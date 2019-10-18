@@ -1,12 +1,13 @@
 Package: KenNet
-Title: What the Package Does (One Line, Title Case)
+Title: Network Tools, especially for uncertainty estimations
 Version: 0.0.1
 Authors@R: 
     person(given = "Kenneth",
            family = "Keuk",
            role = c("aut", "cre"),
            email = "kenneth.keuk@gmail.com")
-Description: What the package does (one paragraph).
+Description: Provides a set of hopefully useful tools for network uncertainty assessment. So far includes functions for bootstrapping dyadic observation lists and run a Random Time-Window Shift (RTWS).
+Imports: data.table
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true

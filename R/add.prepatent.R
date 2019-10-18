@@ -7,11 +7,13 @@
 #' @param unit unit in which mean.lag and duration are provided, with the smallest unit considered being days to perform Dates calculations. (EXTEND TO OTHER TIME RESOLUTION LATER?)
 #'
 #' @return returns the original data table TD after appending to it columns dinf and dsup, representing the boundaries of the small or large time-window (according to extension being zero or not) for each datapoint
-#' @export
 #'
+#' @export
+#' @importFrom data.table data.table
 #' @examples
-#' DT<- data.table::data.table(date=as.Date(round(runif(n = 10,min = 1,max = 30)),origin = "1991-03-30"))
-#' add.prepatent(DT,mean.pp = 10, duration = 12,extension = 5,unit = "day")
+#' D<- round(runif(n = 10,min = 1,max = 30))
+#' DT<- data.table::data.table(date=as.Date(D,origin = "1991-03-30"))
+#' add.prepatent(DT,mean.lag = 10, duration = 12,extension = 5,unit = "day")
 add.prepatent<- function(DT,mean.lag,duration=4,extension=2,unit=c("day","week","month")){
   switch (unit,
           "day" = unit<- 1,
