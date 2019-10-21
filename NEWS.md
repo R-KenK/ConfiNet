@@ -1,3 +1,6 @@
+# KenNet 0.1.3
+* Added Adj -> edge list with repetitions representing edge weights.
+
 # KenNet 0.1.2
 * Added Obs list -> list of subsets to prepare for automatic dynamic SNA.
 
