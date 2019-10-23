@@ -36,8 +36,9 @@
 #' single.core<- system.time(make.Obs.list(DT,Obs,ID.present = FALSE,n.core = 1))
 #' single.core
 
-
 make.Obs.list<- function(DT,Obs,ID.present=TRUE,n.core=parallel::detectCores()-1){
+  if(is.null(DT$date)) stop("No date column in DT.");if(is.null(Obs$date)) stop("No date column in Obs.")
+
   data.table::as.data.table(DT);data.table::as.data.table(Obs)
   cl <- snow::makeCluster(n.core);doSNOW::registerDoSNOW(cl); `%dopar%`<- foreach::`%dopar%`;
   on.exit(snow::stopCluster(cl),add = TRUE,after = TRUE)

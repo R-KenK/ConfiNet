@@ -2,7 +2,11 @@
 
 export(add.prepatent)
 export(adj.to.edge)
+export(closest.date)
+export(extend.window)
 export(make.Obs.list)
+export(random.dates)
+export(rk.closest.date)
 importFrom(data.table,as.data.table)
 importFrom(data.table,data.table)
 importFrom(doSNOW,registerDoSNOW)

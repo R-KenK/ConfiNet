@@ -11,6 +11,7 @@
 #' @export
 #' @importFrom data.table data.table
 #' @examples
+#' set.seed(42)
 #' D<- round(runif(n = 10,min = 1,max = 30))
 #' DT<- data.table::data.table(date=as.Date(D,origin = "1991-03-30"))
 #' add.prepatent(DT,mean.lag = 10, duration = 12,extension = 5,unit = "day")
@@ -21,6 +22,8 @@ add.prepatent<- function(DT,mean.lag,duration=4,extension=2,unit=c("day","week",
           "month" = unit<- 30.5,
           stop("Incorrect unit. Accepted units are: day, week, and month")
   )
+  if(is.null(DT$date)) stop("No date column in DT.")
+
   DT$dinf<- DT$date-floor((mean.lag+duration/2+extension)*unit)
   DT$dsup<- DT$date-ceiling((mean.lag-duration/2-extension)*unit)
   DT

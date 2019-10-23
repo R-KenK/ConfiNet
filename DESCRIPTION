@@ -1,6 +1,6 @@
 Package: KenNet
 Title: Network Tools, especially for uncertainty estimations
-Version: 0.1.3
+Version: 0.2.0
 Authors@R: 
     person(given = "Kenneth",
            family = "Keuk",

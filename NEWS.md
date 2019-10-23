@@ -1,3 +1,6 @@
+# KenNet 0.2.0
+* Preparations for RTWS algorithm: (rk.)closest.dates, extend.window and random.dates.
+
 # KenNet 0.1.3
 * Added Adj -> edge list with repetitions representing edge weights.
 

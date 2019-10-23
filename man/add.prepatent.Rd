@@ -25,6 +25,7 @@ returns the original data table TD after appending to it columns dinf and dsup, 
 Add prepatent period to data table
 }
 \examples{
+set.seed(42)
 D<- round(runif(n = 10,min = 1,max = 30))
 DT<- data.table::data.table(date=as.Date(D,origin = "1991-03-30"))
 add.prepatent(DT,mean.lag = 10, duration = 12,extension = 5,unit = "day")
