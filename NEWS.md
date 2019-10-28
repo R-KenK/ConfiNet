@@ -1,3 +1,6 @@
+# KenNet 0.3.0
+* Progress toward bootstrap and network building implementation (still WIP).
+
 # KenNet 0.2.0
 * Preparations for RTWS algorithm: (rk.)closest.dates, extend.window and random.dates.
 
