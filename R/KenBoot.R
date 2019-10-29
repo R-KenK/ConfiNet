@@ -17,6 +17,8 @@
 #'
 #'
 #' @examples
+#' print("WIP")
+
 KenBoot<- function(Obs,id="id",tar="tar",boot=100,replacement=TRUE,proportion=1.0,output="list"){
   switch(class(Obs)[1],
          "data.table" = Obs,

@@ -4,7 +4,8 @@
 \alias{build.network}
 \title{Network building function wrapper}
 \usage{
-build.network(Obs, id = "id", tar = "tar", boot = 10,
+build.network(Obs, id = "id", tar = "tar", mode = c("directed",
+  "undirected", "max", "min", "upper", "lower", "plus"), boot = 10,
   rdraw = FALSE, replacement = TRUE, directed = FALSE, IDS = NULL)
 }
 \arguments{
@@ -13,6 +14,8 @@ build.network(Obs, id = "id", tar = "tar", boot = 10,
 \item{id}{WIP}
 
 \item{tar}{WIP}
+
+\item{mode}{WIP}
 
 \item{boot}{WIP}
 
@@ -29,4 +32,7 @@ WIP
 }
 \description{
 Wrapper for building and bootstrapping networks
+}
+\examples{
+print("WIP")
 }

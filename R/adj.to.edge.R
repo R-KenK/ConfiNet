@@ -22,7 +22,8 @@
 #' adj.to.edge(Adj,mode = "directed")
 #' adj.to.edge(Adj,mode = "plus")
 
-adj.to.edge<- function(Adj,mode){
+adj.to.edge<- function(Adj,mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
+  if(length(mode)>1) {mode<- "directed"}
   graph<- igraph::graph_from_adjacency_matrix(Adj,mode = mode)
   edgelist<- data.table::data.table(igraph::get.edgelist(graph))
   colnames(edgelist)<-c("id","tar")

@@ -1,3 +1,9 @@
+# KenNet (development version)
+* Reading through Whitehead (2008) to implement the different association indices (WIP)...
+
+# KenNet 0.3.1
+* Implemented edge -> adj, probably useful even if only for internal use...
+
 # KenNet 0.3.0
 * Progress toward bootstrap and network building implementation (still WIP).
 

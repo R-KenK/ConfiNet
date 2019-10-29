@@ -5,6 +5,7 @@
 #' @param Obs WIP
 #' @param id WIP
 #' @param tar WIP
+#' @param mode WIP
 #' @param boot WIP
 #' @param rdraw WIP
 #' @param replacement WIP
@@ -16,7 +17,10 @@
 #' @importFrom igraph graph.data.frame
 #'
 #' @examples
-build.network<- function(Obs,id="id",tar="tar",boot = 10,rdraw=FALSE,replacement=TRUE, directed=FALSE,IDS=NULL){
+#' print("WIP")
+build.network<- function(Obs,id="id",tar="tar",mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
+                         boot = 10,rdraw=FALSE,replacement=TRUE, directed=FALSE,IDS=NULL){
+  if(length(mode)>1) {mode<- "directed"}
   interaction.list<- KenBoot(Obs = Obs,id = id,tar = tar,boot = boot,replacement = replacement,proportion = 1.0,output = "for igraph")
   interaction.list
   lapply(interaction.list,function(l) igraph::graph.data.frame(l))

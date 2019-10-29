@@ -28,3 +28,6 @@ WIP
 \description{
 Bootstrap edge lists where repeated lines represent dyads' weights
 }
+\examples{
+print("WIP")
+}
