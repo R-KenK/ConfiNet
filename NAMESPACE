@@ -2,6 +2,7 @@
 
 export(KenBoot)
 export(add.prepatent)
+export(adj.to.assoc)
 export(adj.to.edge)
 export(build.network)
 export(closest.date)

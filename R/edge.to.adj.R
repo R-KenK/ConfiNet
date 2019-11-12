@@ -49,9 +49,9 @@ edge.to.adj<- function(edge,mode = c("directed", "undirected", "max","min", "upp
   graph<- igraph::graph_from_edgelist(as.matrix(edge),directed = directed);igraph::E(graph)$weight<-1;
 
   if(directed){
-    graph<- igraph::simplify(graph,remove.multiple = TRUE,edge.attr.comb = "sum")
+    graph<- igraph::simplify(graph,remove.multiple = TRUE,remove.loops = FALSE,edge.attr.comb = "sum")
   }else{
-    graph<- igraph::as.undirected(igraph::simplify(graph,remove.multiple = TRUE,edge.attr.comb = "sum"),mode = "collapse")
+    graph<- igraph::as.undirected(igraph::simplify(graph,remove.multiple = TRUE,remove.loops = FALSE,edge.attr.comb = "sum"),mode = "collapse")
   }
 
 

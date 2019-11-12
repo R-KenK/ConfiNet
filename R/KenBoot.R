@@ -38,6 +38,15 @@ KenBoot<- function(Obs,id="id",tar="tar",boot=100,replacement=TRUE,proportion=1.
                 Obs[sample(1:nrow(Obs),round(nrow(Obs)*proportion,0),replace = FALSE)][,.N,by=c(id,tar)]
             )
           },
+          "edge" = {
+            lapply(1:boot,function(b) {
+              if(replacement)
+                Obs[sample(1:nrow(Obs),nrow(Obs),replace = TRUE)]
+              else
+                Obs[sample(1:nrow(Obs),round(nrow(Obs)*proportion,0),replace = FALSE)]
+            }
+            )
+          },
           "for igraph" = {
             lapply(1:boot,function(b) {
               if(replacement)
@@ -52,3 +61,66 @@ KenBoot<- function(Obs,id="id",tar="tar",boot=100,replacement=TRUE,proportion=1.
           }
   )
 }
+
+
+# edge<- KenNet::adj.to.edge(Adj)
+# el<- KenBoot(edge,boot = 10,output = "edge")
+#
+# al<- lapply(el,
+#             function(edge) {
+#               ADJ<- matrix(0,nrow(Adj),ncol(Adj),dimnames = list(row.names(Adj.tmp),row.names(Adj.tmp)))
+#               Adj.tmp<- edge.to.adj(edge,mode = "directed")
+#               ADJ[rownames(Adj.tmp),colnames(Adj.tmp)]<- Adj.tmp
+#               ADJ[sort(rownames(ADJ)),sort(colnames(ADJ))]
+#             })
+# al
+#
+# a<- al[[2]]
+#
+# for(x in a>0){
+#   a[[x]]
+# }
+#
+# pos<- non.zero.non.diag(a)
+#
+# pos[2,]["row"]
+#
+# a[pos]<- sapply(1:nrow(pos),
+#                 function(ij){
+#                   i<- pos[ij,]["row"];j<- pos[ij,]["col"];
+#                   a[i,j]/(a[i,i]+a[j,j])
+#                 })
+# a
+#
+# str(pos)
+# Matrix::
+#   a[a>0]
+#
+# ef<- rowSums(a)
+#
+#
+# adj.mat.ij<- matrix(0,nrow = length(IDs),ncol = length(IDs));                                       #make matrices with the right dimensions as place-holders
+# row.names(adj.mat.ij)<- IDs;colnames(adj.mat.ij)<- IDs;                                           #name the matrices' row and columns right
+#
+# Adj.tmp<- edge.to.adj(edge.test,mode = "directed")
+# if(!identical(row.names(Adj.tmp),row.names(Adj))){
+#   outer
+# }
+#
+# edge<- KenNet::adj.to.edge(Adj,mode = "plus")
+# Adj<- KenNet::edge.to.adj(edge,mode="plus")
+#
+# round(do.call(rbind,
+#               lapply(1:nrow(Adj),function(r) {
+#                 Adj[r,]<-Adj[r,]/sum(Adj[r,])
+#               })
+# ),2)
+#
+#
+#
+# for(i in ID){                                                                                                           #for each cell
+#   for(j in ID){
+#     IJ<- sum(Adj[i,i],Adj[j,j])                                                       #check how many observations has been made for focal i AND for focal j from the first non transposed matrix
+#     Adj[i,j]<- ifelse(IJ!=0,Adj[i,j]/IJ, Adj[i,j])                                    # divide each cell by this value: taking into account observation effort of focal sampling i AND j
+#   }
+# }

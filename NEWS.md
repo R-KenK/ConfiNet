@@ -1,4 +1,4 @@
-# KenNet (development version)
+# KenNet 0.4.0
 * Reading through Whitehead (2008) to implement the different association indices (WIP)...
 
 # KenNet 0.3.1
