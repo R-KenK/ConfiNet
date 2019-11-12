@@ -1,3 +1,6 @@
+# KenNet 0.4.1
+* Bug fixes (diagonal functionvariable name mismatch, example for internal functions...)
+
 # KenNet 0.4.0
 * Reading through Whitehead (2008) to implement the different association indices (WIP)...
 * Implementing adjacency to association index for the case of focal sampling and egocentric networks

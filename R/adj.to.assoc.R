@@ -2,15 +2,15 @@
 #'
 #' Similarly to upper.tri and lower.tri, returns a matrix of logicals to identify the diagonal of a square matrix
 #'
-#' @param a matrix or other R object with length(dim(x)) == 2. For back compatibility reasons, when the above is not fulfilled, as.matrix(x) is called first.
+#' @param M matrix or other R object with length(dim(x)) == 2. For back compatibility reasons, when the above is not fulfilled, as.matrix(x) is called first.
 #'
 #' @return square logical matrix with diagonal of TRUEs
 #'
 #' @examples
 #' M<- matrix(sample(1:10,16,replace = TRUE),4,4)
-#' diagonal(M)
+#' KenNet:::diagonal(M)
 #'
-diagonal<- function(M) {upper.tri(a,diag = TRUE)&!upper.tri(a,diag = FALSE)}
+diagonal<- function(M) {upper.tri(M,diag = TRUE)&!upper.tri(M,diag = FALSE)}
 
 #' Identify coordinates of non null non diagonal elements of a matrix
 #'
@@ -20,7 +20,9 @@ diagonal<- function(M) {upper.tri(a,diag = TRUE)&!upper.tri(a,diag = FALSE)}
 #'
 #' @examples
 #' M<- matrix(sample(1:10,16,replace = TRUE),4,4)
-#' diagonal(M)
+#' diagonal<- function(M) {upper.tri(M,diag = TRUE)&!upper.tri(M,diag = FALSE)}
+#'
+#' KenNet:::non.zero.non.diag(M)
 #'
 non.zero.non.diag<- function(M) {which(M>0&!diagonal(M),arr.ind = TRUE,useNames = TRUE)}
 
@@ -32,7 +34,7 @@ non.zero.non.diag<- function(M) {which(M>0&!diagonal(M),arr.ind = TRUE,useNames 
 #' @param effort facultative vector of sampling effort per individual
 #' @param type character string. Type of effort per individual provided. Either "yab", indicates the number of times an individual have been observed associated with no-one, or "total" for its total sampling effort (cf. Whitehead, 2008). Logically, the number or association of an individual cannot be smaller than the total number of observation for this individual.
 #' @param index character string. Type of association index (cf. Whitehead, 2008).
-#' @param mode
+#' @param mode Type of adjacency matrix. Not really in use yet (WIP)
 #'
 #' @return A matrix of association index.
 #' @export
@@ -54,7 +56,7 @@ non.zero.non.diag<- function(M) {which(M>0&!diagonal(M),arr.ind = TRUE,useNames 
 #'
 #' adj.to.assoc(Adj,yab,type = "yab",index="focal")
 #' adj.to.assoc(Adj,yab,index="focal")
-#' adj.to.assoc(Adj,yab,type = "total",index="focal")
+#'
 adj.to.assoc<- function(Adj,effort=NULL,index=c("joint","sri","hw","tw","sqrt","socaff","both","focal"),
                         type = c("total","yab"),
                         mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
@@ -101,6 +103,6 @@ adj.to.assoc<- function(Adj,effort=NULL,index=c("joint","sri","hw","tw","sqrt","
            diag(Adj)<-0
            Adj
          },
-         stop("WIP. Other methods not implemented yet. Sorry ¯\\_(owo)_/¯"))
+         stop("WIP. Other methods not implemented yet. Sorry (owo)"))
 }
 

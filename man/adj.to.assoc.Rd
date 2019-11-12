@@ -18,7 +18,7 @@ adj.to.assoc(Adj, effort = NULL, index = c("joint", "sri", "hw", "tw",
 
 \item{type}{character string. Type of effort per individual provided. Either "yab", indicates the number of times an individual have been observed associated with no-one, or "total" for its total sampling effort (cf. Whitehead, 2008). Logically, the number or association of an individual cannot be smaller than the total number of observation for this individual.}
 
-\item{mode}{}
+\item{mode}{Type of adjacency matrix. Not really in use yet (WIP)}
 }
 \value{
 A matrix of association index.
@@ -43,5 +43,5 @@ yab<- sample(5:8,n,replace = TRUE)
 
 adj.to.assoc(Adj,yab,type = "yab",index="focal")
 adj.to.assoc(Adj,yab,index="focal")
-adj.to.assoc(Adj,yab,type = "total",index="focal")
+
 }
