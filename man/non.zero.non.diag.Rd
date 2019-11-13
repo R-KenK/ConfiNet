@@ -17,6 +17,8 @@ Identify coordinates of non null non diagonal elements of a matrix
 }
 \examples{
 M<- matrix(sample(1:10,16,replace = TRUE),4,4)
-diagonal(M)
+diagonal<- function(M) {upper.tri(M,diag = TRUE)&!upper.tri(M,diag = FALSE)}
+non.zero.non.diag<- function(M) {which(M>0&!diagonal(M),arr.ind = TRUE,useNames = TRUE)}
+non.zero.non.diag(M)
 
 }

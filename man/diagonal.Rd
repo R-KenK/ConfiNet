@@ -7,7 +7,7 @@
 diagonal(M)
 }
 \arguments{
-\item{a}{matrix or other R object with length(dim(x)) == 2. For back compatibility reasons, when the above is not fulfilled, as.matrix(x) is called first.}
+\item{M}{matrix or other R object with length(dim(x)) == 2. For back compatibility reasons, when the above is not fulfilled, as.matrix(x) is called first.}
 }
 \value{
 square logical matrix with diagonal of TRUEs
@@ -17,6 +17,7 @@ Similarly to upper.tri and lower.tri, returns a matrix of logicals to identify t
 }
 \examples{
 M<- matrix(sample(1:10,16,replace = TRUE),4,4)
+diagonal<- function(M) {upper.tri(M,diag = TRUE)&!upper.tri(M,diag = FALSE)}
 diagonal(M)
 
 }
