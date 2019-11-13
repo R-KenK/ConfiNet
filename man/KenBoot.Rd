@@ -4,26 +4,33 @@
 \alias{KenBoot}
 \title{Network Bootstrap of edge-lists}
 \usage{
-KenBoot(Obs, id = "id", tar = "tar", boot = 100,
-  replacement = TRUE, proportion = 1, output = "list")
+KenBoot(Adj, effort, type = c("total", "yab"), boot = 100,
+  replacement = TRUE, proportion = 1, index = c("joint", "sri", "hw",
+  "tw", "sqrt", "socaff", "both", "focal"), mode = c("directed",
+  "undirected", "max", "min", "upper", "lower", "plus"),
+  output = c("adjacency", "edge", "assoc", "graph"))
 }
 \arguments{
-\item{Obs}{WIP}
+\item{Adj}{raw adjacency matrix}
 
-\item{id}{WIP}
+\item{effort}{vector of sampling effort per individual. WIP}
 
-\item{tar}{WIP}
+\item{type}{type of sampling effort. cf \link[KenNet]{adj.to.assoc}}
 
-\item{boot}{WIP}
+\item{boot}{number of bootstrap iteration. WIP}
 
-\item{replacement}{WIP}
+\item{replacement}{resampling with replacement or not. WIP}
 
-\item{proportion}{WIP}
+\item{proportion}{proportion to sub-sample, within [0,1[. WIP}
 
-\item{output}{WIP}
+\item{index}{Type of desired association index. At the molment only focal method implemented. WIP}
+
+\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
+
+\item{output}{desired output of the bootstrap: edge lists, adjacency matrices, association index matrices, or igraph graphs}
 }
 \value{
-WIP
+according to output, returns a list of edge lists, adjacency matrices, association index matrices, or igraph graphs
 }
 \description{
 Bootstrap edge lists where repeated lines represent dyads' weights

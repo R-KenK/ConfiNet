@@ -21,9 +21,9 @@
 build.network<- function(Obs,id="id",tar="tar",mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
                          boot = 10,rdraw=FALSE,replacement=TRUE, directed=FALSE,IDS=NULL){
   if(length(mode)>1) {mode<- "directed"}
-  interaction.list<- KenBoot(Obs = Obs,id = id,tar = tar,boot = boot,replacement = replacement,proportion = 1.0,output = "for igraph")
-  interaction.list
-  lapply(interaction.list,function(l) igraph::graph.data.frame(l))
+  # interaction.list<- KenBoot(Obs = Obs,id = id,tar = tar,boot = boot,replacement = replacement,proportion = 1.0,output = "for igraph")
+  # interaction.list
+  # lapply(interaction.list,function(l) igraph::graph.data.frame(l))
   # if(is.null(IDS)) IDs<- unique(factor(c(as.character(interaction.list$id),                                          #get the names of the individual present, among all individuals (error if not the same levels)
   #                                        as.character(interaction.list$tar))));
   # adj.mat.ij<- matrix(0,nrow = length(IDs),ncol = length(IDs));                                       #make matrices with the right dimensions as place-holders

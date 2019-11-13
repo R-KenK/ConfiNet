@@ -58,7 +58,7 @@ non.zero.non.diag<- function(M) {which(M>0&!diagonal(M),arr.ind = TRUE,useNames 
 #' adj.to.assoc(Adj,yab,type = "yab",index="focal")
 #' adj.to.assoc(Adj,yab,index="focal")
 adj.to.assoc<- function(Adj,effort=NULL,index=c("joint","sri","hw","tw","sqrt","socaff","both","focal"),
-                        type = c("total","yab"),
+                        type = c("total","yab","diag"),
                         mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
   if(length(mode)>1) {mode<- "plus"}
   if(length(index)>1) {index<- "sri"}
@@ -82,6 +82,7 @@ adj.to.assoc<- function(Adj,effort=NULL,index=c("joint","sri","hw","tw","sqrt","
     switch(type,
            "total" = if(all(rowSums(Adj)<=effort)) diag(Adj)<- effort else stop("effort provided smaller than number of associations. This shouldn't be possible."),
            "yab" = diag(Adj)<- effort+rowSums(Adj),
+           "diag" = diag(Adj)<- rowSums(Adj),
            stop("unrecognized effort type.")
 
     )

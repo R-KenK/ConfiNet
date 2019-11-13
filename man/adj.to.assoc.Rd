@@ -5,7 +5,7 @@
 \title{Adjacency matrix to association indices matrix}
 \usage{
 adj.to.assoc(Adj, effort = NULL, index = c("joint", "sri", "hw", "tw",
-  "sqrt", "socaff", "both", "focal"), type = c("total", "yab"),
+  "sqrt", "socaff", "both", "focal"), type = c("total", "yab", "diag"),
   mode = c("directed", "undirected", "max", "min", "upper", "lower",
   "plus"))
 }
