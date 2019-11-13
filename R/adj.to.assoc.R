@@ -80,7 +80,8 @@ adj.to.assoc<- function(Adj,effort=NULL,index=c("joint","sri","hw","tw","sqrt","
     }
 
     switch(type,
-           "total" = if(all(rowSums(Adj)<=effort)) diag(Adj)<- effort else stop("effort provided smaller than number of associations. This shouldn't be possible."),
+           # "total" = if(all(rowSums(Adj)<=effort)) diag(Adj)<- effort else stop("effort provided smaller than number of associations. This shouldn't be possible."),
+           "total" = diag(Adj)<- effort,
            "yab" = diag(Adj)<- effort+rowSums(Adj),
            "diag" = diag(Adj)<- rowSums(Adj),
            stop("unrecognized effort type.")

@@ -42,7 +42,8 @@ KenBoot<- function(Adj,effort,type = c("total","yab"),boot=100,replacement=TRUE,
     }
 
     switch(type,
-           "total" = if(all(rowSums(Adj)<=effort)) diag(Adj)<- effort-rowSums(Adj) else stop("effort provided smaller than number of associations. This shouldn't be possible."),
+           # "total" = if(all(rowSums(Adj)<=effort)) diag(Adj)<- effort-rowSums(Adj) else stop("effort provided smaller than number of associations. This shouldn't be possible."),
+           "total" = diag(Adj)<- effort-rowSums(Adj),
            "yab" = diag(Adj)<- effort,
            "diag" = stop("\"diag\" type shouldn't be used for KenBoot, only for adj.to.assoc."),
            stop("unrecognized effort type.")
