@@ -12,7 +12,7 @@
 #' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
 #' @param output desired output of the bootstrap: edge lists, adjacency matrices, association index matrices, igraph graphs, or network metrics
 #' @param FUN if output is "metric", indicate which function to use to calculate said metric.
-#' @param ... if output is "metric", arguments for function FUN.
+#' @param args.list if output is "metric", arguments for function FUN.
 #'
 #' @return according to output, returns a list of edge lists, adjacency matrices, association index matrices, or igraph graphs
 #' @export
@@ -23,7 +23,7 @@ KenBoot<- function(Adj,effort,type = c("total","yab"),boot=100,replacement=TRUE,
                    index=c("joint","sri","hw","tw","sqrt","socaff","both","focal"),
                    mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
                    output=c("adjacency","edge","assoc","graph","metric"),
-                   FUN=NULL, ...){
+                   FUN=NULL, args.list){
 
   if(length(index)>1) {index<- "sri"}
   if(length(type)>1) {type<- "total"}
@@ -80,9 +80,8 @@ KenBoot<- function(Adj,effort,type = c("total","yab"),boot=100,replacement=TRUE,
           }
           )
           if(output %in% c("metric")){
-            fun.args<- list(...)
             netmet.boot<- lapply(graph.boot,function(graph) {
-              KenNet::metric.boot(graph,FUN = FUN,...=fun.args)
+              KenNet::metric.boot(graph,FUN = FUN,args.list=args.list)
             }
             )
           }
@@ -112,7 +111,7 @@ KenBoot<- function(Adj,effort,type = c("total","yab"),boot=100,replacement=TRUE,
 # effort<- rowSums(Adj)+sample(5:8,n,replace = TRUE)
 # effort
 #
-# KenBoot(Adj,effort,10,replacement = TRUE,proportion = 1.0,
+# boot<- KenNet::KenBoot(Adj,effort,10,replacement = TRUE,proportion = 1.0,
 #         index = "focal",type = "total",mode = "plus",output = "graph")
 #
 #

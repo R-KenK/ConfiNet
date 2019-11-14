@@ -9,7 +9,7 @@ KenBoot(Adj, effort, type = c("total", "yab"), boot = 100,
   "tw", "sqrt", "socaff", "both", "focal"), mode = c("directed",
   "undirected", "max", "min", "upper", "lower", "plus"),
   output = c("adjacency", "edge", "assoc", "graph", "metric"),
-  FUN = NULL, ...)
+  FUN = NULL, args.list)
 }
 \arguments{
 \item{Adj}{raw adjacency matrix}
@@ -32,7 +32,7 @@ KenBoot(Adj, effort, type = c("total", "yab"), boot = 100,
 
 \item{FUN}{if output is "metric", indicate which function to use to calculate said metric.}
 
-\item{...}{if output is "metric", arguments for function FUN.}
+\item{args.list}{if output is "metric", arguments for function FUN.}
 }
 \value{
 according to output, returns a list of edge lists, adjacency matrices, association index matrices, or igraph graphs
