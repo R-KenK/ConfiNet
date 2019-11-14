@@ -8,7 +8,8 @@ KenBoot(Adj, effort, type = c("total", "yab"), boot = 100,
   replacement = TRUE, proportion = 1, index = c("joint", "sri", "hw",
   "tw", "sqrt", "socaff", "both", "focal"), mode = c("directed",
   "undirected", "max", "min", "upper", "lower", "plus"),
-  output = c("adjacency", "edge", "assoc", "graph"))
+  output = c("adjacency", "edge", "assoc", "graph", "metric"),
+  FUN = NULL, ...)
 }
 \arguments{
 \item{Adj}{raw adjacency matrix}
@@ -27,7 +28,11 @@ KenBoot(Adj, effort, type = c("total", "yab"), boot = 100,
 
 \item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
 
-\item{output}{desired output of the bootstrap: edge lists, adjacency matrices, association index matrices, or igraph graphs}
+\item{output}{desired output of the bootstrap: edge lists, adjacency matrices, association index matrices, igraph graphs, or network metrics}
+
+\item{FUN}{if output is "metric", indicate which function to use to calculate said metric.}
+
+\item{...}{if output is "metric", arguments for function FUN.}
 }
 \value{
 according to output, returns a list of edge lists, adjacency matrices, association index matrices, or igraph graphs

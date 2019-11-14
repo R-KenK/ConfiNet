@@ -1,3 +1,6 @@
+# KenNet (development version)
+* attemtp at wrapping metric.boot into KenBoot
+
 # KenNet 0.4.1
 * Bug fixes related to Documents and Check
 
