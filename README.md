@@ -1,4 +1,4 @@
-# KenNet
+# ConfiNet
 Network Tools, especially for uncertainty estimations
 
 ## Installation
