@@ -1,3 +1,6 @@
+# ConfiNet 0.5.1
+* Added group scan simulation function simu.scan
+
 # ConfiNet 0.5.0
 * Change package name KenNet -> ConfiNet + script and function names changes (KenNet -> ConfiNet and KenBoot -> ConfiBoot).
 

@@ -4,8 +4,7 @@
 \alias{make.Obs.list}
 \title{Make the list of Observation subsets}
 \usage{
-make.Obs.list(DT, Obs, ID.present = TRUE,
-  n.core = parallel::detectCores() - 1)
+make.Obs.list(DT, Obs, ID.present = TRUE, n.core = parallel::detectCores() - 1)
 }
 \arguments{
 \item{DT}{data.table of the events/samples of interest, for each and relative to which subsets of data will be produced. Subset between datesdinf and dsup.}

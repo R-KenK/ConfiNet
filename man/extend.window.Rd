@@ -4,8 +4,7 @@
 \alias{extend.window}
 \title{Extend the time-window}
 \usage{
-extend.window(Obs, di, ds, min.obs, rdraw = FALSE, pctdraw = 1,
-  mode = "dates")
+extend.window(Obs, di, ds, min.obs, rdraw = FALSE, pctdraw = 1, mode = "dates")
 }
 \arguments{
 \item{Obs}{data.table of dyadic observations.}

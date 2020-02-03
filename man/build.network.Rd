@@ -4,9 +4,17 @@
 \alias{build.network}
 \title{Network building function wrapper}
 \usage{
-build.network(Obs, id = "id", tar = "tar", mode = c("directed",
-  "undirected", "max", "min", "upper", "lower", "plus"), boot = 10,
-  rdraw = FALSE, replacement = TRUE, directed = FALSE, IDS = NULL)
+build.network(
+  Obs,
+  id = "id",
+  tar = "tar",
+  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus"),
+  boot = 10,
+  rdraw = FALSE,
+  replacement = TRUE,
+  directed = FALSE,
+  IDS = NULL
+)
 }
 \arguments{
 \item{Obs}{WIP}

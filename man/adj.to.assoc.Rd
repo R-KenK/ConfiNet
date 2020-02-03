@@ -4,10 +4,13 @@
 \alias{adj.to.assoc}
 \title{Adjacency matrix to association indices matrix}
 \usage{
-adj.to.assoc(Adj, effort = NULL, index = c("joint", "sri", "hw", "tw",
-  "sqrt", "socaff", "both", "focal"), type = c("total", "yab"),
-  mode = c("directed", "undirected", "max", "min", "upper", "lower",
-  "plus"))
+adj.to.assoc(
+  Adj,
+  effort = NULL,
+  index = c("joint", "sri", "hw", "tw", "sqrt", "socaff", "both", "focal"),
+  type = c("total", "yab"),
+  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus")
+)
 }
 \arguments{
 \item{Adj}{Adjacency matrix of edge weights}

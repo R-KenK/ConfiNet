@@ -4,8 +4,15 @@
 \alias{ConfiBoot}
 \title{Network Bootstrap of edge-lists}
 \usage{
-ConfiBoot(Obs, id = "id", tar = "tar", boot = 100,
-  replacement = TRUE, proportion = 1, output = "list")
+ConfiBoot(
+  Obs,
+  id = "id",
+  tar = "tar",
+  boot = 100,
+  replacement = TRUE,
+  proportion = 1,
+  output = "list"
+)
 }
 \arguments{
 \item{Obs}{WIP}

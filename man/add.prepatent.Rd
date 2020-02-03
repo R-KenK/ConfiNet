@@ -4,8 +4,13 @@
 \alias{add.prepatent}
 \title{Add prepatent period to data table}
 \usage{
-add.prepatent(DT, mean.lag, duration = 4, extension = 2,
-  unit = c("day", "week", "month"))
+add.prepatent(
+  DT,
+  mean.lag,
+  duration = 4,
+  extension = 2,
+  unit = c("day", "week", "month")
+)
 }
 \arguments{
 \item{DT}{data table containing at least a date column.}

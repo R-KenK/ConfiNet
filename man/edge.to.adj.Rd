@@ -4,8 +4,10 @@
 \alias{edge.to.adj}
 \title{Convert an adjacency matrix to an edge list with repeated lines}
 \usage{
-edge.to.adj(edge, mode = c("directed", "undirected", "max", "min",
-  "upper", "lower", "plus"))
+edge.to.adj(
+  edge,
+  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus")
+)
 }
 \arguments{
 \item{edge}{data.table or two-columns matrix. Each line represent an edge (order matters if the graph is directed), repetition of a given (ordered) pair represent the weight of an edge.}

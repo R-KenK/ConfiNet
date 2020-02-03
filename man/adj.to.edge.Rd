@@ -4,8 +4,10 @@
 \alias{adj.to.edge}
 \title{Convert an adjacency matrix to an edge list with repeated lines}
 \usage{
-adj.to.edge(Adj, mode = c("directed", "undirected", "max", "min",
-  "upper", "lower", "plus"))
+adj.to.edge(
+  Adj,
+  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus")
+)
 }
 \arguments{
 \item{Adj}{adjacency matrix. Can be directed or undirected. Should probably be weighted if the network is to be bootstrapped...}

@@ -4,8 +4,13 @@
 \alias{random.dates}
 \title{Random dates}
 \usage{
-random.dates(Obs, duration = 4, extension = 2, unit = "day",
-  mode = "first-half")
+random.dates(
+  Obs,
+  duration = 4,
+  extension = 2,
+  unit = "day",
+  mode = "first-half"
+)
 }
 \arguments{
 \item{Obs}{data.table of dyadic observations. Must contain a date column.}
