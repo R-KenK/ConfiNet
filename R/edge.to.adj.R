@@ -22,15 +22,15 @@
 #' Adj[lower.tri(Adj)]<- sample(0:1,n*(n-1)/2,replace = TRUE)
 #' Adj
 #'
-#' edge<- KenNet::adj.to.edge(Adj,mode = "directed")
+#' edge<- ConfiNet::adj.to.edge(Adj,mode = "directed")
 #' edge.to.adj(edge,mode="directed")
-#' edge.up<- KenNet::adj.to.edge(Adj,mode = "upper")
+#' edge.up<- ConfiNet::adj.to.edge(Adj,mode = "upper")
 #' edge.to.adj(edge.up,mode="upper")
 #'
-#' edge.plus<- KenNet::adj.to.edge(Adj,mode = "plus")
+#' edge.plus<- ConfiNet::adj.to.edge(Adj,mode = "plus")
 #' edge.to.adj(edge.plus,mode="plus")
 #'
-#' edge.low<- KenNet::adj.to.edge(Adj,mode = "lower")
+#' edge.low<- ConfiNet::adj.to.edge(Adj,mode = "lower")
 #' edge.to.adj(edge.low,mode="lower")
 edge.to.adj<- function(edge,mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
   if(length(mode)>1) {mode<- "directed"}

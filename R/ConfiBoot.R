@@ -19,7 +19,7 @@
 #' @examples
 #' print("WIP")
 
-KenBoot<- function(Obs,id="id",tar="tar",boot=100,replacement=TRUE,proportion=1.0,output="list"){
+ConfiBoot<- function(Obs,id="id",tar="tar",boot=100,replacement=TRUE,proportion=1.0,output="list"){
   switch(class(Obs)[1],
          "data.table" = Obs,
          "data.frame" = Obs<- data.table::data.table(Obs),
@@ -63,8 +63,8 @@ KenBoot<- function(Obs,id="id",tar="tar",boot=100,replacement=TRUE,proportion=1.
 }
 
 
-# edge<- KenNet::adj.to.edge(Adj)
-# el<- KenBoot(edge,boot = 10,output = "edge")
+# edge<- ConfiNet::adj.to.edge(Adj)
+# el<- ConfiBoot(edge,boot = 10,output = "edge")
 #
 # al<- lapply(el,
 #             function(edge) {
@@ -107,8 +107,8 @@ KenBoot<- function(Obs,id="id",tar="tar",boot=100,replacement=TRUE,proportion=1.
 #   outer
 # }
 #
-# edge<- KenNet::adj.to.edge(Adj,mode = "plus")
-# Adj<- KenNet::edge.to.adj(edge,mode="plus")
+# edge<- ConfiNet::adj.to.edge(Adj,mode = "plus")
+# Adj<- ConfiNet::edge.to.adj(edge,mode="plus")
 #
 # round(do.call(rbind,
 #               lapply(1:nrow(Adj),function(r) {
