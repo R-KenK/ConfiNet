@@ -1,3 +1,6 @@
+# ConfiNet (development version)
+* Added focal scan simulation function simu.focal (need cleaning)
+
 # ConfiNet 0.5.1
 * Added group scan simulation function simu.scan
 
