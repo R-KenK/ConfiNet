@@ -7,6 +7,7 @@
 #' @param n_nodes integer, number of nodes to simulate.
 #' @param nodes_names optional character vector of the nodes' names, otherwise simply numbered.
 #' @param focals optional character vector of the nodes' names, otherwise simply numbered.
+#' @param prob optional character vector of the nodes' names, otherwise simply numbered.
 #' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
 #' @param output Character scalar, specifies if the function should return a list of lists of scans (n_focals-list of n_scans vectors), a list of egocentric network (n_focals-list, can have several per node), or an adjacency matrix. Only adjacency matrices can be undirected (???).
 #'
@@ -18,9 +19,9 @@
 #'
 #' simu.focal(n_focals = 15,n_scans = 5,n_nodes = 10,mode = "directed",output = "scan")
 #' simu.focal(n_focals = 15,n_scans = 5,n_nodes = 10,mode = "directed",output = "ego")
-#' simu.focal(n_focals = 15,n_scans = 5,n_nodes = 10,mode = "directed",output = "adj")
+#' simu.focal(n_focals = 500,n_scans = 5,n_nodes = 10,mode = "directed",output = "adj")
 #' simu.focal(n_focals = 15,n_scans = 5,n_nodes = 10,mode = "plus",output = "adj")
-simu.focal<- function(n_focals,n_scans,n_nodes, nodes_names=as.character(1:n_nodes),focals=nodes_names,
+simu.focal<- function(n_focals,n_scans,n_nodes, nodes_names=as.character(1:n_nodes),focals=nodes_names,prob=NULL,
                       mode = c("directed", "undirected", "plus"),
                       output = c("scans","egos","adjacency")){
   if(length(mode)>1) {mode<- "directed"}
@@ -39,7 +40,7 @@ simu.focal<- function(n_focals,n_scans,n_nodes, nodes_names=as.character(1:n_nod
                          lapply(1:n_scans,
                                 function(scan) {
                                   ego<- rep(NA,n_nodes);names(ego)<- nodes_names;
-                                  ego[names(ego)!=focal]<- sample(0:1,n_nodes-1,replace = TRUE)
+                                  ego[names(ego)!=focal]<- sample(0:1,n_nodes-1,replace = TRUE,prob = prob)
                                   ego
                                 }
                          )

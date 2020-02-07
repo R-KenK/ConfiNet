@@ -18,76 +18,83 @@
 #' simu.scan(n_scans,n_nodes = n,mode = "directed")
 #' simu.scan(n_scans,n_nodes = n,nodes_names = nodes,mode = "plus")
 #'
-simu.scan<- function(n_scans,n_nodes, nodes_names=as.character(1:n_nodes),mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
+simu.scan<- function(n_scans,n_nodes, nodes_names=as.character(1:n_nodes),prob=NULL,
+                     mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
+                     output=c("scan","adjacency")){
   if(length(mode)>1) {mode<- "directed"}
-  switch(mode,
-         "directed" ={
-           lapply(1:n_scans,
-                  function(scan) {
-                    Scan<- matrix(data = 0,nrow = n_nodes,ncol = n_nodes,dimnames = list(nodes_names,nodes_names))
-                    Scan[upper.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE)
-                    Scan[lower.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE)
-                    Scan
-                  }
-           )
-         },
-         "undirected" ={
-           lapply(1:n_scans,
-                  function(scan) {
-                    Scan<- matrix(data = 0,nrow = n_nodes,ncol = n_nodes,dimnames = list(nodes_names,nodes_names))
-                    Scan[upper.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE)
-                    Scan+t(Scan)
-                  }
-           )
-         },
-         "max" ={
-           lapply(1:n_scans,
-                  function(scan) {
-                    Scan<- matrix(data = 0,nrow = n_nodes,ncol = n_nodes,dimnames = list(nodes_names,nodes_names))
-                    Scan[upper.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE)
-                    Scan[lower.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE)
-                    ifelse(Scan+t(Scan)>=1,1,0) #conserve a connection between nodes if there's one in either directions (either adjacency triangle)
-                  }
-           )
-         },
-         "min" ={
-           lapply(1:n_scans,
-                  function(scan) {
-                    Scan<- matrix(data = 0,nrow = n_nodes,ncol = n_nodes,dimnames = list(nodes_names,nodes_names))
-                    Scan[upper.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE)
-                    Scan[lower.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE)
-                    ifelse(Scan+t(Scan)==2,1,0) #only conserve a connection between nodes who have one in both directions (each adjacency triangle)
-                  }
-           )
-         },
-         "upper" ={
-           lapply(1:n_scans,
-                  function(scan) {
-                    Scan<- matrix(data = 0,nrow = n_nodes,ncol = n_nodes,dimnames = list(nodes_names,nodes_names))
-                    Scan[upper.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE)
-                    Scan
-                  }
-           )
-         },
-         "lower" ={
-           lapply(1:n_scans,
-                  function(scan) {
-                    Scan<- matrix(data = 0,nrow = n_nodes,ncol = n_nodes,dimnames = list(nodes_names,nodes_names))
-                    Scan[lower.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE)
-                    Scan
-                  }
-           )
-         },
-         "plus" = {
-           lapply(1:n_scans,
-                  function(scan) {
-                    Scan<- matrix(data = 0,nrow = n_nodes,ncol = n_nodes,dimnames = list(nodes_names,nodes_names))
-                    Scan[upper.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE)
-                    Scan[lower.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE)
-                    Scan<- Scan+t(Scan)
-                    Scan
-                  }
-           )
-         }
+  if(length(output)>1) {output<- "scan"}
+
+  Scans<- switch(mode,
+                 "directed" ={
+                   lapply(1:n_scans,
+                          function(scan) {
+                            Scan<- matrix(data = 0,nrow = n_nodes,ncol = n_nodes,dimnames = list(nodes_names,nodes_names))
+                            Scan[upper.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE,prob=prob)
+                            Scan[lower.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE,prob=prob)
+                            Scan
+                          }
+                   )
+                 },
+                 "undirected" ={
+                   lapply(1:n_scans,
+                          function(scan) {
+                            Scan<- matrix(data = 0,nrow = n_nodes,ncol = n_nodes,dimnames = list(nodes_names,nodes_names))
+                            Scan[upper.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE,prob=prob)
+                            Scan+t(Scan)
+                          }
+                   )
+                 },
+                 "max" ={
+                   lapply(1:n_scans,
+                          function(scan) {
+                            Scan<- matrix(data = 0,nrow = n_nodes,ncol = n_nodes,dimnames = list(nodes_names,nodes_names))
+                            Scan[upper.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE,prob=prob)
+                            Scan[lower.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE,prob=prob)
+                            ifelse(Scan+t(Scan)>=1,1,0) #conserve a connection between nodes if there's one in either directions (either adjacency triangle)
+                          }
+                   )
+                 },
+                 "min" ={
+                   lapply(1:n_scans,
+                          function(scan) {
+                            Scan<- matrix(data = 0,nrow = n_nodes,ncol = n_nodes,dimnames = list(nodes_names,nodes_names))
+                            Scan[upper.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE,prob=prob)
+                            Scan[lower.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE,prob=prob)
+                            ifelse(Scan+t(Scan)==2,1,0) #only conserve a connection between nodes who have one in both directions (each adjacency triangle)
+                          }
+                   )
+                 },
+                 "upper" ={
+                   lapply(1:n_scans,
+                          function(scan) {
+                            Scan<- matrix(data = 0,nrow = n_nodes,ncol = n_nodes,dimnames = list(nodes_names,nodes_names))
+                            Scan[upper.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE,prob=prob)
+                            Scan
+                          }
+                   )
+                 },
+                 "lower" ={
+                   lapply(1:n_scans,
+                          function(scan) {
+                            Scan<- matrix(data = 0,nrow = n_nodes,ncol = n_nodes,dimnames = list(nodes_names,nodes_names))
+                            Scan[lower.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE,prob=prob)
+                            Scan
+                          }
+                   )
+                 },
+                 "plus" = {
+                   lapply(1:n_scans,
+                          function(scan) {
+                            Scan<- matrix(data = 0,nrow = n_nodes,ncol = n_nodes,dimnames = list(nodes_names,nodes_names))
+                            Scan[upper.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE,prob=prob)
+                            Scan[lower.tri(Scan)]<- sample(0:1,n_nodes*(n_nodes-1)/2,replace = TRUE,prob=prob)
+                            Scan<- Scan+t(Scan)
+                            Scan
+                          }
+                   )
+                 }
   )
+  if(output %in% c("scan","scans","list")) return(Scans)
+
+  if(output %in% c("adj","adjacency")) return(Reduce("+",Scans)) else stop("invalid output provided. Should be either \"scan\" or \"adjacency\".")
 }
