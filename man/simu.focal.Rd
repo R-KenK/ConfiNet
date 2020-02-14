@@ -10,6 +10,7 @@ simu.focal(
   n_nodes,
   nodes_names = as.character(1:n_nodes),
   focals = nodes_names,
+  prob = NULL,
   mode = c("directed", "undirected", "plus"),
   output = c("scans", "egos", "adjacency")
 )
@@ -24,6 +25,8 @@ simu.focal(
 \item{nodes_names}{optional character vector of the nodes' names, otherwise simply numbered.}
 
 \item{focals}{optional character vector of the nodes' names, otherwise simply numbered.}
+
+\item{prob}{optional character vector of the nodes' names, otherwise simply numbered.}
 
 \item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
 
@@ -40,6 +43,6 @@ set.seed(42)
 
 simu.focal(n_focals = 15,n_scans = 5,n_nodes = 10,mode = "directed",output = "scan")
 simu.focal(n_focals = 15,n_scans = 5,n_nodes = 10,mode = "directed",output = "ego")
-simu.focal(n_focals = 15,n_scans = 5,n_nodes = 10,mode = "directed",output = "adj")
+simu.focal(n_focals = 500,n_scans = 5,n_nodes = 10,mode = "directed",output = "adj")
 simu.focal(n_focals = 15,n_scans = 5,n_nodes = 10,mode = "plus",output = "adj")
 }

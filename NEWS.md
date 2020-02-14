@@ -1,7 +1,8 @@
-# ConfiNet (development version)
+# ConfiNet 0.6.0
 * Added focal scan simulation function simu.focal (need cleaning)
 * Pre-implementation of user-defined probabilities for simu.scan and simu.focal
 * Added option to output either list of scans or weighted adjacency matrix in simu.scan
+* implemented scale.to.binary.prob (will haev to rename probably) and do.scan
 
 # ConfiNet 0.5.1
 * Added group scan simulation function simu.scan

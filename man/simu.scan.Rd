@@ -8,7 +8,9 @@ simu.scan(
   n_scans,
   n_nodes,
   nodes_names = as.character(1:n_nodes),
-  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus")
+  prob = NULL,
+  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus"),
+  output = c("scan", "adjacency")
 )
 }
 \arguments{
@@ -31,7 +33,7 @@ set.seed(42)
 n<- 10L;nodes<- letters[1:n];n_scans<- 50L;
 
 simu.scan(n_scans,n_nodes = n,mode = "undirected")
-simu.scan(n_scans,n_nodes = n,mode = "directed")
-simu.scan(n_scans,n_nodes = n,nodes_names = nodes,mode = "plus")
+simu.scan(n_scans,n_nodes = n,mode = "directed",output="scan")
+simu.scan(n_scans,n_nodes = n,nodes_names = nodes,mode = "plus",output="adj")
 
 }
