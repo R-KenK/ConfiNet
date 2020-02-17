@@ -1,6 +1,6 @@
 Package: ConfiNet
 Title: Network Tools, especially for uncertainty estimations
-Version: 0.5.1
+Version: 0.6.1
 Authors@R: 
     person(given = "Kenneth",
            family = "Keuk",
