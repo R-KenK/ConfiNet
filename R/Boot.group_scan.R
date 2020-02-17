@@ -1,5 +1,5 @@
 #' Bootstrap Adjacency
-#' Perform a bootstrap of group scans with probabilities derived from a provided adjancecy matrix, to produce a new adjancecy matrix
+#' Perform a bootstrap of group scans with probabilities derived from a provided adjancecy matrix, to produce a new adjancecy matrix.
 #'
 #' @param Adj square integers matrix of occurences of dyads. WIP: implement method for association matrices...
 #' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.
@@ -26,7 +26,7 @@
 #'
 #' Boot.group_scan(Adj,42,output="adj")
 #' Boots<- lapply(
-#'   1:10,
+#'   1:5,
 #'     function(b){
 #'         Boot.group_scan(Adj,42,mode = "directed",output = "adj",n.core=1)
 #'     }
@@ -39,7 +39,7 @@ Boot.group_scan<- function(Adj,total_scan,mode = c("directed", "undirected", "ma
 
   cl<- snow::makeCluster(n.cores)
   doSNOW::registerDoSNOW(cl)
-  boot.list<- foreach::`%dopar%`(foreach::foreach(b=1:total_scan,.export = c("do.scan","non.diagonal","scale.to.binary.prob")),
+  boot.list<- foreach::`%dopar%`(foreach::foreach(b=1:total_scan,.export = c("do.scan","non.diagonal","Binary.prob")),
                                  do.scan(Adj = Adj,total_scan = total_scan,mode = mode)
   )
   snow::stopCluster(cl)

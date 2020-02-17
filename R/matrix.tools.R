@@ -28,6 +28,7 @@ non.diagonal<- function(M,output=c("matrix.logical","vector.values")) {
 #' @param output choose to either return a matrix of logical values (TRUEs on the diagonal, i.e. comparable behaviour than diag() for instance) or a vector of the subsetted values of the matrix.
 #'
 #' @return square logical matrix with diagonal of TRUEs
+#' @export
 #'
 #' @examples
 #' M<- matrix(sample(1:10,16,replace = TRUE),4,4)
@@ -47,6 +48,7 @@ diagonal<- function(M,output=c("matrix.logical","vector.values")) {
 #' @param M a square matrix
 #'
 #' @return an array of row and col indices of the positive and non diagonal elements
+#' @export
 #'
 #' @examples
 #' set.seed(42)

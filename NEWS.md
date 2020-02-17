@@ -1,3 +1,7 @@
+# ConfiNet 0.6.1
+* Bug fixes and renaming: scale.to.binary.prob -> Binary.prob, moved simu.scan into .WIP folder
+* other minor syntax/bug fixes till build doesn't return any error.
+
 # ConfiNet 0.6.0
 * Added focal scan simulation function simu.focal (need cleaning)
 * Pre-implementation of user-defined probabilities for simu.scan and simu.focal

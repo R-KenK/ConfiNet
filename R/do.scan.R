@@ -33,8 +33,7 @@ do.scan<- function(Adj,total_scan,
                       "upper" = upper.tri,
                       "lower" =  lower.tri
   )
-
-  prob<- scale.to.binary.prob(Adj=Adj,total_scan=total_scan,mode = mode)
+  prob<- Binary.prob(Adj=Adj,total_scan=total_scan,mode = mode)
   Scan[Adj.subfun(Scan)]<- sapply(1:length(Scan[Adj.subfun(Scan)]),
                                   function(dyad) {
                                     Scan[Adj.subfun(Scan)][dyad]<- sample(c(1,0),1,replace = TRUE,prob=prob[dyad,c("present","absent")])

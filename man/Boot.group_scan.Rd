@@ -3,7 +3,7 @@
 \name{Boot.group_scan}
 \alias{Boot.group_scan}
 \title{Bootstrap Adjacency
-Perform a bootstrap of group scans with probabilities derived from a provided adjancecy matrix, to produce a new adjancecy matrix}
+Perform a bootstrap of group scans with probabilities derived from a provided adjancecy matrix, to produce a new adjancecy matrix.}
 \usage{
 Boot.group_scan(
   Adj,
@@ -29,7 +29,7 @@ according to output a list of scans, or the bootstrapped adjacency matrix
 }
 \description{
 Bootstrap Adjacency
-Perform a bootstrap of group scans with probabilities derived from a provided adjancecy matrix, to produce a new adjancecy matrix
+Perform a bootstrap of group scans with probabilities derived from a provided adjancecy matrix, to produce a new adjancecy matrix.
 }
 \examples{
 set.seed(42)

@@ -5,7 +5,9 @@
 #' @param n_scans integer, number of scans to simulate.
 #' @param n_nodes integer, number of nodes to simulate.
 #' @param nodes_names optional character vector of the nodes' names, otherwise simply numbered.
+#' @param prob adjacency matrix of reference, to derive probabilities of edge presence for group scans.
 #' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
+#' @param output Character scalar, specifies if the function should return a list of lists of scans (binary adjacency matrices), or an adjacency matrix.
 #'
 #' @return list of adjacency matrices
 #'
@@ -65,7 +67,7 @@ simu.scan<- function(n_scans,n_nodes, nodes_names=as.character(1:n_nodes),prob=N
 #
 #
 #
-# scale.to.binary.prob(prob.test.lin,n*(n-1),mode = "upper")
+# Binary.prob(prob.test.lin,n*(n-1),mode = "upper")
 #
 # prob<- dnorm(1:n,mean = n/2,sd=n/3)
 # prob.norm<- sapply(1:n,
@@ -78,8 +80,8 @@ simu.scan<- function(n_scans,n_nodes, nodes_names=as.character(1:n_nodes),prob=N
 #                    }
 # )
 #
-# scale.to.binary.prob(prob.norm,max(prob.norm),mode = "max")
-# scale.to.binary.prob(test.Adj,1138,mode = "max")
+# Binary.prob(prob.norm,max(prob.norm),mode = "max")
+# Binary.prob(test.Adj,1138,mode = "max")
 #
 #
 #
