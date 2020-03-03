@@ -1,3 +1,7 @@
+# ConfiNet (development version)
+* Implemented focal scan with definable probs by giving output option to do.scan()
+* fixed typo in previous NEWS.md
+
 # ConfiNet 0.6.1
 * Bug fixes and renaming: scale.to.binary.prob -> Binary.prob, moved simu.scan into .WIP folder
 * other minor syntax/bug fixes till build doesn't return any error.
@@ -41,5 +45,4 @@
 
 
 # ConfiNet 0.1.0
-
 * Added a `NEWS.md` file to track changes to the package.

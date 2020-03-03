@@ -41,7 +41,7 @@ Adj
 
 Boot.group_scan(Adj,42,output="adj")
 Boots<- lapply(
-  1:10,
+  1:5,
     function(b){
         Boot.group_scan(Adj,42,mode = "directed",output = "adj",n.core=1)
     }

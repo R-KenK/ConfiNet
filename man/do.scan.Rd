@@ -8,7 +8,9 @@ Generate a random group scan based on provided reference adjacency matrix and sa
 do.scan(
   Adj,
   total_scan,
-  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus")
+  focal = NULL,
+  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus"),
+  output = c("group", "focal", "both")
 )
 }
 \arguments{
@@ -16,7 +18,11 @@ do.scan(
 
 \item{total_scan}{integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.}
 
+\item{focal}{Character scalar, indicate which focal to consider for the scan.}
+
 \item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
+
+\item{output}{Character scalar, specifies if the function should return a whole-group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).}
 }
 \value{
 a square binary matrix representing the whle group scan
@@ -34,5 +40,31 @@ Adj[non.diagonal(Adj)]<- sample(0:30,n*(n-1),replace = TRUE)
 Adj
 
 do.scan(Adj,42)
+do.scan(Adj,42,"c",output = "focal")
 Reduce("+",lapply(1:42,function(s) do.scan(Adj,42)))
+
+focal.list<- sample(nodes,42,replace = TRUE)
+table(focal.list)
+L<- lapply(1:42,function(s) do.scan(Adj,42,focal.list[s],output = "both"))
+
+list(group = round(Reduce("+",lapply(L,function(l) l$group))/42,3),
+     focal = {foc<- do.call(rbind,
+                            lapply(nodes,
+                                   function(node) {
+                                     L.focal<- L[sapply(L,function(l) attr(l$focal,"focal"))==node]
+                                     round(
+                                           Reduce("+",
+                                                  lapply(L.focal,
+                                                         function(l) {
+                                                           l$focal
+                                                         }
+                                                  )
+                                           )/length(L.focal),3
+                                     )
+                                   }
+                             )
+                     );
+              row.names(foc)<-nodes
+                             foc}
+)
 }
