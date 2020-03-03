@@ -1,5 +1,5 @@
 #' Single group scan
-#' Generate a random group scan based on provided reference adjacency matrix and sampling effort.
+#' Generate a random whole group or focal scan based on provided reference adjacency matrix and sampling effort.
 #'
 #' @param Adj square integers matrix of occurences of dyads. WIP: implement method for association matrices...
 #' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.

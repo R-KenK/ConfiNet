@@ -3,7 +3,7 @@
 \name{do.scan}
 \alias{do.scan}
 \title{Single group scan
-Generate a random group scan based on provided reference adjacency matrix and sampling effort.}
+Generate a random whole group or focal scan based on provided reference adjacency matrix and sampling effort.}
 \usage{
 do.scan(
   Adj,
@@ -29,7 +29,7 @@ a square binary matrix representing the whle group scan
 }
 \description{
 Single group scan
-Generate a random group scan based on provided reference adjacency matrix and sampling effort.
+Generate a random whole group or focal scan based on provided reference adjacency matrix and sampling effort.
 }
 \examples{
 set.seed(42)

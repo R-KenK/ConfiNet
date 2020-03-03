@@ -1,6 +1,8 @@
 # ConfiNet (development version)
 * Implemented focal scan with definable probs by giving output option to do.scan()
 * fixed typo in previous NEWS.md
+* added Boot.focal_scan() function (quick implementation, require some proofing)
+* added scaling option to both group and focal bootstrap functions
 
 # ConfiNet 0.6.1
 * Bug fixes and renaming: scale.to.binary.prob -> Binary.prob, moved simu.scan into .WIP folder
