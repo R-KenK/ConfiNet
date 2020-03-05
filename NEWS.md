@@ -4,6 +4,7 @@
 * added Boot.focal_scan() function (quick implementation, require some proofing)
 * added scaling option to both group and focal bootstrap functions
 * merged Boot.group_scan() and Boot.focal_scan() into Boot_scan() with "method" option
+* Wrapped previous Boot_scan into higher bootstrap function to avoid multiple makeCluster()/stopCluster() call (huge impact on perfs otherwise), renamed Boot_scan() into iterate_scans() for better clarity, and moved some functional tests into Boot_scans() rather than iterate_scans()
 * added irrelevant NULLs assignement to dummy variables to remove NOTEs in R CMD check (till better fix emerge in the R community...)
 
 # ConfiNet 0.6.1
