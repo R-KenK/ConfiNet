@@ -24,9 +24,9 @@ Subset the dyadic observations into event/sample-centric observations datasets
 \examples{
 set.seed(42);ID<- letters[1:10];
 
-D<- round(runif(n = 500,min = 1,max = 30));
+D<- round(runif(n = 200,min = 1,max = 30));
 DT<- data.table::data.table(date=as.Date(D,origin = "1991-03-30"),
-                            id=sample(ID,500,replace = TRUE));
+                            id=sample(ID,200,replace = TRUE));
 DT<- add.prepatent(DT,mean.lag = 0, duration = 15,extension = 0,unit = "day");
 
 D.Obs<- round(runif(n = 4000,min = 0,max = 15))
@@ -35,8 +35,8 @@ Obs<- data.table::data.table(date=as.Date(D.Obs-15,origin = "1991-03-30"),
                              tar=sample(ID,1000,replace = TRUE))
 
 make.Obs.list(DT,Obs)
-multi.core<- system.time(make.Obs.list(DT,Obs,ID.present = FALSE))
-multi.core
-single.core<- system.time(make.Obs.list(DT,Obs,ID.present = FALSE,n.core = 1))
-single.core
+# multi.core<- system.time(make.Obs.list(DT,Obs,ID.present = FALSE))
+# multi.core
+# single.core<- system.time(make.Obs.list(DT,Obs,ID.present = FALSE,n.core = 1))
+# single.core
 }
