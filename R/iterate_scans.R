@@ -32,7 +32,7 @@
 #' table(focal.list)
 #' iterate_scans(Adj,42,scaled = FALSE,method = "group",output = "adj",n.cores = 1)
 #' iterate_scans(Adj,42,focal.list,scaled = TRUE,
-#'                 method = "focal",mode = "directed",output = "list",n.cores = 1)
+#'                 method = "focal",mode = "directed",output = "list")
 
 iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),focal.list=NULL,
                      scaled=FALSE,
