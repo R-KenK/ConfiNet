@@ -20,6 +20,7 @@
 #' print("WIP")
 
 ConfiBoot<- function(Obs,id="id",tar="tar",boot=100,replacement=TRUE,proportion=1.0,output="list"){
+  .N<-NULL;.<- NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
   switch(class(Obs)[1],
          "data.table" = Obs,
          "data.frame" = Obs<- data.table::data.table(Obs),

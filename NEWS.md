@@ -3,6 +3,8 @@
 * fixed typo in previous NEWS.md
 * added Boot.focal_scan() function (quick implementation, require some proofing)
 * added scaling option to both group and focal bootstrap functions
+* merged Boot.group_scan() and Boot.focal_scan() into Boot_scan() with "method" option
+* added irrelevant NULLs assignement to dummy variables to remove NOTEs in R CMD check (till better fix emerge in the R community...)
 
 # ConfiNet 0.6.1
 * Bug fixes and renaming: scale.to.binary.prob -> Binary.prob, moved simu.scan into .WIP folder
