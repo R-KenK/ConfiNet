@@ -1,3 +1,6 @@
+# ConfiNet 0.7.1
+* Added progress bar through pblapply (pbapply package) to Boot_scan()
+
 # ConfiNet 0.7.0
 * Implemented focal scan with definable probs by giving output option to do.scan()
 * fixed typo in previous NEWS.md

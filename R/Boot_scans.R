@@ -19,6 +19,7 @@
 #' @importFrom snow makeCluster
 #' @importFrom snow stopCluster
 #' @importFrom doSNOW registerDoSNOW
+#' @importFrom pbapply pblapply
 #'
 #' @examples
 #' set.seed(42)
@@ -63,7 +64,7 @@ Boot_scans<- function(Adj,n.boot,total_scan,
     doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))
   }
 
-  lapply(
+  pbapply::pblapply(
     1:n.boot,
     function(b){
       iterate_scans(Adj = Adj,total_scan = total_scan,focal.list = focal.list,scaled = scaled,
