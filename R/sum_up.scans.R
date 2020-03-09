@@ -16,7 +16,7 @@ sum_up.scans<- function(Adj,scan_list,scaled=FALSE,
                         method = c("group","focal","both")){
   method<- match.arg(method)
   switch(method,
-         "group" = Reduce("+",scan_list)/ifelse(scaled,length(scan_list),1),
+         "group" = Reduce(matrix_sum_na.rm,scan_list)/ifelse(scaled,n.observed_edges(scan_list,diag = 1),1),
          "focal" = {
            summed_up<- do.call(rbind,
                                lapply(rownames(Adj),
@@ -33,7 +33,7 @@ sum_up.scans<- function(Adj,scan_list,scaled=FALSE,
            list(
              group = {
                scan_list.group<- lapply(scan_list,function(l) l$group);
-               Reduce("+",scan_list.group)/ifelse(scaled,length(scan_list.group),1)
+               Reduce(matrix_sum_na.rm,scan_list.group)/ifelse(scaled,n.observed_edges(scan_list.group,diag = 1),1)
              },
              focal = {
                summed_up<- do.call(rbind,
@@ -52,3 +52,23 @@ sum_up.scans<- function(Adj,scan_list,scaled=FALSE,
          }
   )
 }
+# set.seed(42)
+#
+# n<- 10;nodes<- letters[1:n];
+# Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
+# Adj[non.diagonal(Adj)]<- sample(0:30,n*(n-1),replace = TRUE)
+# Adj
+#
+# scan_list<- iterate_scans(Adj,100,method = "group",output = "list",n.cores = 7)
+#
+# scan_list<- lapply(scan_list,
+#                    function(Scan){
+#                      observable_edges(Scan,prob = 0.9)
+#                    }
+# )
+#
+# Reduce(matrix_sum_na.rm,scan_list)/n.observed_edges(scan_list,1)
+# mean(non.diagonal(n.observed_edges(scan_list),output = "vector"))
+#
+# test<- function(x,y) ifelse(!is.na(x),1,0)+ifelse(!is.na(y),1,0)
+# Reduce(test,scan_list[40:42])
