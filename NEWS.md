@@ -1,3 +1,6 @@
+# ConfiNet (development version)
+* Added observable_edge() to subset group scans according to observation probability. Supports probability matrix, vector, or single value.
+
 # ConfiNet 0.7.1
 * Added progress bar through pblapply (pbapply package) to Boot_scan()
 
