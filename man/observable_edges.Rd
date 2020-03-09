@@ -5,7 +5,7 @@
 \title{Hide unobservable edges
 Simulate that some dyads might reasonable not be observable during a group scan}
 \usage{
-observable_edges(Scan, prob = NULL)
+observable_edges(Scan, prob = NULL, keep = FALSE)
 }
 \arguments{
 \item{Scan}{a square matrix}
@@ -16,9 +16,11 @@ observable_edges(Scan, prob = NULL)
  \item{"a dyad observation vector"}{subsetted similarly as Scan (through the non.diagonal() function for instance)}
  \item{"a general dyad observation probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
 }}
+
+\item{keep}{logical. Indicate if the original "theoretical" scan should be kept track of.}
 }
 \value{
-a similar matrix as Scan where some non diagonal edges have a probability to be NAs
+a similar matrix as Scan where some non diagonal edges have a probability to be NAs. If keep is TRUE, returns a list with theoretical and observed scan.
 }
 \description{
 Hide unobservable edges
@@ -33,5 +35,5 @@ prob<- matrix(runif(6*6,0,1),n,n);diag(prob)<- 0
 prob.single<- runif(1,0,1)
 
 observable_edges(Scan,prob)
-observable_edges(Scan,prob.single)
+
 }
