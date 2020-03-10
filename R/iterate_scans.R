@@ -30,12 +30,12 @@
 #'
 #' focal.list<- sample(nodes,42,replace = TRUE)
 #' table(focal.list)
-#' iterate_scans(Adj,42,scaled = FALSE,method = "group",output = "adj",n.cores = 1)
+#' iterate_scans(Adj,42,scaled = FALSE,method = "group",output = "adjacency",n.cores = 1)
 #' iterate_scans(Adj,42,focal.list,scaled = TRUE,
 #'                 method = "focal",mode = "directed",output = "list")
 
-iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),focal.list=NULL,
-                     scaled=FALSE,
+iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),
+                         focal.list=NULL,scaled=FALSE,obs.prob=NULL,keep=FALSE,
                      mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
                      output=c("list","adjacency"),n.cores=(parallel::detectCores()-1),cl=NULL){
   b<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
@@ -45,9 +45,9 @@ iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),focal.l
          "group" = {
            scan_list<- foreach::`%dopar%`(
              foreach::foreach(b=1:total_scan,
-                              .export = c("do.scan","non.diagonal","Binary.prob")),
+                              .export = c("do.scan","non.diagonal","Binary.prob","observable_edges")),
              do.scan(Adj = Adj,total_scan = total_scan,
-                     focal = NULL,
+                     focal = NULL,obs.prob=obs.prob,keep=keep,
                      mode = mode, output = "group")
            )
          },
@@ -56,16 +56,16 @@ iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),focal.l
              foreach::foreach(b=1:total_scan,
                               .export = c("do.scan","non.diagonal","Binary.prob")),
              do.scan(Adj = Adj,total_scan = total_scan,
-                     focal = focal.list[b],
+                     focal = focal.list[b],obs.prob=NULL,keep=FALSE,
                      mode = mode,output = "focal")
            )
          },
          "both" = {
            scan_list<- foreach::`%dopar%`(
              foreach::foreach(b=1:total_scan,
-                              .export = c("do.scan","non.diagonal","Binary.prob")),
+                              .export = c("do.scan","non.diagonal","Binary.prob","observable_edges")),
              do.scan(Adj = Adj,total_scan = total_scan,
-                     focal = focal.list[b],
+                     focal = focal.list[b],obs.prob=obs.prob,keep=keep,
                      mode = mode,output = "both")
            )
          }
@@ -73,7 +73,13 @@ iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),focal.l
 
   switch(output,
          "list" = return(scan_list),
-         "adjacency" = return(sum_up.scans(Adj = Adj,scan_list = scan_list,scaled = scaled,method = method))
+         "adjacency" = return(sum_up.scans(Adj = Adj,scan_list = scan_list,keep = keep,scaled = scaled,method = method))
 
   )
 }
+#
+#
+# iterate_scans(Adj,42,scaled = FALSE,obs.prob = 0.7,keep = TRUE,
+#               method = "group",output = "adjacency",n.cores = 1)
+# iterate_scans(Adj,42,scaled = TRUE,obs.prob = 0.7,keep = TRUE,
+#               method = "both",output = "adjacency",n.cores = 1)

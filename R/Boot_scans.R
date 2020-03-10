@@ -44,8 +44,8 @@
 #' #   Boot_scans(Adj,10,total_scan = 42,focal.list = focal.list,scaled = TRUE,
 #' #             method = "both",mode = "directed",output = "adj")
 #' # )
-Boot_scans<- function(Adj,n.boot,total_scan,
-                      method=c("group","focal","both"),focal.list=NULL,scaled=FALSE,
+Boot_scans<- function(Adj,n.boot,total_scan,method=c("group","focal","both"),
+                      focal.list=NULL,scaled=FALSE,obs.prob=1,keep=FALSE,
                       mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
                       output=c("list","adjacency"),n.cores=(parallel::detectCores()-1),cl=NULL){
   b<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
@@ -67,7 +67,8 @@ Boot_scans<- function(Adj,n.boot,total_scan,
   pbapply::pblapply(
     1:n.boot,
     function(b){
-      iterate_scans(Adj = Adj,total_scan = total_scan,focal.list = focal.list,scaled = scaled,
+      iterate_scans(Adj = Adj,total_scan = total_scan,
+                    focal.list = focal.list,scaled = scaled,obs.prob=obs.prob,keep=keep,
                     method = method,mode = mode,output = output,n.cores = n.cores,cl=cl)
     }
   )

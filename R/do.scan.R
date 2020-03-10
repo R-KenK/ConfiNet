@@ -48,7 +48,7 @@
 #' )
 
 
-do.scan<- function(Adj,total_scan,focal=NULL,
+do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
                    mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
                    output = c("group","focal","both")){
   if(nrow(Adj)==ncol(Adj)) {n<- nrow(Adj);nodes_names<- row.names(Adj)} else {stop("Adj is not a square matrix")}
@@ -89,7 +89,14 @@ do.scan<- function(Adj,total_scan,focal=NULL,
                 "lower" =  Scan
   )
 
-  if(output == "group") {return(Scan)}
+  if(output == "group") {
+    if(is.null(obs.prob)){
+      return(Scan)
+    }else{
+      return(observable_edges(Scan = Scan,obs.prob = obs.prob,keep = keep))
+    }
+  }
+
 
   Focal.scan<- Scan[c(focal),];
   attr(Focal.scan,"focal")<- focal;
@@ -97,10 +104,20 @@ do.scan<- function(Adj,total_scan,focal=NULL,
 
   if(output == "both") {
     return(
-      list("group" = Scan,
-           "focal" = Focal.scan)
+      list(
+        "group" = {
+          if(is.null(obs.prob)){
+            Scan
+          }else{
+            observable_edges(Scan = Scan,obs.prob = obs.prob,keep = keep)
+          }
+        },
+        "focal" = Focal.scan
+      )
     )
   }
 
   if(!(output %in% c("group","focal","both"))) {stop("How did you reach here?")}
 }
+#
+# do.scan(Adj,42,obs.prob = .9,keep = TRUE,output = "both")
