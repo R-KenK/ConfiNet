@@ -12,8 +12,10 @@ Boot_scans(
   method = c("group", "focal", "both"),
   focal.list = NULL,
   scaled = FALSE,
+  obs.prob = 1,
+  keep = FALSE,
   mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus"),
-  output = c("list", "adjacency"),
+  output = c("list", "adjacency", "all"),
   n.cores = (parallel::detectCores() - 1),
   cl = NULL
 )
@@ -30,6 +32,15 @@ Boot_scans(
 \item{focal.list}{Character vector, indicate the list of focals to consider throughout the scans.}
 
 \item{scaled}{logical, specifies if adjacency data should be scaled by sampling effort.}
+
+\item{obs.prob}{either :
+\itemize{
+ \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
+ \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+ \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+}}
+
+\item{keep}{logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.}
 
 \item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
 
@@ -66,7 +77,8 @@ Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,scaled = TRUE,
 #              method = "both",mode = "directed",output = "adj",n.cores = 1)
 # )
 # system.time( #multi threaded (with number of thread existing - 1)
-#   Boot_scans(Adj,10,total_scan = 42,focal.list = focal.list,scaled = TRUE,
+#   Boot_scans(Adj,10,total_scan = 42,focal.list = focal.list,
+#             scaled = TRUE,obs.prob=0.7,keep=TRUE,
 #             method = "both",mode = "directed",output = "adj")
 # )
 }

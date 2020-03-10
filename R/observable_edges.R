@@ -8,7 +8,7 @@
 #'  \item{"a dyad observation vector"}{subsetted similarly as Scan (through the non.diagonal() function for instance)}
 #'  \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
 #' }
-#' @param keep logical. Indicate if the original "theoretical" scan should be kept track of.
+#' @param keep logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.
 #'
 #' @return a similar matrix as Scan where some non diagonal edges have a obs.probability to be NAs. If keep is TRUE, returns a list with theoretical and observed scan.
 #' @export

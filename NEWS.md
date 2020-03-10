@@ -1,5 +1,9 @@
-# ConfiNet (development version)
+# ConfiNet 0.8.0
 * Added observable_edge() to subset group scans according to observation probability. Supports probability matrix, vector, or single value.
+* Added output="all" option to keep track of both list and adjacency matrix in Boot_scans()
+* Updated consequently nested functions
+* Added internal function Bootstrap_add.attributes() to store Boot_scans() parameters as attributes in the Bootstrap output
+* Added Boot_get.list() function to cleanly retrieve some data of a Boot_scans() output. Relies on the Bootstrap attributes to avoid users inputting them
 
 # ConfiNet 0.7.1
 * Added progress bar through pblapply (pbapply package) to Boot_scan()

@@ -11,8 +11,10 @@ iterate_scans(
   method = c("group", "focal", "both"),
   focal.list = NULL,
   scaled = FALSE,
+  obs.prob = NULL,
+  keep = FALSE,
   mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus"),
-  output = c("list", "adjacency"),
+  output = c("list", "adjacency", "all"),
   n.cores = (parallel::detectCores() - 1),
   cl = NULL
 )
@@ -27,6 +29,15 @@ iterate_scans(
 \item{focal.list}{Character vector, indicate the list of focals to consider throughout the scans.}
 
 \item{scaled}{logical, specifies if adjacency data should be scaled by sampling effort.}
+
+\item{obs.prob}{either :
+\itemize{
+ \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
+ \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+ \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+}}
+
+\item{keep}{logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.}
 
 \item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
 
@@ -53,7 +64,7 @@ Adj
 
 focal.list<- sample(nodes,42,replace = TRUE)
 table(focal.list)
-iterate_scans(Adj,42,scaled = FALSE,method = "group",output = "adj",n.cores = 1)
-iterate_scans(Adj,42,focal.list,scaled = TRUE,
-                method = "focal",mode = "directed",output = "list")
+iterate_scans(Adj,42,scaled = FALSE,method = "group",output = "adjacency",n.cores = 1)
+iterate_scans(Adj,42,focal.list,scaled = TRUE,obs.prob = 0.7,keep=TRUE,
+              method = "focal",mode = "directed",output = "list")
 }

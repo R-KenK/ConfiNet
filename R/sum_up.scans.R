@@ -4,6 +4,7 @@
 #' @param Adj square integers matrix of occurences of dyads. WIP: implement method for association matrices...
 #' @param scan_list list of binary adjacency matrices, binary focal vectors, or both, outputed by iterating do.scan()
 #' @param scaled logical, specifies if adjacency data should be scaled by sampling effort.
+#' @param keep logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.
 #' @param method Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).
 #'
 #' @return A non-binary adjacency matrix, or a list of two if method = "both"
@@ -72,26 +73,3 @@ sum_up.scans<- function(Adj,scan_list,scaled=FALSE,keep=FALSE,
          }
   )
 }
-
-# set.seed(42)
-#
-# n<- 10;nodes<- letters[1:n];
-# Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
-# Adj[non.diagonal(Adj)]<- sample(0:30,n*(n-1),replace = TRUE)
-# Adj
-#
-# scan_list<- iterate_scans(Adj,100,method = "both",obs.prob = 0.9,keep = TRUE,output = "list",n.cores = 7)
-#
-# scan_list<- lapply(scan_list,
-#                    function(Scan){
-#                      observable_edges(Scan,obs.prob = 0.9,keep = TRUE)
-#                    }
-# )
-# scaled<- FALSE
-# Reduce(matrix_sum_na.rm,scan_list$group$theoretical)/ifelse(scaled,n.observed_edges(scan_list$group$theoretical,diag = 1),1)
-#
-# Reduce(matrix_sum_na.rm,scan_list)/n.observed_edges(scan_list,1)
-# mean(non.diagonal(n.observed_edges(scan_list),output = "vector"))
-#
-# test<- function(x,y) ifelse(!is.na(x),1,0)+ifelse(!is.na(y),1,0)
-# Reduce(test,scan_list[40:42])

@@ -5,22 +5,22 @@
 \title{Hide unobservable edges
 Simulate that some dyads might reasonable not be observable during a group scan}
 \usage{
-observable_edges(Scan, prob = NULL, keep = FALSE)
+observable_edges(Scan, obs.prob = NULL, keep = FALSE)
 }
 \arguments{
 \item{Scan}{a square matrix}
 
-\item{prob}{either :
+\item{obs.prob}{either :
 \itemize{
- \item{"a dyad observation probability matrix"}{of same dimension as Scan}
+ \item{"a dyad observation obs.probability matrix"}{of same dimension as Scan}
  \item{"a dyad observation vector"}{subsetted similarly as Scan (through the non.diagonal() function for instance)}
- \item{"a general dyad observation probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+ \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
 }}
 
-\item{keep}{logical. Indicate if the original "theoretical" scan should be kept track of.}
+\item{keep}{logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.}
 }
 \value{
-a similar matrix as Scan where some non diagonal edges have a probability to be NAs. If keep is TRUE, returns a list with theoretical and observed scan.
+a similar matrix as Scan where some non diagonal edges have a obs.probability to be NAs. If keep is TRUE, returns a list with theoretical and observed scan.
 }
 \description{
 Hide unobservable edges
@@ -31,9 +31,10 @@ set.seed(42)
 
 n<- 6;
 Scan<- matrix(sample(c(1,0),6*6,replace=TRUE),n,n);diag(Scan)<- 0
-prob<- matrix(runif(6*6,0,1),n,n);diag(prob)<- 0
-prob.single<- runif(1,0,1)
+obs.prob<- matrix(runif(6*6,0,1),n,n);diag(obs.prob)<- 0
+obs.prob.single<- runif(1,0,1)
 
-observable_edges(Scan,prob)
+observable_edges(Scan,obs.prob)
+observable_edges(Scan,obs.prob.single)
 
 }
