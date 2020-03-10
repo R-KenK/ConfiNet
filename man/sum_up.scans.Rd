@@ -9,6 +9,7 @@ sum_up.scans(
   Adj,
   scan_list,
   scaled = FALSE,
+  keep = FALSE,
   method = c("group", "focal", "both")
 )
 }
@@ -18,6 +19,8 @@ sum_up.scans(
 \item{scan_list}{list of binary adjacency matrices, binary focal vectors, or both, outputed by iterating do.scan()}
 
 \item{scaled}{logical, specifies if adjacency data should be scaled by sampling effort.}
+
+\item{keep}{logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.}
 
 \item{method}{Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).}
 }

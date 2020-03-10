@@ -57,3 +57,39 @@ diagonal<- function(M,output=c("matrix.logical","vector.values")) {
 #' non.zero.non.diag(M)
 #'
 non.zero.non.diag<- function(M) {which(M>0&!diagonal(M),arr.ind = TRUE,useNames = TRUE)}
+
+#' Matrix sum removing NAs
+#' Equivalent to the elmement-wise matrix addition, but replacing NAs by zeros. Internal use
+#'
+#' @param X first matrix
+#' @param Y second matrix, similarly dimensioned
+#'
+#' @return the sum of X and Y, replacing NAs by zeros
+#' @export
+#'
+#' @examples
+#' #Internal use
+matrix_sum_na.rm<-function(X,Y) {ifelse(!is.na(X),X,0)+ifelse(!is.na(Y),Y,0)}
+
+#' Get number of edge observations
+#' quantify actual edge-wise sampling effort, considering that some weren't observable in all group scans.Internal use.
+#'
+#' @param scan_list list of binary group scans, with NAs when the dyad was not observable.
+#' @param diag integer (mostly), value to replace the diagonal of the output matrix with. Use NULL if you consider self-loop (untested).
+#'
+#' @return a square matrix with element quantifying how many time a dyad has been sampled
+#' @export
+#'
+#' @examples
+#' #internal use.
+n.observed_edges<- function(scan_list,diag=0){
+  Reduce("+",
+         lapply(scan_list,
+                function(scan){
+                  observed<- ifelse(!is.na(scan),1,0)
+                  if(!is.null(diag)) {diag(observed)<- diag}
+                  observed
+                }
+         )
+  )
+}

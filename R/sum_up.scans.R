@@ -4,6 +4,7 @@
 #' @param Adj square integers matrix of occurences of dyads. WIP: implement method for association matrices...
 #' @param scan_list list of binary adjacency matrices, binary focal vectors, or both, outputed by iterating do.scan()
 #' @param scaled logical, specifies if adjacency data should be scaled by sampling effort.
+#' @param keep logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.
 #' @param method Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).
 #'
 #' @return A non-binary adjacency matrix, or a list of two if method = "both"
@@ -12,11 +13,22 @@
 #' @examples
 #' #Internal use for readability
 
-sum_up.scans<- function(Adj,scan_list,scaled=FALSE,
+sum_up.scans<- function(Adj,scan_list,scaled=FALSE,keep=FALSE,
                         method = c("group","focal","both")){
   method<- match.arg(method)
   switch(method,
-         "group" = Reduce("+",scan_list)/ifelse(scaled,length(scan_list),1),
+         "group" = {
+           if(keep){
+             scan_list.theoretical<- lapply(scan_list,function(l) l$theoretical);
+             scan_list.observed<- lapply(scan_list,function(l) l$observed);
+             list(
+               theoretical = Reduce(matrix_sum_na.rm,scan_list.theoretical)/ifelse(scaled,n.observed_edges(scan_list.theoretical,diag = 1),1),
+               group = Reduce(matrix_sum_na.rm,scan_list.observed)/ifelse(scaled,n.observed_edges(scan_list.observed,diag = 1),1)
+             )
+           }else{
+             Reduce(matrix_sum_na.rm,scan_list)/ifelse(scaled,n.observed_edges(scan_list,diag = 1),1)
+           }
+         },
          "focal" = {
            summed_up<- do.call(rbind,
                                lapply(rownames(Adj),
@@ -33,7 +45,16 @@ sum_up.scans<- function(Adj,scan_list,scaled=FALSE,
            list(
              group = {
                scan_list.group<- lapply(scan_list,function(l) l$group);
-               Reduce("+",scan_list.group)/ifelse(scaled,length(scan_list.group),1)
+               if(keep){
+                 scan_list.theoretical<- lapply(scan_list.group,function(l) l$theoretical);
+                 scan_list.observed<- lapply(scan_list.group,function(l) l$observed);
+                 list(
+                   theoretical = Reduce(matrix_sum_na.rm,scan_list.theoretical)/ifelse(scaled,n.observed_edges(scan_list.theoretical,diag = 1),1),
+                   observed = Reduce(matrix_sum_na.rm,scan_list.observed)/ifelse(scaled,n.observed_edges(scan_list.observed,diag = 1),1)
+                 )
+               }else{
+                 Reduce(matrix_sum_na.rm,scan_list)/ifelse(scaled,n.observed_edges(scan_list,diag = 1),1)
+               }
              },
              focal = {
                summed_up<- do.call(rbind,

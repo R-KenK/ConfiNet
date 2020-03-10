@@ -4,6 +4,13 @@
 #' @param Adj square integers matrix of occurences of dyads. WIP: implement method for association matrices...
 #' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.
 #' @param focal Character scalar, indicate which focal to consider for the scan.
+#' @param obs.prob either :
+#' \itemize{
+#'  \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
+#'  \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+#'  \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+#' }
+#' @param keep logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.
 #' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
 #' @param output Character scalar, specifies if the function should return a whole-group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).
 #'
@@ -48,7 +55,7 @@
 #' )
 
 
-do.scan<- function(Adj,total_scan,focal=NULL,
+do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
                    mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
                    output = c("group","focal","both")){
   if(nrow(Adj)==ncol(Adj)) {n<- nrow(Adj);nodes_names<- row.names(Adj)} else {stop("Adj is not a square matrix")}
@@ -89,7 +96,14 @@ do.scan<- function(Adj,total_scan,focal=NULL,
                 "lower" =  Scan
   )
 
-  if(output == "group") {return(Scan)}
+  if(output == "group") {
+    if(is.null(obs.prob)){
+      return(Scan)
+    }else{
+      return(observable_edges(Scan = Scan,obs.prob = obs.prob,keep = keep))
+    }
+  }
+
 
   Focal.scan<- Scan[c(focal),];
   attr(Focal.scan,"focal")<- focal;
@@ -97,10 +111,20 @@ do.scan<- function(Adj,total_scan,focal=NULL,
 
   if(output == "both") {
     return(
-      list("group" = Scan,
-           "focal" = Focal.scan)
+      list(
+        "group" = {
+          if(is.null(obs.prob)){
+            Scan
+          }else{
+            observable_edges(Scan = Scan,obs.prob = obs.prob,keep = keep)
+          }
+        },
+        "focal" = Focal.scan
+      )
     )
   }
 
   if(!(output %in% c("group","focal","both"))) {stop("How did you reach here?")}
 }
+#
+# do.scan(Adj,42,obs.prob = .9,keep = TRUE,output = "both")
