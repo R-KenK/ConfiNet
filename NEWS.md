@@ -1,3 +1,6 @@
+# ConfiNet (development version)
+* Structuring simulation script and proof of concept for multiple parameters testing
+
 # ConfiNet 0.8.0
 * Added observable_edge() to subset group scans according to observation probability. Supports probability matrix, vector, or single value.
 * Added output="all" option to keep track of both list and adjacency matrix in Boot_scans()
