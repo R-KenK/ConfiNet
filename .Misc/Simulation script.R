@@ -1,22 +1,3 @@
-set.seed(42)
-G<- igraph::read_graph("C:/R/Git/asnr/Networks/Mammalia/rhesusmacaque_association_weighted/weighted_Contact_Sits_Macaque.graphml",format = "graphml")
-
-total_scan<- 1138; #from original paper
-
-Adj<- as.matrix(igraph::as_adj(G,attr = "weight"))
-Adj<- as.matrix(igraph::as_adj(G,attr = "weight"))
-row.names(Adj)<- as.character(1:nrow(Adj));colnames(Adj)<- row.names(Adj)
-Adj
-
-focal.list<- sample(row.names(Adj),1138,replace = TRUE)
-table(focal.list)
-
-test<- ConfiNet::Boot_scans(Adj = Adj,n.boot = 100,total_scan = total_scan,
-                            method = "both",focal.list = focal.list,scaled = TRUE,mode = "max",output = "adj",n.cores = 7)
-head(test)
-
-
-
 # Simulation script backbone ----------------------------------------------
 
 ## import needed function, but ultimately should use library(ConfiNet) --------
@@ -31,6 +12,8 @@ source("R/Bootstrap_tools.R")
 
 
 # import and generate objects ---------------------------------------------
+# Here preferably should be impleemnted as automatic import from ASNR
+
 set.seed(42)
 
 n<- 10;nodes<- letters[1:n];
@@ -54,8 +37,9 @@ FOCAL.LIST<- list(random = sample(nodes,total_scan,replace = TRUE),
 
 # Boot_scans() wrapper to loop through parameters -------------------------
 Boot_with.parameter.list<- function(Adj,n.obs,total_scan,obs.prob,mode,focal.list){
+  cat(paste0("obs.prob = ",obs.prob," - focal.list = ",names(focal.list)," - mode = ",mode,"\n"))
   Boot_scans(Adj = Adj,n.boot = n.boot,total_scan = total_scan,obs.prob = 0.6,keep = TRUE,
-             method = "both",focal.list = focal.list,scaled = TRUE,mode = "directed",output = "all",n.cores = 7)
+             method = "both",focal.list = focal.list[[1]],scaled = TRUE,mode = "directed",output = "all",n.cores = 7)
 }
 start<- Sys.time()
 Bootstrap.list<- lapply(seq_along(OBS.PROB),
@@ -67,7 +51,7 @@ Bootstrap.list<- lapply(seq_along(OBS.PROB),
                                             Boot_with.parameter.list(Adj,n.obs,total_scan,
                                                                      obs.prob = OBS.PROB[[param.obs]],
                                                                      mode = MODE[[param.mode]],
-                                                                     focal.list = FOCAL.LIST )
+                                                                     focal.list = FOCAL.LIST[param.foc] )
                                           }
                                    )
                                  }
