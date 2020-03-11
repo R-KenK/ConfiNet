@@ -93,3 +93,27 @@ n.observed_edges<- function(scan_list,diag=0){
          )
   )
 }
+
+#' Make Adjacency fit the selected mode
+#' From a directed adjacency matrix, make it fit the selected mode
+#'
+#' @param Adj an adjacency matrix
+#' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+adjacency_mode<- function(Adj,mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
+  modew<- match.arg(mode)
+
+  switch(mode,
+         "undirected" = ,
+         "max" = ifelse(Adj+t(Adj)>=1,1,0), #conserve a connection between nodes if there's one in either directions (either adjacency triangle)
+         "min" = ifelse(Adj+t(Adj)==2,1,0), #only conserve a connection between nodes who have one in both directions (each adjacency triangle)
+         "plus" = Adj+t(Adj),
+         "directed" = ,
+         "upper" = ,
+         "lower" =  Adj
+  )
+}

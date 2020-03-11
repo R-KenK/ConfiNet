@@ -6,6 +6,7 @@
 #' @param scaled logical, specifies if adjacency data should be scaled by sampling effort.
 #' @param keep logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.
 #' @param method Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).
+#' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
 #'
 #' @return A non-binary adjacency matrix, or a list of two if method = "both"
 #' @export
@@ -14,7 +15,7 @@
 #' #Internal use for readability
 
 sum_up.scans<- function(Adj,scan_list,scaled=FALSE,keep=FALSE,
-                        method = c("group","focal","both")){
+                        method = c("group","focal","both"),mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
   method<- match.arg(method)
   switch(method,
          "group" = {
@@ -39,7 +40,15 @@ sum_up.scans<- function(Adj,scan_list,scaled=FALSE,keep=FALSE,
                                )
            )
            row.names(summed_up)<- rownames(Adj)
-           summed_up
+           switch(mode,
+                  "undirected" = ,
+                  "max" = ifelse(summed_up+t(summed_up)>=1,1,0), #conserve a connection between nodes if there's one in either directions (either adjacency triangle)
+                  "min" = ifelse(summed_up+t(summed_up)==2,1,0), #only conserve a connection between nodes who have one in both directions (each adjacency triangle)
+                  "plus" = summed_up+t(summed_up),
+                  "directed" = ,
+                  "upper" = ,
+                  "lower" =  summed_up
+           )
          },
          "both" = {
            list(
