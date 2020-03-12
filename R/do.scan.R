@@ -54,7 +54,6 @@
 #'                              foc}
 #' )
 
-
 do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
                    mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
                    output = c("group","focal","both")){
@@ -86,15 +85,7 @@ do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
                                   }
   )
 
-  Scan<- switch(mode,
-                "undirected" = ,
-                "max" = ifelse(Scan+t(Scan)>=1,1,0), #conserve a connection between nodes if there's one in either directions (either adjacency triangle)
-                "min" = ifelse(Scan+t(Scan)==2,1,0), #only conserve a connection between nodes who have one in both directions (each adjacency triangle)
-                "plus" = Scan+t(Scan),
-                "directed" = ,
-                "upper" = ,
-                "lower" =  Scan
-  )
+  Scan<- binary_adjacency_mode(Scan,mode)
 
   if(output == "group") {
     if(is.null(obs.prob)){
@@ -126,5 +117,3 @@ do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
 
   if(!(output %in% c("group","focal","both"))) {stop("How did you reach here?")}
 }
-#
-# do.scan(Adj,42,obs.prob = .9,keep = TRUE,output = "both")

@@ -40,15 +40,7 @@ sum_up.scans<- function(Adj,scan_list,scaled=FALSE,keep=FALSE,
                                )
            )
            row.names(summed_up)<- rownames(Adj)
-           switch(mode,
-                  "undirected" = ,
-                  "max" = ifelse(summed_up+t(summed_up)>=1,1,0), #conserve a connection between nodes if there's one in either directions (either adjacency triangle)
-                  "min" = ifelse(summed_up+t(summed_up)==2,1,0), #only conserve a connection between nodes who have one in both directions (each adjacency triangle)
-                  "plus" = summed_up+t(summed_up),
-                  "directed" = ,
-                  "upper" = ,
-                  "lower" =  summed_up
-           )
+           adjacency_mode(summed_up,mode = mode)
          },
          "both" = {
            list(
@@ -76,7 +68,7 @@ sum_up.scans<- function(Adj,scan_list,scaled=FALSE,keep=FALSE,
                                   )
                );
                row.names(summed_up)<- rownames(Adj)
-               summed_up
+               adjacency_mode(summed_up,mode = mode)
              }
            )
          }

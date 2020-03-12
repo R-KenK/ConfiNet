@@ -30,7 +30,7 @@ table(focal.list)
 
 # Parameter choices -------------------------------------------------------
 OBS.PROB<- seq(0.1,0.9,by = 0.2)
-MODE<- c("directed","max")
+MODE<- c("directed","max","min","plus")
 FOCAL.LIST<- list(random = sample(nodes,total_scan,replace = TRUE),
                   even = rep_len(nodes,length.out = total_scan),
                   biased = "TO IMPLEMENT")
@@ -73,19 +73,6 @@ adjacency_cor<- function(Bootstrap,what = c("observed","focal"),n.boot = length(
                c(Boot_get.list(Bootstrap,what)$adjacency[[b]]))
          }
   )
-}
-
-#' Title
-#'
-#' @param X
-#' @param FUN
-#'
-#' @return
-#' @export
-#'
-#' @examples
-rbind_lapply<- function(X,FUN){
-  do.call(rbind,lapply(X = X,FUN = FUN))
 }
 
 start<- Sys.time()

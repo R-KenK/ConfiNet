@@ -1,5 +1,7 @@
-# ConfiNet (development version)
+# ConfiNet 0.8.1
 * Structuring simulation script and proof of concept for multiple parameters testing
+* Added proper handling of adjacency mode in the form of adjacency_mode() and binary_adjacency_mode(), included in do.scan() and sum_up.scans()
+* Added a wrapper for the frequently used do.call(rbind,lapply()) sequence
 
 # ConfiNet 0.8.0
 * Added observable_edge() to subset group scans according to observation probability. Supports probability matrix, vector, or single value.

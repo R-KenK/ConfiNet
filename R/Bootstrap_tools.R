@@ -50,7 +50,6 @@ Bootstrap_add.attributes<- function(Bootstrap,method,keep,mode,output){
 #'                        method = "both",mode = "directed",output = "all")
 #' Boot_get.list(Bootstrap,"focal")$adjacency
 #' Boot_get.list(Bootstrap,"observed")$list
-
 Boot_get.list<- function(Bootstrap,what=c("group","focal","theoretical","observed")){
   what<- match.arg(what)
 
@@ -149,3 +148,22 @@ Boot_get.list<- function(Bootstrap,what=c("group","focal","theoretical","observe
          )
   )
 }
+
+#' Row bind list of data frames
+#' wrapper to one-function do.call rbind over a lapply list
+#'
+#' @param X a list. See details \link[base]{lapply}.
+#' @param FUN a function to subset data frames (or data tables). See details \link[base]{lapply}.
+#'
+#' @return a row bound data frame
+#' @export
+#'
+#' @examples
+#' set.seed(42)
+#'
+#' X<- lapply(1:3,function(i) list(int = 42,df = data.frame(x = runif(10,0,1),y = runif(10,0,1))))
+#' rbind_lapply(X,function(x) x$df)
+rbind_lapply<- function(X,FUN){
+  do.call(rbind,lapply(X = X,FUN = FUN))
+}
+
