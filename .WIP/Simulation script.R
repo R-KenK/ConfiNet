@@ -16,7 +16,7 @@ source("R/Bootstrap_tools.R")
 
 set.seed(42)
 
-n<- 10;nodes<- letters[1:n];
+n<- 10;nodes<- as.character(1:n);
 total_scan<- 100; #from original paper
 n.boot<- 5;
 

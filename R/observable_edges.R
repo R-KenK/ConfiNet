@@ -40,3 +40,77 @@ observable_edges<- function(Scan,obs.prob=NULL,keep=FALSE){
     observed
   }
 }
+#
+# set.seed(42)
+#
+# n<- 10;nodes<- as.character(1:n);
+# total_scan<- 100; #from original paper
+# n.boot<- 5;
+#
+# Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
+# Adj[non.diagonal(Adj)]<- sample((0:round(total_scan*.50)),n*(n-1),replace = TRUE)
+#
+# dirty_EV(Adj,"undirected")
+# dirty_EV(Adj,"undirected")
+#
+# EV<- dirty_EV(Adj,"undirected")
+#
+# obs.prob.trait.plus<- matrix(0,length(EV),length(EV),dimnames = list(row.names(Adj),row.names(Adj)))
+# for(i in seq_along(row.names(Adj))){
+#   for(j in seq_along(row.names(Adj))){
+#     if(i!=j) {obs.prob.trait.plus[i,j]<- i+j}
+#   }
+# }
+# obs.prob.trait.plus
+#
+# obs.prob.trait.prod<- matrix(0,length(EV),length(EV),dimnames = list(row.names(Adj),row.names(Adj)))
+# for(i in seq_along(EV)){
+#   for(j in seq_along(EV)){
+#     if(i!=j) {obs.prob.trait.prod[i,j]<- i*j}
+#   }
+# }
+# obs.prob.trait.prod
+#
+# obs.prob.net.plus<- matrix(0,length(EV),length(EV),dimnames = list(row.names(Adj),row.names(Adj)))
+# for(i in seq_along(row.names(Adj))){
+#   for(j in seq_along(row.names(Adj))){
+#     if(i!=j) {obs.prob.net.plus[i,j]<- EV[i]+EV[j]}
+#   }
+# }
+# obs.prob.net.plus
+#
+# obs.prob.net.prod<- matrix(0,length(EV),length(EV),dimnames = list(row.names(Adj),row.names(Adj)))
+# for(i in seq_along(EV)){
+#   for(j in seq_along(EV)){
+#     if(i!=j) {obs.prob.net.prod[i,j]<- EV[i]*EV[j]}
+#   }
+# }
+# obs.prob.net.prod
+#
+# G<- igraph::read_graph("C:/R/Git/asnr/Networks/Mammalia/rhesusmacaque_association_weighted/weighted_Contact_Sits_Macaque.graphml",format = "graphml")
+# total_scan<- 1138;
+# Adj<- as.matrix(igraph::as_adj(G,attr = "weight"))
+# row.names(Adj)<- as.character(1:nrow(Adj));colnames(Adj)<- row.names(Adj)
+# Adj
+# sorta.default.plot(Adj,edge.with.mul = 1/100,vertex.size.mul = 20,centrality.fun = "EV")
+#
+# focal.list<- sample(nodes,total_scan,replace = TRUE)
+#
+# Scan<- do.scan(Adj,total_scan)
+# obs.prob<- matrix(runif(10*10,0,1),10,10);diag(obs.prob)<- 0
+#
+# observable_edges(Scan,obs.prob = obs.prob.net.plus/2,keep = T)
+#
+# obs.test<- obs.prob.net.plus/2
+#
+# do.scan(Adj,total_scan,obs.prob = obs.test,keep = TRUE)
+#
+# iterate_scans(Adj,total_scan = 1138,focal.list = focal.list,
+#               scaled = FALSE,keep = TRUE,obs.prob = 0.5,
+#               method = "both",mode = "max",output = "all",n.cores = 7)
+#
+#
+# dirty_EV<- function(Adj,mode = mode){
+#   graph<- igraph::graph.adjacency(Adj,weighted = TRUE,diag = TRUE,mode = mode)
+#   igraph::eigen_centrality(graph)$vector
+# }
