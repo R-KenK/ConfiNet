@@ -29,14 +29,20 @@ sum_up.scans<- function(Adj,scan_list,scaled=FALSE,keep=FALSE,
                group = adj.observed
              )
            }else{
-             adj.observed
+             summed_up<- Reduce(matrix_sum_na.rm,scan_list)/ifelse(scaled,n.observed_edges(scan_list,diag = 1),1)
+             adjacency_mode(summed_up,mode = mode)
            }
          },
          "focal" = {
            summed_up<- rbind_lapply(rownames(Adj),
                                     function(node) {
-                                      scan_list.focal<- scan_list[sapply(scan_list,function(b) attr(b,"focal"))==node]
-                                      Reduce("+",scan_list.focal)/ifelse(scaled,length(scan_list.focal),1)
+                                      scan_list.focal<- scan_list[sapply(scan_list,function(l) attr(l,"focal"))==node]
+                                      if(length(scan_list.focal)==0) {
+                                        scan_list.focal<- rep(0,ncol(Adj))
+                                      }else{
+                                        scan_list.focal<- lapply(scan_list.focal,function(l) l)
+                                        Reduce("+",scan_list.focal)/ifelse(scaled,length(scan_list.focal),1)
+                                      }
                                     }
            )
            row.names(summed_up)<- rownames(Adj)
@@ -64,11 +70,15 @@ sum_up.scans<- function(Adj,scan_list,scaled=FALSE,keep=FALSE,
                summed_up<- rbind_lapply(rownames(Adj),
                                         function(node) {
                                           scan_list.focal<- scan_list[sapply(scan_list,function(l) attr(l$focal,"focal"))==node]
-                                          scan_list.focal<- lapply(scan_list.focal,function(l) l$focal)
-                                          Reduce("+",scan_list.focal)/ifelse(scaled,length(scan_list.focal),1)
+                                          if(length(scan_list.focal)==0) {
+                                            scan_list.focal<- rep(0,ncol(Adj))
+                                          }else{
+                                            scan_list.focal<- lapply(scan_list.focal,function(l) l$focal)
+                                            Reduce("+",scan_list.focal)/ifelse(scaled,length(scan_list.focal),1)
+                                          }
                                         }
                );
-               row.names(summed_up)<- rownames(Adj)
+               rownames(summed_up)<- rownames(Adj)
                adjacency_mode(summed_up,mode = mode)
              }
            )

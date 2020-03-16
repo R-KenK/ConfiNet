@@ -19,15 +19,34 @@
 #' n<- 6;
 #' Scan<- matrix(sample(c(1,0),6*6,replace=TRUE),n,n);diag(Scan)<- 0
 #' obs.prob<- matrix(runif(6*6,0,1),n,n);diag(obs.prob)<- 0
+#' traits<- rnorm(nrow(Scan),0,1)
+#' trait.bias_fun<- function(x) {traits[x]}
+#' obs.prob.trait<- obs.prob_bias(Scan,sum,bias_fun = trait.bias_fun)
 #' obs.prob.single<- runif(1,0,1)
 #'
 #' observable_edges(Scan,obs.prob)
+#' observable_edges(Scan,obs.prob.trait)
 #' observable_edges(Scan,obs.prob.single)
-#'
-
 observable_edges<- function(Scan,obs.prob=NULL,keep=FALSE){
-  if(is.matrix(obs.prob)) {obs.prob<- non.diagonal(obs.prob,"vector")}
-  if(length(obs.prob)==1) {ifelse(obs.prob<=1 & obs.prob>=0,obs.prob<- rep(obs.prob,length(non.diagonal(Scan,"vector"))),stop("Single observation obs.probability provided should be within [0,1]"))}
+  if(is.matrix(obs.prob)) {
+    obs.prob<- non.diagonal(obs.prob,"vector")
+  }
+
+  if(any(obs.prob<0)){
+    obs.prob<- obs.prob+abs(min(obs.prob))
+  }
+
+  if(length(obs.prob)==1) {
+    ifelse(obs.prob<=1 & obs.prob>=0,
+           obs.prob<- rep(obs.prob,length(non.diagonal(Scan,"vector"))),
+           stop("Single observation obs.probability provided should be within [0,1]"))
+  } else {
+    ifelse(length(obs.prob)==length(non.diagonal(Scan,"vector")),
+           obs.prob<- (obs.prob+min(obs.prob[obs.prob>0]))/(max(obs.prob)+2*min(obs.prob[obs.prob>0])),
+           stop("Matrix or vector obs.prob dimension(s) incompatible with adjacency matrix's")
+    )
+  }
+
 
   observable<- sapply(obs.prob,function(p) sample(c(TRUE,FALSE),1,prob = c(p,1-p)))
 
@@ -40,77 +59,3 @@ observable_edges<- function(Scan,obs.prob=NULL,keep=FALSE){
     observed
   }
 }
-#
-# set.seed(42)
-#
-# n<- 10;nodes<- as.character(1:n);
-# total_scan<- 100; #from original paper
-# n.boot<- 5;
-#
-# Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
-# Adj[non.diagonal(Adj)]<- sample((0:round(total_scan*.50)),n*(n-1),replace = TRUE)
-#
-# dirty_EV(Adj,"undirected")
-# dirty_EV(Adj,"undirected")
-#
-# EV<- dirty_EV(Adj,"undirected")
-#
-# obs.prob.trait.plus<- matrix(0,length(EV),length(EV),dimnames = list(row.names(Adj),row.names(Adj)))
-# for(i in seq_along(row.names(Adj))){
-#   for(j in seq_along(row.names(Adj))){
-#     if(i!=j) {obs.prob.trait.plus[i,j]<- i+j}
-#   }
-# }
-# obs.prob.trait.plus
-#
-# obs.prob.trait.prod<- matrix(0,length(EV),length(EV),dimnames = list(row.names(Adj),row.names(Adj)))
-# for(i in seq_along(EV)){
-#   for(j in seq_along(EV)){
-#     if(i!=j) {obs.prob.trait.prod[i,j]<- i*j}
-#   }
-# }
-# obs.prob.trait.prod
-#
-# obs.prob.net.plus<- matrix(0,length(EV),length(EV),dimnames = list(row.names(Adj),row.names(Adj)))
-# for(i in seq_along(row.names(Adj))){
-#   for(j in seq_along(row.names(Adj))){
-#     if(i!=j) {obs.prob.net.plus[i,j]<- EV[i]+EV[j]}
-#   }
-# }
-# obs.prob.net.plus
-#
-# obs.prob.net.prod<- matrix(0,length(EV),length(EV),dimnames = list(row.names(Adj),row.names(Adj)))
-# for(i in seq_along(EV)){
-#   for(j in seq_along(EV)){
-#     if(i!=j) {obs.prob.net.prod[i,j]<- EV[i]*EV[j]}
-#   }
-# }
-# obs.prob.net.prod
-#
-# G<- igraph::read_graph("C:/R/Git/asnr/Networks/Mammalia/rhesusmacaque_association_weighted/weighted_Contact_Sits_Macaque.graphml",format = "graphml")
-# total_scan<- 1138;
-# Adj<- as.matrix(igraph::as_adj(G,attr = "weight"))
-# row.names(Adj)<- as.character(1:nrow(Adj));colnames(Adj)<- row.names(Adj)
-# Adj
-# sorta.default.plot(Adj,edge.with.mul = 1/100,vertex.size.mul = 20,centrality.fun = "EV")
-#
-# focal.list<- sample(nodes,total_scan,replace = TRUE)
-#
-# Scan<- do.scan(Adj,total_scan)
-# obs.prob<- matrix(runif(10*10,0,1),10,10);diag(obs.prob)<- 0
-#
-# observable_edges(Scan,obs.prob = obs.prob.net.plus/2,keep = T)
-#
-# obs.test<- obs.prob.net.plus/2
-#
-# do.scan(Adj,total_scan,obs.prob = obs.test,keep = TRUE)
-#
-# iterate_scans(Adj,total_scan = 1138,focal.list = focal.list,
-#               scaled = FALSE,keep = TRUE,obs.prob = 0.5,
-#               method = "both",mode = "max",output = "all",n.cores = 7)
-#
-#
-# dirty_EV<- function(Adj,mode = mode){
-#   graph<- igraph::graph.adjacency(Adj,weighted = TRUE,diag = TRUE,mode = mode)
-#   igraph::eigen_centrality(graph)$vector
-# }
