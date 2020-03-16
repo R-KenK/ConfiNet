@@ -1,3 +1,14 @@
+# ConfiNet 0.9.0
+* Added sections to the matrix.tool.R script
+* Added obs.prob_bias() as a wrapper to implement observation probability biases (either trait- or network-based), via the use of user-defined functions
+* Considering how flexible the obs.prob_bias() function is, added relevant if statements in observable_edges() to test if input obs.prob matrice or vector contains negative values, and to scale its values to ]0,1[ (zeros and ones are avoided, because of their poor simulation relevance, according the the smallest non-null value of obs.prob)
+* Fixed previous code error in sum_up.scans() (line 32 of b63fcc6ece0476362daa6e8ab9a8534357d68617) for specific parameter choice.
+
+# ConfiNet 0.8.1
+* Structuring simulation script and proof of concept for multiple parameters testing
+* Added proper handling of adjacency mode in the form of adjacency_mode() and binary_adjacency_mode(), included in do.scan() and sum_up.scans()
+* Added a wrapper for the frequently used do.call(rbind,lapply()) sequence
+
 # ConfiNet 0.8.0
 * Added observable_edge() to subset group scans according to observation probability. Supports probability matrix, vector, or single value.
 * Added output="all" option to keep track of both list and adjacency matrix in Boot_scans()

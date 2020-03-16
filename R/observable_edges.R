@@ -19,15 +19,34 @@
 #' n<- 6;
 #' Scan<- matrix(sample(c(1,0),6*6,replace=TRUE),n,n);diag(Scan)<- 0
 #' obs.prob<- matrix(runif(6*6,0,1),n,n);diag(obs.prob)<- 0
+#' traits<- rnorm(nrow(Scan),0,1)
+#' trait.bias_fun<- function(x) {traits[x]}
+#' obs.prob.trait<- obs.prob_bias(Scan,sum,bias_fun = trait.bias_fun)
 #' obs.prob.single<- runif(1,0,1)
 #'
 #' observable_edges(Scan,obs.prob)
+#' observable_edges(Scan,obs.prob.trait)
 #' observable_edges(Scan,obs.prob.single)
-#'
-
 observable_edges<- function(Scan,obs.prob=NULL,keep=FALSE){
-  if(is.matrix(obs.prob)) {obs.prob<- non.diagonal(obs.prob,"vector")}
-  if(length(obs.prob)==1) {ifelse(obs.prob<=1 & obs.prob>=0,obs.prob<- rep(obs.prob,length(non.diagonal(Scan,"vector"))),stop("Single observation obs.probability provided should be within [0,1]"))}
+  if(is.matrix(obs.prob)) {
+    obs.prob<- non.diagonal(obs.prob,"vector")
+  }
+
+  if(any(obs.prob<0)){
+    obs.prob<- obs.prob+abs(min(obs.prob))
+  }
+
+  if(length(obs.prob)==1) {
+    ifelse(obs.prob<=1 & obs.prob>=0,
+           obs.prob<- rep(obs.prob,length(non.diagonal(Scan,"vector"))),
+           stop("Single observation obs.probability provided should be within [0,1]"))
+  } else {
+    ifelse(length(obs.prob)==length(non.diagonal(Scan,"vector")),
+           obs.prob<- (obs.prob+min(obs.prob[obs.prob>0]))/(max(obs.prob)+2*min(obs.prob[obs.prob>0])),
+           stop("Matrix or vector obs.prob dimension(s) incompatible with adjacency matrix's")
+    )
+  }
+
 
   observable<- sapply(obs.prob,function(p) sample(c(TRUE,FALSE),1,prob = c(p,1-p)))
 
