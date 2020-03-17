@@ -17,7 +17,6 @@ source("R/Bootstrap_tools.R")
 set.seed(42)
 
 n<- 15;nodes<- as.character(1:n);
-total_scan<- 300; #from original paper
 n.boot<- 100;
 
 Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
@@ -84,9 +83,13 @@ parameters.list<- lapply(1:nrow(parameters.comb),
 #' @export
 #'
 #' @examples
-boot_progress.param<- function(obs.prob,mode,focal.list){
-  cat(paste0("obs.prob = ",attr(obs.prob,"name")," - focal.list = ",attr(focal.list,"name")," - mode = ",attr(mode,"name"),"\n"))
+boot_progress.param<- function(p){
+  cat(paste0("obs.prob = ",attr(parameters.list[[p]]$obs.prob,"name")
+             ," - focal.list = ",attr(parameters.list[[p]]$focal.list,"name"),
+             " - mode = ",attr(parameters.list[[p]]$mode,"name")," (",p,"/",length(parameters.list),")","\n"))
 }
+
+
 
 #' Title
 #'
@@ -127,10 +130,12 @@ adjacency_cor<- function(Bootstrap,what = c("observed","focal"),n.boot = length(
 }
 # HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
 start<- Sys.time()
-Bootstrap.list<- lapply(parameters.list,
+Bootstrap.list<- lapply(seq_along(parameters.list),
                         function(p){
-                          obs.prob<- p$obs.prob;mode<- p$mode;focal.list<- p$focal.list
-                          boot_progress.param(obs.prob = obs.prob,mode = mode,focal.list = focal.list)
+                          obs.prob<- parameters.list[[p]]$obs.prob;
+                          mode<- parameters.list[[p]]$mode;
+                          focal.list<- parameters.list[[p]]$focal.list
+                          boot_progress.param(p)
                           Boot_scans(Adj = Adj,n.boot = n.boot,total_scan = total_scan,obs.prob = obs.prob,keep = TRUE,
                                      method = "both",focal.list = focal.list,scaled = TRUE,mode = mode,output = "all",n.cores = 7)
                         }

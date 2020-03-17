@@ -2,6 +2,7 @@
 * Revamp and huge code cleaning of simulation script. Now, considering only an unested list per variable, the parameter combinations are automatically and flexibly generated, and cleanly integrated in the different bootstraps.
 * added Boot_get.param() function to retrieve the stored parameters as a data.frame of factors, to ease further data gathering
 * prototype of data collection and graphical exploration
+* quick adding of proportion of completion throughout parameters.list
 
 # ConfiNet 0.9.0
 * Added sections to the matrix.tool.R script
