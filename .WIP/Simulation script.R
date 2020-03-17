@@ -16,9 +16,9 @@ source("R/Bootstrap_tools.R")
 
 set.seed(42)
 
-n<- 10;nodes<- as.character(1:n);
-total_scan<- 100; #from original paper
-n.boot<- 5;
+n<- 15;nodes<- as.character(1:n);
+total_scan<- 300; #from original paper
+n.boot<- 100;
 
 Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
 Adj[non.diagonal(Adj)]<- sample((0:round(total_scan*.50)),n*(n-1),replace = TRUE)
@@ -33,6 +33,9 @@ OBS.PROB<- list(trait = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = N
                                         reverse = FALSE)
 )
 OBS.PROB<- c({unb<- seq(0.1,0.9,by = 0.2);names(unb)<- paste0("unbiased_",unb);as.list(unb)},OBS.PROB) # c() over two lists makes them flat while allowing for shorter calls
+# SHOULD PERHAPS ONLY SET TYPE AS UNBIASED, AND ADD A VARIABLE BEING THE VALUE WHEN TYPE IS UNBIASED ----> DOING THIS FROM NOW
+## PERHAPS ALSO SHOULD DETERMINE THE AVERAGE +/- SD PROBABILITY OF OBSERVABILITY
+## SHOULD ALSO KEEP TRACK OF TRAIT- AND NETWORK-BASED CORRELATION WITH ADJACENCY MATRIX (THEORETICAL? ORIGINAL? BOTH?)
 MODE<- as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))
 FOCAL.LIST<- list(random = sample(nodes,total_scan,replace = TRUE),
                   even = rep_len(nodes,length.out = total_scan),
@@ -66,7 +69,7 @@ parameters.list<- lapply(1:nrow(parameters.comb),
                            )
                          }
 )
-attr(parameters.list[[1]]$obs.prob,"name")
+
 # Boot_scans() wrapper to loop through parameters -------------------------
 #' Title
 #'
@@ -87,6 +90,24 @@ boot_progress.param<- function(obs.prob,mode,focal.list){
 
 #' Title
 #'
+#' @param parameters
+#' @param what
+#'
+#' @return
+#' @export
+#'
+#' @examples
+Boot_get.param<- function(parameters,what=c("obs.prob","focal.list","mode")){
+  data.frame(obs.prob = as.factor(attr(parameters$obs.prob,"name")),
+             focal.list = as.factor(attr(parameters$focal.list,"name")),
+             mode = as.factor(attr(parameters$mode,"name"))
+  )
+}
+
+length(parameters.list[[5]]$obs.prob)
+
+#' Title
+#'
 #' @param Bootstrap
 #' @param n.boot
 #' @param what
@@ -104,36 +125,38 @@ adjacency_cor<- function(Bootstrap,what = c("observed","focal"),n.boot = length(
          }
   )
 }
-
+# HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
+start<- Sys.time()
 Bootstrap.list<- lapply(parameters.list,
                         function(p){
                           obs.prob<- p$obs.prob;mode<- p$mode;focal.list<- p$focal.list
                           boot_progress.param(obs.prob = obs.prob,mode = mode,focal.list = focal.list)
                           Boot_scans(Adj = Adj,n.boot = n.boot,total_scan = total_scan,obs.prob = obs.prob,keep = TRUE,
-                                     method = "both",focal.list = focal.list,scaled = scaled,mode = mode,output = "all",n.cores = 7)
+                                     method = "both",focal.list = focal.list,scaled = TRUE,mode = mode,output = "all",n.cores = 7)
                         }
 )
+stop<- Sys.time()
+stop-start
 
-data<- rbind_lapply(Bootstrap.list,
-                    function(param.obs){
-                      rbind_lapply(param.obs,
-                                   function(param.foc){
-                                     rbind_lapply(param.foc,
-                                                  function(L){
-                                                    L$"stats"
-                                                  }
-                                     )
-                                   }
-                      )
-                    }
+data.long<- rbind_lapply(seq_along(Bootstrap.list),
+                         function(B){
+                           rbind(data.frame(boot = B,method = "group",
+                                            Boot_get.param(parameters.list[[B]]),
+                                            cor = adjacency_cor(Bootstrap = Bootstrap.list[[B]],what = "observed")),
+                                 data.frame(boot = B,method = "focal",
+                                            Boot_get.param(parameters.list[[B]]),
+                                            cor = adjacency_cor(Bootstrap = Bootstrap.list[[B]],what = "focal")))
+                         }
 )
 
 library(ggplot2)
 library(data.table)
-data.long<- data.table(reshape2::melt(data,id.vars = 1:3,measure.vars = 4:5,variable.name = "method",value.name = "cor"))
+data.long<- data.table(data.long)
 data.summary<- data.long[,.(cor=median(cor),sd=sd(cor)),by = .(obs.prob,focal.list,mode,method)]
-ggplot(data.long,aes(interaction(method,obs.prob),cor,colour = method))+facet_grid(mode~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+theme_bw()
-ggplot(data.summary,aes(interaction(method,obs.prob),cor,fill = method))+facet_grid(mode~focal.list)+
-  geom_errorbar(aes(ymin = cor-sd,ymax=cor+sd),width = 0.2)+geom_bar(stat = "identity")+theme_bw()
 
-str(Bootstrap.list)
+ggplot(data.long[obs.prob %in% c("network","trait")],aes(interaction(method,obs.prob),cor,colour = method))+facet_grid(mode~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+theme_bw()
+ggplot(data.long[!(obs.prob %in% c("network","trait"))],aes(interaction(method,obs.prob),cor,colour = method))+facet_grid(mode~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+theme_bw()
+
+ggplot(data.summary,aes(interaction(method,obs.prob),cor,fill = method))+facet_grid(mode~focal.list)+
+  geom_errorbar(aes(ymin = cor-sd,ymax=cor+sd),width = 0.2)+geom_bar(stat = "identity",alpha=0.8)+theme_bw()
+
