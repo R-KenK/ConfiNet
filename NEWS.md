@@ -1,3 +1,6 @@
+# ConfiNet (development version)
+* Revamp and huge code cleaning of simulation script. Now, considering only an unested list per variable, the parameter combinations are automatically and flexibly generated, and cleanly integrated in the different bootstraps.
+
 # ConfiNet 0.9.0
 * Added sections to the matrix.tool.R script
 * Added obs.prob_bias() as a wrapper to implement observation probability biases (either trait- or network-based), via the use of user-defined functions
