@@ -16,8 +16,9 @@ source("R/Bootstrap_tools.R")
 
 set.seed(42)
 
-n<- 15;nodes<- as.character(1:n);
-n.boot<- 100;
+n<- 10;nodes<- as.character(1:n);
+total_scan<- 200;
+n.boot<- 50;
 
 Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
 Adj[non.diagonal(Adj)]<- sample((0:round(total_scan*.50)),n*(n-1),replace = TRUE)
@@ -26,10 +27,14 @@ Adj
 # Parameter choices -------------------------------------------------------
 # for each variable type, there should be only a non-nested list of parameters. I'll figure out later how to group similar values through factor ifelse() and substring I guess...
 
-OBS.PROB<- list(trait = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = NULL,reverse = FALSE),
-                network = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
-                                        bias_fun = function(node) igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
-                                        reverse = FALSE)
+OBS.PROB<- list(trait.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = NULL,reverse = FALSE),
+                trait.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = function(i,j) 1/prod(i,j),bias_fun = NULL,reverse = FALSE),
+                network.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
+                                            bias_fun = function(node) igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
+                                            reverse = FALSE),
+                network.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
+                                            bias_fun = function(node) 1/igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
+                                            reverse = FALSE)
 )
 OBS.PROB<- c({unb<- seq(0.1,0.9,by = 0.2);names(unb)<- paste0("unbiased_",unb);as.list(unb)},OBS.PROB) # c() over two lists makes them flat while allowing for shorter calls
 MODE<- as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))
@@ -73,7 +78,7 @@ Bootstrap.list<- lapply(seq_along(parameters.list),
                           obs.prob<- parameters.list[[p]]$obs.prob;
                           mode<- parameters.list[[p]]$mode;
                           focal.list<- parameters.list[[p]]$focal.list
-                          boot_progress.param(p)
+                          boot_progress.param(p,parameters.list = parameters.list)
                           Boot_scans(Adj = Adj,n.boot = n.boot,total_scan = total_scan,obs.prob = obs.prob,keep = TRUE,
                                      method = "both",focal.list = focal.list,scaled = TRUE,mode = mode,output = "all",n.cores = 7)
                         }
