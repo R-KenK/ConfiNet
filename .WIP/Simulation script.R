@@ -32,9 +32,6 @@ OBS.PROB<- list(trait = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = N
                                         reverse = FALSE)
 )
 OBS.PROB<- c({unb<- seq(0.1,0.9,by = 0.2);names(unb)<- paste0("unbiased_",unb);as.list(unb)},OBS.PROB) # c() over two lists makes them flat while allowing for shorter calls
-# SHOULD PERHAPS ONLY SET TYPE AS UNBIASED, AND ADD A VARIABLE BEING THE VALUE WHEN TYPE IS UNBIASED ----> DOING THIS FROM NOW
-## PERHAPS ALSO SHOULD DETERMINE THE AVERAGE +/- SD PROBABILITY OF OBSERVABILITY
-## SHOULD ALSO KEEP TRACK OF TRAIT- AND NETWORK-BASED CORRELATION WITH ADJACENCY MATRIX (THEORETICAL? ORIGINAL? BOTH?)
 MODE<- as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))
 FOCAL.LIST<- list(random = sample(nodes,total_scan,replace = TRUE),
                   even = rep_len(nodes,length.out = total_scan),
@@ -69,66 +66,7 @@ parameters.list<- lapply(1:nrow(parameters.comb),
                          }
 )
 
-# Boot_scans() wrapper to loop through parameters -------------------------
-#' Title
-#'
-#' @param Adj
-#' @param n.obs
-#' @param total_scan
-#' @param obs.prob
-#' @param mode
-#' @param focal.list
-#'
-#' @return
-#' @export
-#'
-#' @examples
-boot_progress.param<- function(p){
-  cat(paste0("obs.prob = ",attr(parameters.list[[p]]$obs.prob,"name")
-             ," - focal.list = ",attr(parameters.list[[p]]$focal.list,"name"),
-             " - mode = ",attr(parameters.list[[p]]$mode,"name")," (",p,"/",length(parameters.list),")","\n"))
-}
-
-
-
-#' Title
-#'
-#' @param parameters
-#' @param what
-#'
-#' @return
-#' @export
-#'
-#' @examples
-Boot_get.param<- function(parameters,what=c("obs.prob","focal.list","mode")){
-  data.frame(obs.prob = as.factor(attr(parameters$obs.prob,"name")),
-             focal.list = as.factor(attr(parameters$focal.list,"name")),
-             mode = as.factor(attr(parameters$mode,"name"))
-  )
-}
-
-length(parameters.list[[5]]$obs.prob)
-
-#' Title
-#'
-#' @param Bootstrap
-#' @param n.boot
-#' @param what
-#'
-#' @return
-#' @export
-#'
-#' @examples
-adjacency_cor<- function(Bootstrap,what = c("observed","focal"),n.boot = length(Bootstrap)){
-  what<- match.arg(what)
-  sapply(1:n.boot,  # needs function to gather and structure in a data frame
-         function(b) {
-           cor(c(Boot_get.list(Bootstrap,"theoretical")$adjacency[[b]]),   # c() flattens the matrix to consider it like a vector
-               c(Boot_get.list(Bootstrap,what)$adjacency[[b]]))
-         }
-  )
-}
-# HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
+# Iterated Boot_scans() through parameters.list -------------------------
 start<- Sys.time()
 Bootstrap.list<- lapply(seq_along(parameters.list),
                         function(p){

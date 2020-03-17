@@ -167,3 +167,63 @@ rbind_lapply<- function(X,FUN){
   do.call(rbind,lapply(X = X,FUN = FUN))
 }
 
+#' Bootstrap specific progress bar
+#' Provide feedbacks on the simulation testing situation (which parameters, which combination of parameters over the whole list). Internal use.
+#'
+#' @param p integer, index of the current combination of parameters within parameters.list.
+#' @param parameters.list data frame of parameters for all the simulations
+#'
+#' @return display some feedbacks on the simulation testing situation (which parameters, which combination of parameters over the whole list).
+#' @export
+#'
+#' @examples
+#' #Internal use in Simulation_script.R.
+boot_progress.param<- function(p,parameters.list = parameters.list){
+  cat(paste0("obs.prob = ",attr(parameters.list[[p]]$obs.prob,"name")
+             ," - focal.list = ",attr(parameters.list[[p]]$focal.list,"name"),
+             " - mode = ",attr(parameters.list[[p]]$mode,"name")," (",p,"/",length(parameters.list),")","\n"))
+}
+
+
+
+#' Retrieve specific simulation parameters of given Bootstrap
+#' Internal use. To ease the recollection of a given bootstrap performed through Boot_scans() iterations alongside a parameters.list
+#'
+#' @param parameters a list containing a combination of obs.prob, focal.list, and mode parameters. Element of parameters.list
+#'
+#' @return a data frame referencing the simulation parameters
+#' @export
+#'
+#' @examples
+#' #Internal use in Simulation_script.R.
+Boot_get.param<- function(parameters){
+  data.frame(obs.prob = as.factor(attr(parameters$obs.prob,"name")),
+             focal.list = as.factor(attr(parameters$focal.list,"name")),
+             mode = as.factor(attr(parameters$mode,"name"))
+  )
+}
+
+#' Calculate the correlation coefficient between "flattened" adjacency matrices
+#' Provide the correlation coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
+#'
+#' @param Bootstrap.list an output of Boot_scan()
+#' @param n.boot number of Bootstrap to go through
+#' @param what character scalar, indicate if the function should output the coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
+#'
+#' @return a vector of correlation coefficients
+#' @export
+#'
+#' @importFrom stats cor
+#'
+#' @examples
+#' #Internal use in Simulation_script.R.
+adjacency_cor<- function(Bootstrap.list,what = c("observed","focal"),n.boot = length(Bootstrap.list)){
+  what<- match.arg(what)
+  sapply(1:n.boot,  # needs function to gather and structure in a data frame
+         function(b) {
+           stats::cor(c(Boot_get.list(Bootstrap.list,"theoretical")$adjacency[[b]]),   # c() flattens the matrix to consider it like a vector
+                      c(Boot_get.list(Bootstrap.list,what)$adjacency[[b]]))
+         }
+  )
+}
+# HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
