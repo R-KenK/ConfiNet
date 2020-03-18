@@ -72,12 +72,23 @@ Boot_scans<- function(Adj,n.boot,total_scan,method=c("group","focal","both"),
     doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))
   }
 
+  Adj.subfun<- switch(mode,
+                      "directed" = ,
+                      "undirected" = ,
+                      "max" = ,
+                      "min" = ,
+                      "plus" = non.diagonal,
+                      "upper" = upper.tri,
+                      "lower" =  lower.tri
+  )
+  prob<- Binary.prob(Adj=Adj,total_scan=total_scan,mode = mode)
+
   Bootstrap<- pbapply::pblapply(
     1:n.boot,
     function(b){
       iterate_scans(Adj = Adj,total_scan = total_scan,
                     focal.list = focal.list,scaled = scaled,obs.prob=obs.prob,keep=keep,
-                    method = method,mode = mode,output = output,n.cores = n.cores,cl=cl)
+                    method = method,mode = mode,output = output,n.cores = n.cores,cl=cl,Adj.subfun = Adj.subfun,prob = prob)
     }
   )
   Bootstrap_add.attributes(Bootstrap = Bootstrap,method = method,keep = keep,mode = mode,output = output)

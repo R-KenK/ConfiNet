@@ -24,6 +24,8 @@ source("R/Bootstrap_tools.R")
 # Adj[non.diagonal(Adj)]<- sample((0:round(total_scan*.50)),n*(n-1),replace = TRUE)
 # Adj
 
+devtools::install_github("schochastics/networkdata")
+library(networkdata)
 networkdata.list<- ls("package:networkdata")
 networkdata.list<- networkdata.list[
   Reduce("|",
@@ -49,9 +51,9 @@ network.list<- lapply(networkdata.list,
 )
 
 test<- sapply(network.list,
-       function(net){
-         igraph::is.igraph(net)
-       }
+              function(net){
+                igraph::is.igraph(net)
+              }
 )
 
 sapply(unlist(network.list[!test],recursive = FALSE),
@@ -68,9 +70,9 @@ weighted<- sapply(net.list,
 )
 net.weighted<- net.list[weighted]
 sapply(net.weighted,
-                  function(net){
-                    igraph::edge.attributes(net)
-                  }
+       function(net){
+         igraph::edge.attributes(net)
+       }
 )[1:5]
 
 # Parameter choices -------------------------------------------------------
@@ -91,7 +93,8 @@ non.binary.sup.to.one<- sapply(ADJ,
 
 ADJ<- ADJ[non.binary.sup.to.one]
 
-initialize_parameters<- function(Adj){
+initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()-1),cl=NULL){
+  if(is.null(cl)) {cl<- snow::makeCluster(n.cores);doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))} # left to avoid error if the function is used alone, but should probably be used internally from Boot_scans() now.
   OBS.PROB<- list(trait.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = NULL,reverse = FALSE),
                   trait.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = function(i,j) 1/prod(i,j),bias_fun = NULL,reverse = FALSE),
                   network.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
@@ -102,9 +105,9 @@ initialize_parameters<- function(Adj){
                                               reverse = FALSE)
   )
   OBS.PROB<- c({unb<- seq(0.1,0.9,by = 0.2);names(unb)<- paste0("unbiased_",unb);as.list(unb)},OBS.PROB) # c() over two lists makes them flat while allowing for shorter calls
-  MODE<- as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))
-  FOCAL.LIST<- list(random = sample(nodes,total_scan,replace = TRUE),
-                    even = rep_len(nodes,length.out = total_scan),
+  MODE<- if(identical(Adj,t(Adj))) {as.list(c("max"))} else  {as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))}
+  FOCAL.LIST<- list(random = sample(rownames(Adj),total_scan,replace = TRUE),
+                    even = rep_len(rownames(Adj),length.out = total_scan),
                     biased = "TO IMPLEMENT")
 
   parameters.comb<- expand.grid(
@@ -114,50 +117,87 @@ initialize_parameters<- function(Adj){
     )
   )
 
-  parameters.list<- lapply(1:nrow(parameters.comb),
-                           function(p){
-                             list(
-                               obs.prob = {
-                                 obs.prob<- OBS.PROB[[parameters.comb[p,"obs.prob"]]];
-                                 attr(obs.prob,"name")<- names(OBS.PROB)[parameters.comb[p,"obs.prob"]];
-                                 obs.prob
-                               },
-                               focal.list = {
-                                 focal.list<- FOCAL.LIST[[parameters.comb[p,"focal.list"]]];
-                                 attr(focal.list,"name")<- names(FOCAL.LIST)[parameters.comb[p,"focal.list"]];
-                                 focal.list
-                               },
-                               mode = {
-                                 mode<- MODE[[parameters.comb[p,"mode"]]];
-                                 attr(mode,"name")<- names(MODE)[parameters.comb[p,"mode"]];
-                                 mode
-                               }
-                             )
-                           }
+  if(is.null(cl)) {cl<- snow::makeCluster(n.cores);doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))} # left to avoid error if the function is used alone, but should probably be used internally from Boot_scans() now.
+  parameters.list<- foreach::`%dopar%`(
+    foreach::foreach(p=1:nrow(parameters.comb)),
+    list(
+      obs.prob = {
+        obs.prob<- OBS.PROB[[parameters.comb[p,"obs.prob"]]];
+        attr(obs.prob,"name")<- names(OBS.PROB)[parameters.comb[p,"obs.prob"]];
+        obs.prob
+      },
+      focal.list = {
+        focal.list<- FOCAL.LIST[[parameters.comb[p,"focal.list"]]];
+        attr(focal.list,"name")<- names(FOCAL.LIST)[parameters.comb[p,"focal.list"]];
+        focal.list
+      },
+      mode = {
+        mode<- MODE[[parameters.comb[p,"mode"]]];
+        attr(mode,"name")<- names(MODE)[parameters.comb[p,"mode"]];
+        mode
+      }
+    )
   )
   parameters.list
 }
 
-
 # Iterated Boot_scans() through parameters.list -------------------------
-lapply(ADJ[42:69],
+sapply(ADJ,
        function(Adj){
-         start<- Sys.time()
-         Bootstrap.list<- lapply(seq_along(parameters.list),
-                                 function(p){
-                                   obs.prob<- parameters.list[[p]]$obs.prob;
-                                   mode<- parameters.list[[p]]$mode;
-                                   focal.list<- parameters.list[[p]]$focal.list
-                                   boot_progress.param(p,parameters.list = parameters.list)
-                                   Boot_scans(Adj = Adj,n.boot = n.boot,total_scan = total_scan,obs.prob = obs.prob,keep = TRUE,
-                                              method = "both",focal.list = focal.list,scaled = TRUE,mode = mode,output = "all",n.cores = 7)
-                                 }
-         )
-         stop<- Sys.time()
-         stop-start
-         Bootstrap.list
+         nrow(Adj)
        }
 )
+
+sapply(ADJ,
+       function(Adj){
+         round(max(Adj))
+       }
+)
+
+sorta.default.plot(ADJ.test[[1]],edge.with.mul = 0.05,vertex.size.mul = 0.025,centrality.fun = "strength")
+
+ADJ.test<- ADJ[sapply(ADJ,max)>150][161]
+Boot.list<- lapply(seq_along(ADJ.test),
+                   function(a){
+                     cat(a,"/",length(ADJ.test),"\n")
+                     Adj<- ADJ.test[[a]]
+                     total_scan<- round(max(Adj)*1.25)
+                     parameters.list<- initialize_parameters(Adj,total_scan)
+                     Bootstrap.list<- lapply(seq_along(parameters.list),
+                                             function(p){
+                                               obs.prob<- parameters.list[[p]]$obs.prob;
+                                               mode<- parameters.list[[p]]$mode;
+                                               focal.list<- parameters.list[[p]]$focal.list
+                                               boot_progress.param(p,parameters.list = parameters.list)
+                                               Boot_scans(Adj = Adj,n.boot = n.boot,total_scan = total_scan,obs.prob = obs.prob,keep = TRUE,
+                                                          method = "both",focal.list = focal.list,scaled = TRUE,mode = mode,output = "all",n.cores = 7)
+                                             }
+                     )
+                     Bootstrap.list
+                   }
+)
+
+# Adj<- round(ADJ.test[[1]]/2)
+# total_scan<- round(max(Adj)*1.25)
+# parameters.list<- initialize_parameters(Adj,total_scan)
+# n.boot<-1;
+# start<- Sys.time()
+# Bootstrap.list<- lapply(1,
+#                         function(p){
+#                           obs.prob<- parameters.list[[p]]$obs.prob;
+#                           mode<- parameters.list[[p]]$mode;
+#                           focal.list<- parameters.list[[p]]$focal.list
+#                           boot_progress.param(p,parameters.list = parameters.list)
+#                           Boot_scans(Adj = Adj,n.boot = n.boot,total_scan = total_scan,obs.prob = obs.prob,keep = TRUE,
+#                                      method = "both",focal.list = NULL,scaled = TRUE,mode = mode,output = "all",n.cores = 7)
+#                         }
+# )
+# stop<- Sys.time()
+# stop-start
+# Bootstrap.list
+
+Bootstrap.list<- Boot.list[[1]]
+parameters.list<- initialize_parameters(Adj,total_scan)
 
 data.long<- rbind_lapply(seq_along(Bootstrap.list),
                          function(B){
@@ -170,13 +210,16 @@ data.long<- rbind_lapply(seq_along(Bootstrap.list),
                          }
 )
 
+Boot_get.param(parameters.list[[1]])
+adjacency_cor
 library(ggplot2)
 library(data.table)
 data.long<- data.table(data.long)
 data.summary<- data.long[,.(cor=median(cor),sd=sd(cor)),by = .(obs.prob,focal.list,mode,method)]
 
+ggplot(data.long[obs.prob %in% c("network.pos","trait.pos","network.neg","trait.neg")],aes(interaction(method,obs.prob),cor,colour = method))+facet_grid(mode~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+theme_bw()
 ggplot(data.long[obs.prob %in% c("network","trait")],aes(interaction(method,obs.prob),cor,colour = method))+facet_grid(mode~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+theme_bw()
-ggplot(data.long[!(obs.prob %in% c("network","trait"))],aes(interaction(method,obs.prob),cor,colour = method))+facet_grid(mode~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+theme_bw()
+ggplot(data.long[!(obs.prob %in% c("network.pos","trait.pos","network.neg","trait.neg"))],aes(interaction(method,obs.prob),cor,colour = method))+facet_grid(mode~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+theme_bw()
 
 ggplot(data.summary,aes(interaction(method,obs.prob),cor,fill = method))+facet_grid(mode~focal.list)+
   geom_errorbar(aes(ymin = cor-sd,ymax=cor+sd),width = 0.2)+geom_bar(stat = "identity",alpha=0.8)+theme_bw()

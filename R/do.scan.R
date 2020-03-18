@@ -56,7 +56,7 @@
 
 do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
                    mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
-                   output = c("group","focal","both")){
+                   output = c("group","focal","both"),Adj.subfun,prob){
   if(nrow(Adj)==ncol(Adj)) {n<- nrow(Adj);nodes_names<- row.names(Adj)} else {stop("Adj is not a square matrix")}
   mode<- match.arg(mode);
   output<- match.arg(output);
@@ -69,16 +69,7 @@ do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
   }
 
   Scan<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes_names,nodes_names))
-  Adj.subfun<- switch(mode,
-                      "directed" = ,
-                      "undirected" = ,
-                      "max" = ,
-                      "min" = ,
-                      "plus" = non.diagonal,
-                      "upper" = upper.tri,
-                      "lower" =  lower.tri
-  )
-  prob<- Binary.prob(Adj=Adj,total_scan=total_scan,mode = mode)
+
   Scan[Adj.subfun(Scan)]<- sapply(1:length(Scan[Adj.subfun(Scan)]),
                                   function(dyad) {
                                     Scan[Adj.subfun(Scan)][dyad]<- sample(c(1,0),1,replace = TRUE,prob=prob[dyad,c("present","absent")])

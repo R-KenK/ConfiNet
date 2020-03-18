@@ -199,7 +199,7 @@ boot_progress.param<- function(p,parameters.list = parameters.list){
 Boot_get.param<- function(parameters){
   data.frame(obs.prob = as.factor(attr(parameters$obs.prob,"name")),
              focal.list = as.factor(attr(parameters$focal.list,"name")),
-             mode = as.factor(attr(parameters$mode,"name"))
+             mode = as.factor(ifelse(is.null(attr(parameters$mode,"name")),parameters$mode,attr(parameters$mode,"name")))
   )
 }
 

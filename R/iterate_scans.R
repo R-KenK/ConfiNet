@@ -44,7 +44,7 @@
 iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),
                          focal.list=NULL,scaled=FALSE,obs.prob=NULL,keep=FALSE,
                          mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
-                         output=c("list","adjacency","all"),n.cores=(parallel::detectCores()-1),cl=NULL){
+                         output=c("list","adjacency","all"),n.cores=(parallel::detectCores()-1),cl=NULL,Adj.subfun,prob){
   b<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
   if(is.null(cl)) {cl<- snow::makeCluster(n.cores);doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))} # left to avoid error if the function is used alone, but should probably be used internally from Boot_scans() now.
 
@@ -55,7 +55,7 @@ iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),
                               .export = c("do.scan","non.diagonal","Binary.prob","observable_edges","binary_adjacency_mode")),
              do.scan(Adj = Adj,total_scan = total_scan,
                      focal = NULL,obs.prob=obs.prob,keep=keep,
-                     mode = mode, output = "group")
+                     mode = mode, output = "group",Adj.subfun = Adj.subfun,prob = prob)
            )
          },
          "focal" = {
@@ -64,7 +64,7 @@ iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),
                               .export = c("do.scan","non.diagonal","Binary.prob","binary_adjacency_mode")),
              do.scan(Adj = Adj,total_scan = total_scan,
                      focal = focal.list[b],obs.prob=NULL,keep=FALSE,
-                     mode = mode,output = "focal")
+                     mode = mode,output = "focal",Adj.subfun = Adj.subfun,prob = prob)
            )
          },
          "both" = {
@@ -73,7 +73,7 @@ iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),
                               .export = c("do.scan","non.diagonal","Binary.prob","observable_edges","binary_adjacency_mode")),
              do.scan(Adj = Adj,total_scan = total_scan,
                      focal = focal.list[b],obs.prob=obs.prob,keep=keep,
-                     mode = mode,output = "both")
+                     mode = mode,output = "both",Adj.subfun = Adj.subfun,prob = prob)
            )
          }
   )
