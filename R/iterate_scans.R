@@ -55,7 +55,7 @@ iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),
                               .export = c("do.scan","non.diagonal","Binary.prob","observable_edges","binary_adjacency_mode")),
              do.scan(Adj = Adj,total_scan = total_scan,
                      focal = NULL,obs.prob=obs.prob,keep=keep,
-                     mode = mode, output = "group",Adj.subfun = Adj.subfun,prob = prob)
+                     mode = mode, method = "group",Adj.subfun = Adj.subfun,prob = prob)
            )
          },
          "focal" = {
@@ -64,7 +64,7 @@ iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),
                               .export = c("do.scan","non.diagonal","Binary.prob","binary_adjacency_mode")),
              do.scan(Adj = Adj,total_scan = total_scan,
                      focal = focal.list[b],obs.prob=NULL,keep=FALSE,
-                     mode = mode,output = "focal",Adj.subfun = Adj.subfun,prob = prob)
+                     mode = mode,method = "focal",Adj.subfun = Adj.subfun,prob = prob)
            )
          },
          "both" = {
@@ -73,7 +73,7 @@ iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),
                               .export = c("do.scan","non.diagonal","Binary.prob","observable_edges","binary_adjacency_mode")),
              do.scan(Adj = Adj,total_scan = total_scan,
                      focal = focal.list[b],obs.prob=obs.prob,keep=keep,
-                     mode = mode,output = "both",Adj.subfun = Adj.subfun,prob = prob)
+                     mode = mode,method = "both",Adj.subfun = Adj.subfun,prob = prob)
            )
          }
   )

@@ -53,17 +53,16 @@
 #'               row.names(foc)<-nodes
 #'                              foc}
 #' )
-
 do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
                    mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
-                   output = c("group","focal","both"),Adj.subfun,prob){
+                   method = c("group","focal","both"),Adj.subfun,prob){
   if(nrow(Adj)==ncol(Adj)) {n<- nrow(Adj);nodes_names<- row.names(Adj)} else {stop("Adj is not a square matrix")}
   mode<- match.arg(mode);
-  output<- match.arg(output);
+  method<- match.arg(method);
 
-  if(output=="group" & !is.null(focal)){warning("Focal input but group scan chosen as expected output: is it desired behaviour?")}
+  if(method=="group" & !is.null(focal)){warning("Focal input but group scan chosen as expected method: is it desired behaviour?")}
 
-  if(output %in% c("focal","both") & is.null(focal)){
+  if(method %in% c("focal","both") & is.null(focal)){
     warning("No focal input: random one selected.")
     focal<- sample(row.names(Adj),1)
   }
@@ -78,7 +77,7 @@ do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
 
   Scan<- binary_adjacency_mode(Scan,mode)
 
-  if(output == "group") {
+  if(method == "group") {
     if(is.null(obs.prob)){
       return(Scan)
     }else{
@@ -89,9 +88,9 @@ do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
 
   Focal.scan<- Scan[c(focal),];
   attr(Focal.scan,"focal")<- focal;
-  if(output == "focal") {return(Focal.scan)}
+  if(method == "focal") {return(Focal.scan)}
 
-  if(output == "both") {
+  if(method == "both") {
     return(
       list(
         "group" = {
@@ -106,5 +105,5 @@ do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
     )
   }
 
-  if(!(output %in% c("group","focal","both"))) {stop("How did you reach here?")}
+  if(!(method %in% c("group","focal","both"))) {stop("How did you reach here?")}
 }

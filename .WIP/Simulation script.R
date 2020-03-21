@@ -9,6 +9,7 @@ source("R/iterate_scans.R")
 source("R/Boot_scans.R")
 source("R/observable_edges.R")
 source("R/Bootstrap_tools.R")
+source(".WIP/ASNR.tools.R")
 
 
 # import and generate objects ---------------------------------------------
@@ -24,74 +25,96 @@ n.boot<- 10;
 # Adj[non.diagonal(Adj)]<- sample((0:round(total_scan*.50)),n*(n-1),replace = TRUE)
 # Adj
 
-devtools::install_github("schochastics/networkdata")
-library(networkdata)
-networkdata.list<- ls("package:networkdata")
-networkdata.list<- networkdata.list[
-  Reduce("|",
-         list(
-           grepl("^animal*",networkdata.list),
-           grepl("^ants*",networkdata.list),
-           grepl("^dolphin*",networkdata.list),
-           grepl("^giraffe*",networkdata.list),
-           grepl("^sheep*",networkdata.list),
-           grepl("^kangaroo*",networkdata.list),
-           grepl("^giraffe*",networkdata.list),
-           grepl("^macaque*",networkdata.list),
-           grepl("^rhesus*",networkdata.list)
-         )
-  )
-  ]
+# devtools::install_github("schochastics/networkdata")
+# library(networkdata)
+# networkdata.list<- ls("package:networkdata")
+# networkdata.list<- networkdata.list[
+#   Reduce("|",
+#          list(
+#            grepl("^animal*",networkdata.list),
+#            grepl("^ants*",networkdata.list),
+#            grepl("^dolphin*",networkdata.list),
+#            grepl("^giraffe*",networkdata.list),
+#            grepl("^sheep*",networkdata.list),
+#            grepl("^kangaroo*",networkdata.list),
+#            grepl("^giraffe*",networkdata.list),
+#            grepl("^macaque*",networkdata.list),
+#            grepl("^rhesus*",networkdata.list)
+#          )
+#   )
+#   ]
+#
+# networkdata.list<- paste0("networkdata::",networkdata.list)
+# network.list<- lapply(networkdata.list,
+#                       function(net){
+#                         eval(parse(text = net))
+#                       }
+# )
+#
+# test<- sapply(network.list,
+#               function(net){
+#                 igraph::is.igraph(net)
+#               }
+# )
+#
+# sapply(unlist(network.list[!test],recursive = FALSE),
+#        function(net){
+#          igraph::is.igraph(net)
+#        }
+# )
+# net.list<- c(unlist(network.list[!test],recursive = FALSE),network.list[test])
+# length(net.list)
+# weighted<- sapply(net.list,
+#                   function(net){
+#                     igraph::is_weighted(net)
+#                   }
+# )
+# net.weighted<- net.list[weighted]
+# sapply(net.weighted,
+#        function(net){
+#          igraph::edge.attributes(net)
+#        }
+# )[1:5]
 
-networkdata.list<- paste0("networkdata::",networkdata.list)
-network.list<- lapply(networkdata.list,
-                      function(net){
-                        eval(parse(text = net))
-                      }
+asnr.weighted.dir<- list.files("C:/R/Git/asnr/Networks/Mammalia/",pattern = "_weighted",full.names = TRUE)
+
+asnr.list<- lapply(asnr.weighted.dir,
+                   function(path){
+                     list.files(path,pattern = ".graphml",full.names = TRUE)
+                   }
 )
 
-test<- sapply(network.list,
-              function(net){
-                igraph::is.igraph(net)
-              }
-)
-
-sapply(unlist(network.list[!test],recursive = FALSE),
-       function(net){
-         igraph::is.igraph(net)
-       }
-)
-net.list<- c(unlist(network.list[!test],recursive = FALSE),network.list[test])
-length(net.list)
-weighted<- sapply(net.list,
-                  function(net){
-                    igraph::is_weighted(net)
+asnr.Adj<- lapply(asnr.list[which(sapply(asnr.list,length)==1)],
+                  function(path){
+                    Adj<- import_from_graphml(path,"adjacency")
+                    attr(Adj,"path")<- path
+                    Adj
                   }
 )
-net.weighted<- net.list[weighted]
-sapply(net.weighted,
-       function(net){
-         igraph::edge.attributes(net)
-       }
-)[1:5]
+ADJ<- asnr.Adj
+
+TOTAL_SCAN<- lapply(asnr.weighted.dir[which(sapply(asnr.list,length)==1)],get.total_scan)
+with.total_scan<- !sapply(TOTAL_SCAN,is.null)
+ADJ<- ADJ[with.total_scan]
+TOTAL_SCAN<- TOTAL_SCAN[with.total_scan]
 
 # Parameter choices -------------------------------------------------------
 # for each variable type, there should be only a non-nested list of parameters. I'll figure out later how to group similar values through factor ifelse() and substring I guess...
-ADJ<- lapply(net.weighted,
-             function(net){
-               Adj<- igraph::get.adjacency(net,attr = "weight",names = TRUE,sparse = FALSE)
-               rownames(Adj)<- as.character(1:nrow(Adj));colnames(Adj)<- as.character(1:ncol(Adj));
-               Adj
-             }
-)
-
-non.binary.sup.to.one<- sapply(ADJ,
-                               function(Adj){
-                                 Reduce("|",as.list(!(Adj %in% c(0,1)))) & Reduce("|",as.list(Adj>=1))
-                               }
-)
-
-ADJ<- ADJ[non.binary.sup.to.one]
+# ADJ<- lapply(net.weighted,
+#              function(net){
+#                Adj<- igraph::get.adjacency(net,attr = "weight",names = TRUE,sparse = FALSE)
+#                rownames(Adj)<- as.character(1:nrow(Adj));colnames(Adj)<- as.character(1:ncol(Adj));
+#                Adj
+#              }
+# )
+#
+# non.binary.sup.to.one<- sapply(ADJ,
+#                                function(Adj){
+#                                  Reduce("|",as.list(!(Adj %in% c(0,1)))) & Reduce("|",as.list(Adj>=1))
+#                                }
+# )
+#
+# ADJ<- ADJ[non.binary.sup.to.one]
 
 initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()-1),cl=NULL){
   OBS.PROB<- list(trait.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = NULL,reverse = FALSE,cl = cl),
@@ -140,14 +163,36 @@ initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()
   parameters.list
 }
 
+# Generate parameters list for each network once and for all --------------
+PARAMETERS.LIST<- lapply(seq_along(ADJ),
+                         function(a){
+                           cat(paste0(a,"/",length(ADJ)," @ ",Sys.time(),"\n"))
+                           Adj<- ADJ[[a]]
+                           total_scan<- TOTAL_SCAN[[a]]
+                           initialize_parameters(Adj,total_scan)
+                         }
+)
+
+
 # Iterated Boot_scans() through parameters.list -------------------------
-ADJ.test<- ADJ[sapply(ADJ,max)>150&sapply(ADJ,nrow)<=50][1:10]
-Boot.list<- lapply(seq_along(ADJ.test),
+sapply(ADJ,
+       function(Adj){
+         nrow(Adj)
+       }
+)
+
+sapply(ADJ,
+       function(Adj){
+         round(max(Adj))
+       }
+)
+
+Boot.list<- lapply(seq_along(ADJ),
                    function(a){
-                     cat(paste0(a,"/",length(ADJ.test)," @ ",Sys.time(),"\n"))
-                     Adj<- ADJ.test[[a]]
-                     total_scan<- round(max(Adj)*1.25)
-                     parameters.list<- initialize_parameters(Adj,total_scan,n.cores = 7)
+                     cat(a,"/",length(ADJ),"\n")
+                     Adj<- ADJ[[a]]
+                     total_scan<- TOTAL_SCAN[[a]]
+                     parameters.list<- PARAMETERS.LIST[[a]]
                      Bootstrap.list<- lapply(seq_along(parameters.list),
                                              function(p){
                                                obs.prob<- parameters.list[[p]]$obs.prob;
