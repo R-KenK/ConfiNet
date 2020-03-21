@@ -14,11 +14,11 @@ source("R/Bootstrap_tools.R")
 # import and generate objects ---------------------------------------------
 # Here preferably should be impleemnted as automatic import from ASNR
 
-# set.seed(42)
+set.seed(42)
 #
 # n<- 10;nodes<- as.character(1:n);
 # total_scan<- 200;
-# n.boot<- 50;
+n.boot<- 10;
 #
 # Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
 # Adj[non.diagonal(Adj)]<- sample((0:round(total_scan*.50)),n*(n-1),replace = TRUE)
@@ -94,19 +94,18 @@ non.binary.sup.to.one<- sapply(ADJ,
 ADJ<- ADJ[non.binary.sup.to.one]
 
 initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()-1),cl=NULL){
-  if(is.null(cl)) {cl<- snow::makeCluster(n.cores);doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))} # left to avoid error if the function is used alone, but should probably be used internally from Boot_scans() now.
-  OBS.PROB<- list(trait.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = NULL,reverse = FALSE),
-                  trait.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = function(i,j) 1/prod(i,j),bias_fun = NULL,reverse = FALSE),
+  OBS.PROB<- list(trait.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = NULL,reverse = FALSE,cl = cl),
+                  trait.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = function(i,j) 1/prod(i,j),bias_fun = NULL,reverse = FALSE,cl = cl),
                   network.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
                                               bias_fun = function(node) igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
-                                              reverse = FALSE),
+                                              reverse = FALSE,cl = cl),
                   network.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
                                               bias_fun = function(node) 1/igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
-                                              reverse = FALSE)
+                                              reverse = FALSE,cl = cl)
   )
   OBS.PROB<- c({unb<- seq(0.1,0.9,by = 0.2);names(unb)<- paste0("unbiased_",unb);as.list(unb)},OBS.PROB) # c() over two lists makes them flat while allowing for shorter calls
   MODE<- if(identical(Adj,t(Adj))) {as.list(c("max"))} else  {as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))}
-  FOCAL.LIST<- list(random = sample(rownames(Adj),total_scan,replace = TRUE),
+  FOCAL.LIST<- list(random = sample(rownames(Adj),total_scan,replace = TRUE),  # consider checking if can be implemented for each boot (leaving it NULL?)
                     even = rep_len(rownames(Adj),length.out = total_scan),
                     biased = "TO IMPLEMENT")
 
@@ -142,27 +141,13 @@ initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()
 }
 
 # Iterated Boot_scans() through parameters.list -------------------------
-sapply(ADJ,
-       function(Adj){
-         nrow(Adj)
-       }
-)
-
-sapply(ADJ,
-       function(Adj){
-         round(max(Adj))
-       }
-)
-
-sorta.default.plot(ADJ.test[[1]],edge.with.mul = 0.05,vertex.size.mul = 0.025,centrality.fun = "strength")
-
-ADJ.test<- ADJ[sapply(ADJ,max)>150][161]
+ADJ.test<- ADJ[sapply(ADJ,max)>150&sapply(ADJ,nrow)<=50][1:10]
 Boot.list<- lapply(seq_along(ADJ.test),
                    function(a){
-                     cat(a,"/",length(ADJ.test),"\n")
+                     cat(paste0(a,"/",length(ADJ.test)," @ ",Sys.time(),"\n"))
                      Adj<- ADJ.test[[a]]
                      total_scan<- round(max(Adj)*1.25)
-                     parameters.list<- initialize_parameters(Adj,total_scan)
+                     parameters.list<- initialize_parameters(Adj,total_scan,n.cores = 7)
                      Bootstrap.list<- lapply(seq_along(parameters.list),
                                              function(p){
                                                obs.prob<- parameters.list[[p]]$obs.prob;
@@ -199,6 +184,30 @@ Boot.list<- lapply(seq_along(ADJ.test),
 Bootstrap.list<- Boot.list[[1]]
 parameters.list<- initialize_parameters(Adj,total_scan)
 
+Get.data<- function(B,Bootstrap.list,parameters.list){
+  rbind_lapply(seq_along(Bootstrap.list),
+               function(b){
+                 rbind(data.frame(Network = B,boot = b,method = "group",
+                                  Boot_get.param(parameters.list[[b]]),
+                                  cor = adjacency_cor(Bootstrap = Bootstrap.list[[b]],what = "observed")),
+                       data.frame(Network = B,boot = b,method = "focal",
+                                  Boot_get.param(parameters.list[[b]]),
+                                  cor = adjacency_cor(Bootstrap = Bootstrap.list[[b]],what = "focal")))
+               }
+  )
+}
+
+data.long<- rbind_lapply(seq_along(Boot.list),
+                         function(B){
+                           cat(paste0(B,"/",length(ADJ.test)," @ ",Sys.time(),"\n"))
+                           Adj<- ADJ.test[[B]]
+                           total_scan<- round(max(Adj)*1.25)
+                           parameters.list<- initialize_parameters(Adj,total_scan,n.cores = 7)
+                           Bootstrap.list<- Boot.list[[B]]
+                           Get.data(B,Bootstrap.list,parameters.list)
+                         }
+)
+
 data.long<- rbind_lapply(seq_along(Bootstrap.list),
                          function(B){
                            rbind(data.frame(boot = B,method = "group",
@@ -210,17 +219,30 @@ data.long<- rbind_lapply(seq_along(Bootstrap.list),
                          }
 )
 
-Boot_get.param(parameters.list[[1]])
-adjacency_cor
 library(ggplot2)
+mytheme<- theme_bw()+theme(plot.title = element_text(lineheight=.9, face="bold"),axis.line = element_line(colour = "black"),panel.grid.major.x = element_line(colour = "grey95",size = .2),panel.grid.minor.x = element_line(colour = "grey95",linetype = "dotted"),panel.grid.major.y =element_line(colour = "grey95",size = .2),panel.grid.minor.y=element_blank())+theme(axis.text.x = element_text(angle = 45, hjust = 0.5,vjust = 0.75))
 library(data.table)
 data.long<- data.table(data.long)
-data.summary<- data.long[,.(cor=median(cor),sd=sd(cor)),by = .(obs.prob,focal.list,mode,method)]
 
-ggplot(data.long[obs.prob %in% c("network.pos","trait.pos","network.neg","trait.neg")],aes(interaction(method,obs.prob),cor,colour = method))+facet_grid(mode~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+theme_bw()
+data.long$obs.prob.type<- as.factor(substr(data.long$obs.prob,1,3))
+data.long$obs.prob.details<- as.factor(
+  substr(data.long$obs.prob,
+         nchar(as.character(data.long$obs.prob))-2,
+         nchar(as.character(data.long$obs.prob))
+  )
+)
+
+data.summary<- data.long[,.(cor=median(cor),sd=sd(cor)),by = .(Network,obs.prob.type,obs.prob.details,focal.list,mode,method)]
+
+ggplot(data.long[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),cor,colour = method))+
+  facet_grid(Network~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+mytheme
 ggplot(data.long[obs.prob %in% c("network","trait")],aes(interaction(method,obs.prob),cor,colour = method))+facet_grid(mode~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+theme_bw()
 ggplot(data.long[!(obs.prob %in% c("network.pos","trait.pos","network.neg","trait.neg"))],aes(interaction(method,obs.prob),cor,colour = method))+facet_grid(mode~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+theme_bw()
 
-ggplot(data.summary,aes(interaction(method,obs.prob),cor,fill = method))+facet_grid(mode~focal.list)+
-  geom_errorbar(aes(ymin = cor-sd,ymax=cor+sd),width = 0.2)+geom_bar(stat = "identity",alpha=0.8)+theme_bw()
-
+ggplot(data.summary[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),cor,fill = method))+
+  facet_grid(Network~focal.list)+geom_bar(stat = "identity",alpha=0.8)+geom_errorbar(aes(ymin = cor-sd,ymax=cor+sd),width = 0.2)+coord_flip()+theme_bw()
+ggplot(data.summary[obs.prob.type %in% c("net","tra")],aes(interaction(method,obs.prob.details),cor,fill = method))+
+  facet_grid(obs.prob.type+focal.list~Network)+geom_bar(stat = "identity",alpha=0.8)+geom_errorbar(aes(ymin = cor-sd,ymax=cor+sd),width = 0.2)+mytheme
+ggplot(data.summary[obs.prob.type=="unb"],aes(obs.prob.details,cor,colour = method,group=interaction(method,obs.prob.type)))+
+  facet_grid(focal.list~Network)+geom_linerange(aes(ymin = cor-sd,ymax=cor+sd))+geom_line()+geom_point(shape=21,fill="white")+
+  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$cor)-0.01,1))+mytheme
