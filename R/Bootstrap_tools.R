@@ -26,7 +26,6 @@ Bootstrap_add.attributes<- function(Bootstrap,method,keep,mode,output){
 #' Retrieve specific data from Boot_scans() output
 #' Subset rich Bootstrap output choosing what's needed
 #'
-#' @param Bootstrap Boot_scans() final output
 #' @param what character scalar, data type requested
 #' @param format character scalar, output format type requested ("both","list" or "adjacency").
 #'
@@ -295,7 +294,7 @@ initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()
       mode = {
         mode<- MODE[[parameters.comb[p,"mode"]]];
         attr(mode,"name")<- names(MODE)[parameters.comb[p,"mode"]];
-        modeT
+        mode
       }
     )
   )
