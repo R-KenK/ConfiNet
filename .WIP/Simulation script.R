@@ -57,8 +57,8 @@ PARAMETERS.LIST<- lapply(seq_along(ADJ),
 )
 
 
-# Iterated Boot_scans() through parameters.list -------------------------
-Boot.list<- lapply(seq_along(ADJ),
+# Iteration through networks, bootstrap and gather data in data frame -------------------------
+data.long<- rbind_lapply(seq_along(ADJ),
                    function(a){
                      cat(paste0(a,"/",length(ADJ)," @ ",Sys.time(),"\n"))
                      Adj<- ADJ[[a]]
@@ -74,20 +74,11 @@ Boot.list<- lapply(seq_along(ADJ),
                                                           method = "both",focal.list = focal.list,scaled = TRUE,mode = mode,output = "adjacency",n.cores = 7)
                                              }
                      )
-                     Bootstrap.list
+                     cat(paste0("\nCompiling data @ ",Sys.time(),"\n"))
+                     Get.data(a,Bootstrap.list,parameters.list)
                    }
 )
 
-data.long<- rbind_lapply(seq_along(Boot.list),
-                         function(B){
-                           cat(paste0(B,"/",length(ADJ)," @ ",Sys.time(),"\n"))
-                           Adj<- ADJ[[B]]
-                           total_scan<- TOTAL_SCAN[[B]]
-                           parameters.list<- PARAMETERS.LIST[[B]]
-                           Bootstrap.list<- Boot.list[[B]]
-                           Get.data(B,Bootstrap.list,parameters.list)
-                         }
-)
 
 library(ggplot2)
 mytheme<- theme_bw()+theme(plot.title = element_text(lineheight=.9, face="bold"),axis.line = element_line(colour = "black"),panel.grid.major.x = element_line(colour = "grey95",size = .2),panel.grid.minor.x = element_line(colour = "grey95",linetype = "dotted"),panel.grid.major.y =element_line(colour = "grey95",size = .2),panel.grid.minor.y=element_blank())+theme(axis.text.x = element_text(angle = 45, hjust = 0.5,vjust = 0.75))
