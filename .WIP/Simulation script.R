@@ -13,68 +13,10 @@ source(".WIP/ASNR.tools.R")
 
 
 # import and generate objects ---------------------------------------------
-# Here preferably should be impleemnted as automatic import from ASNR
+# Here preferably should be implemented as automatic import from ASNR/networkdata
 
 set.seed(42)
-#
-# n<- 10;nodes<- as.character(1:n);
-# total_scan<- 200;
 n.boot<- 10;
-#
-# Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
-# Adj[non.diagonal(Adj)]<- sample((0:round(total_scan*.50)),n*(n-1),replace = TRUE)
-# Adj
-
-# devtools::install_github("schochastics/networkdata")
-# library(networkdata)
-# networkdata.list<- ls("package:networkdata")
-# networkdata.list<- networkdata.list[
-#   Reduce("|",
-#          list(
-#            grepl("^animal*",networkdata.list),
-#            grepl("^ants*",networkdata.list),
-#            grepl("^dolphin*",networkdata.list),
-#            grepl("^giraffe*",networkdata.list),
-#            grepl("^sheep*",networkdata.list),
-#            grepl("^kangaroo*",networkdata.list),
-#            grepl("^giraffe*",networkdata.list),
-#            grepl("^macaque*",networkdata.list),
-#            grepl("^rhesus*",networkdata.list)
-#          )
-#   )
-#   ]
-#
-# networkdata.list<- paste0("networkdata::",networkdata.list)
-# network.list<- lapply(networkdata.list,
-#                       function(net){
-#                         eval(parse(text = net))
-#                       }
-# )
-#
-# test<- sapply(network.list,
-#               function(net){
-#                 igraph::is.igraph(net)
-#               }
-# )
-#
-# sapply(unlist(network.list[!test],recursive = FALSE),
-#        function(net){
-#          igraph::is.igraph(net)
-#        }
-# )
-# net.list<- c(unlist(network.list[!test],recursive = FALSE),network.list[test])
-# length(net.list)
-# weighted<- sapply(net.list,
-#                   function(net){
-#                     igraph::is_weighted(net)
-#                   }
-# )
-# net.weighted<- net.list[weighted]
-# sapply(net.weighted,
-#        function(net){
-#          igraph::edge.attributes(net)
-#        }
-# )[1:5]
 
 asnr.weighted.dir<- list.files("C:/R/Git/asnr/Networks/Mammalia/",pattern = "_weighted",full.names = TRUE)
 
@@ -94,76 +36,15 @@ asnr.Adj<- lapply(asnr.list[which(sapply(asnr.list,length)==1)],
 ADJ<- asnr.Adj
 
 TOTAL_SCAN<- lapply(asnr.weighted.dir[which(sapply(asnr.list,length)==1)],get.total_scan)
+
 with.total_scan<- !sapply(TOTAL_SCAN,is.null)
 ADJ<- ADJ[with.total_scan]
 TOTAL_SCAN<- TOTAL_SCAN[with.total_scan]
+
 with.total_scan.inf1000<- sapply(TOTAL_SCAN,function(t) t<1000)
 ADJ<- ADJ[with.total_scan.inf1000]
 TOTAL_SCAN<- TOTAL_SCAN[with.total_scan.inf1000]
 # Parameter choices -------------------------------------------------------
-# for each variable type, there should be only a non-nested list of parameters. I'll figure out later how to group similar values through factor ifelse() and substring I guess...
-# ADJ<- lapply(net.weighted,
-#              function(net){
-#                Adj<- igraph::get.adjacency(net,attr = "weight",names = TRUE,sparse = FALSE)
-#                rownames(Adj)<- as.character(1:nrow(Adj));colnames(Adj)<- as.character(1:ncol(Adj));
-#                Adj
-#              }
-# )
-#
-# non.binary.sup.to.one<- sapply(ADJ,
-#                                function(Adj){
-#                                  Reduce("|",as.list(!(Adj %in% c(0,1)))) & Reduce("|",as.list(Adj>=1))
-#                                }
-# )
-#
-# ADJ<- ADJ[non.binary.sup.to.one]
-
-initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()-1),cl=NULL){
-  OBS.PROB<- list(trait.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = NULL,reverse = FALSE),
-                  trait.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = function(i,j) 1/prod(i,j),bias_fun = NULL,reverse = FALSE),
-                  network.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
-                                              bias_fun = function(node) igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
-                                              reverse = FALSE),
-                  network.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
-                                              bias_fun = function(node) 1/igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
-                                              reverse = FALSE)
-  )
-  OBS.PROB<- c({unb<- seq(0.1,0.9,by = 0.2);names(unb)<- paste0("unbiased_",unb);as.list(unb)},OBS.PROB) # c() over two lists makes them flat while allowing for shorter calls
-  MODE<- if(identical(Adj,t(Adj))) {as.list(c("max"))} else  {as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))}
-  FOCAL.LIST<- list(random = sample(rownames(Adj),total_scan,replace = TRUE),  # consider checking if can be implemented for each boot (leaving it NULL?)
-                    even = rep_len(rownames(Adj),length.out = total_scan),
-                    biased = "TO IMPLEMENT")
-
-  parameters.comb<- expand.grid(
-    list(mode = 1:length(MODE),
-         focal.list = 1:length(FOCAL.LIST[1:2]),
-         obs.prob = 1:length(OBS.PROB)
-    )
-  )
-
-  if(is.null(cl)) {cl<- snow::makeCluster(n.cores);doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))} # left to avoid error if the function is used alone, but should probably be used internally from Boot_scans() now.
-  parameters.list<- foreach::`%dopar%`(
-    foreach::foreach(p=1:nrow(parameters.comb)),
-    list(
-      obs.prob = {
-        obs.prob<- OBS.PROB[[parameters.comb[p,"obs.prob"]]];
-        attr(obs.prob,"name")<- names(OBS.PROB)[parameters.comb[p,"obs.prob"]];
-        obs.prob
-      },
-      focal.list = {
-        focal.list<- FOCAL.LIST[[parameters.comb[p,"focal.list"]]];
-        attr(focal.list,"name")<- names(FOCAL.LIST)[parameters.comb[p,"focal.list"]];
-        focal.list
-      },
-      mode = {
-        mode<- MODE[[parameters.comb[p,"mode"]]];
-        attr(mode,"name")<- names(MODE)[parameters.comb[p,"mode"]];
-        mode
-      }
-    )
-  )
-  parameters.list
-}
 
 # Generate parameters list for each network once and for all --------------
 PARAMETERS.LIST<- lapply(seq_along(ADJ),
@@ -177,18 +58,6 @@ PARAMETERS.LIST<- lapply(seq_along(ADJ),
 
 
 # Iterated Boot_scans() through parameters.list -------------------------
-sapply(ADJ,
-       function(Adj){
-         nrow(Adj)
-       }
-)
-
-sapply(ADJ,
-       function(Adj){
-         round(max(Adj))
-       }
-)
-
 Boot.list<- lapply(seq_along(ADJ),
                    function(a){
                      cat(paste0(a,"/",length(ADJ)," @ ",Sys.time(),"\n"))
@@ -208,38 +77,6 @@ Boot.list<- lapply(seq_along(ADJ),
                      Bootstrap.list
                    }
 )
-
-# Adj<- round(ADJ.test[[1]]/2)
-# total_scan<- round(max(Adj)*1.25)
-# parameters.list<- initialize_parameters(Adj,total_scan)
-# n.boot<-1;
-# start<- Sys.time()
-# Bootstrap.list<- lapply(1,
-#                         function(p){
-#                           obs.prob<- parameters.list[[p]]$obs.prob;
-#                           mode<- parameters.list[[p]]$mode;
-#                           focal.list<- parameters.list[[p]]$focal.list
-#                           boot_progress.param(p,parameters.list = parameters.list)
-#                           Boot_scans(Adj = Adj,n.boot = n.boot,total_scan = total_scan,obs.prob = obs.prob,keep = TRUE,
-#                                      method = "both",focal.list = NULL,scaled = TRUE,mode = mode,output = "all",n.cores = 7)
-#                         }
-# )
-# stop<- Sys.time()
-# stop-start
-# Bootstrap.list
-
-Get.data<- function(B,Bootstrap.list,parameters.list){
-  rbind_lapply(seq_along(Bootstrap.list),
-               function(b){
-                 rbind(data.frame(Network = B,boot = b,method = "group",
-                                  Boot_get.param(parameters.list[[b]]),
-                                  cor = adjacency_cor(Bootstrap = Bootstrap.list[[b]],what = "observed")),
-                       data.frame(Network = B,boot = b,method = "focal",
-                                  Boot_get.param(parameters.list[[b]]),
-                                  cor = adjacency_cor(Bootstrap = Bootstrap.list[[b]],what = "focal")))
-               }
-  )
-}
 
 data.long<- rbind_lapply(seq_along(Boot.list),
                          function(B){
@@ -266,11 +103,6 @@ data.long$obs.prob.details<- as.factor(
 )
 
 data.summary<- data.long[,.(cor=median(cor),sd=sd(cor)),by = .(Network,obs.prob.type,obs.prob.details,focal.list,mode,method)]
-
-ggplot(data.long[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),cor,colour = method))+
-  facet_grid(Network~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+mytheme
-ggplot(data.long[obs.prob %in% c("network","trait")],aes(interaction(method,obs.prob),cor,colour = method))+facet_grid(mode~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+theme_bw()
-ggplot(data.long[!(obs.prob %in% c("network.pos","trait.pos","network.neg","trait.neg"))],aes(interaction(method,obs.prob),cor,colour = method))+facet_grid(mode~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+theme_bw()
 
 ggplot(data.summary[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),cor,fill = method))+geom_hline(yintercept = 0)+
   geom_errorbar(aes(ymin = cor-sd,ymax=cor+sd),colour="grey50",width = 0.2)+

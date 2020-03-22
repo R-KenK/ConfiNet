@@ -1,3 +1,6 @@
+
+# Bootstrap "object" specific tools ---------------------------------------
+
 #' Keep bootstrap parameters as attributes
 #' Internal use in Boot_scans(). Add "method", "keep", "mode", "output" attributes to be more easily retrieved by the get function
 #'
@@ -25,6 +28,7 @@ Bootstrap_add.attributes<- function(Bootstrap,method,keep,mode,output){
 #'
 #' @param Bootstrap Boot_scans() final output
 #' @param what character scalar, data type requested
+#' @param format character scalar, output format type requested ("both","list" or "adjacency").
 #'
 #' @return list which structure depends on chosen data type and Bootstrap attributes
 #' @export
@@ -48,10 +52,12 @@ Bootstrap_add.attributes<- function(Bootstrap,method,keep,mode,output){
 #' Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
 #'                        scaled = TRUE,obs.prob=0.7,keep=TRUE,
 #'                        method = "both",mode = "directed",output = "all")
-#' Boot_get.list(Bootstrap,"focal")$adjacency
-#' Boot_get.list(Bootstrap,"observed")$list
-Boot_get.list<- function(Bootstrap,what=c("group","focal","theoretical","observed")){
+#' Boot_get.list(Bootstrap,"observed","both")
+#' Boot_get.list(Bootstrap,"observed","adjacency")
+#' Boot_get.list(Bootstrap,"observed","list")
+Boot_get.list<- function(Bootstrap,what=c("group","focal","theoretical","observed"),format = c("both","list","adjacency")){
   what<- match.arg(what)
+  format<- match.arg(format)
 
   method<- attr(Bootstrap,"method");
   keep<- attr(Bootstrap,"keep");
@@ -62,6 +68,7 @@ Boot_get.list<- function(Bootstrap,what=c("group","focal","theoretical","observe
     what<- "group";
   }
   if((what %in% c("group","focal")) & (method!="both" & method!=what)) {stop("Requested List doesn't exist in provided Bootstrap.")}
+  if(output=="list"&format=="adjacency") {stop("WIP.")}
 
   switch(output,
          "list" =  switch(method,
@@ -104,78 +111,56 @@ Boot_get.list<- function(Bootstrap,what=c("group","focal","theoretical","observe
                                 }
                               }
          ),
-         "all" = list(
-           list = switch(method,
-                         "group" = if(keep){
-                           lapply(Bootstrap,function(B) lapply(B$list,function(l) l[[what]]))
-                         }else{
-                           lapply(Bootstrap,function(B) lapply(B$list,function(l) l))
-                         },
-                         "focal" = lapply(Bootstrap,function(B) lapply(B$list,function(l) l)),
-                         "both" = {
-                           if(keep){
-                             switch(what,
-                                    "group" = ,
-                                    "focal" = lapply(Bootstrap,function(B) lapply(B$list,function(l) l[[what]])),
-                                    "theoretical" = ,
-                                    "observed" = lapply(Bootstrap,function(B) lapply(B$list,function(l) l[["group"]][[what]])),
-                             )
-                           }else{
+         "all" = {
+           all<- list(
+             list = switch(method,
+                           "group" = if(keep){
                              lapply(Bootstrap,function(B) lapply(B$list,function(l) l[[what]]))
+                           }else{
+                             lapply(Bootstrap,function(B) lapply(B$list,function(l) l))
+                           },
+                           "focal" = lapply(Bootstrap,function(B) lapply(B$list,function(l) l)),
+                           "both" = {
+                             if(keep){
+                               switch(what,
+                                      "group" = ,
+                                      "focal" = lapply(Bootstrap,function(B) lapply(B$list,function(l) l[[what]])),
+                                      "theoretical" = ,
+                                      "observed" = lapply(Bootstrap,function(B) lapply(B$list,function(l) l[["group"]][[what]])),
+                               )
+                             }else{
+                               lapply(Bootstrap,function(B) lapply(B$list,function(l) l[[what]]))
+                             }
                            }
-                         }
-           ),
-           adjacency = switch(method,
-                              "group" = if(keep){
-                                lapply(Bootstrap,function(B) B$adjacency[[what]])
-                              }else{
-                                lapply(Bootstrap,function(B) B$adjacency)
-                              },
-                              "focal" = lapply(Bootstrap,function(B) B$adjacency),
-                              "both" = {
-                                if(keep){
-                                  switch(what,
-                                         "group" = ,
-                                         "focal" = lapply(Bootstrap,function(B) B$adjacency[[what]]),
-                                         "theoretical" = ,
-                                         "observed" = lapply(Bootstrap,function(B) B$adjacency[["group"]][[what]]),
-                                  )
-                                }else{
+             ),
+             adjacency = switch(method,
+                                "group" = if(keep){
                                   lapply(Bootstrap,function(B) B$adjacency[[what]])
+                                }else{
+                                  lapply(Bootstrap,function(B) B$adjacency)
+                                },
+                                "focal" = lapply(Bootstrap,function(B) B$adjacency),
+                                "both" = {
+                                  if(keep){
+                                    switch(what,
+                                           "group" = ,
+                                           "focal" = lapply(Bootstrap,function(B) B$adjacency[[what]]),
+                                           "theoretical" = ,
+                                           "observed" = lapply(Bootstrap,function(B) B$adjacency[["group"]][[what]]),
+                                    )
+                                  }else{
+                                    lapply(Bootstrap,function(B) B$adjacency[[what]])
+                                  }
                                 }
-                              }
+             )
            )
-         )
+           switch(format,
+                  "both" = all,
+                  "list" = all$list,
+                  "adjacency" = all$adjacency
+           )
+         }
   )
-}
-
-#' Title
-#'
-#' @param Bootstrap
-#' @param what
-#'
-#' @return
-#' @export
-#'
-#' @examples
-Boot_get.adjacency<- function(Bootstrap,what=c("group","focal","theoretical","observed")){
-  what<- match.arg(what)
-
-  method<- attr(Bootstrap,"method");
-  keep<- attr(Bootstrap,"keep");
-  output<- attr(Bootstrap,"output");
-
-  if((what %in% c("theoretical","observed")) & (keep==FALSE)) {
-    warning(paste0("keep was set to FALSE in Bootstrap. Do you mean to retrieve group?"))
-    what<- "group";
-  }
-  if((what %in% c("group","focal")) & (method!="both" & method!=what)) {stop("Requested List doesn't exist in provided Bootstrap.")}
-  switch(output,
-         "list" = stop("WIP. Need to implement switch case where an adjacency is automatically retrieved from the stored list."),
-         "adjacency" = Boot_get.list(Bootstrap = Bootstrap,what = what),
-         "all" = Boot_get.list(Bootstrap = Bootstrap,what = what)$adjacency
-  )
-
 }
 
 #' Row bind list of data frames
@@ -213,8 +198,6 @@ boot_progress.param<- function(p,parameters.list = parameters.list){
              " - mode = ",attr(parameters.list[[p]]$mode,"name")," (",p,"/",length(parameters.list),")","\n"))
 }
 
-
-
 #' Retrieve specific simulation parameters of given Bootstrap
 #' Internal use. To ease the recollection of a given bootstrap performed through Boot_scans() iterations alongside a parameters.list
 #'
@@ -250,9 +233,95 @@ adjacency_cor<- function(Bootstrap.list,what = c("observed","focal"),n.boot = le
   what<- match.arg(what)
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
          function(b) {
-           stats::cor(c(Boot_get.adjacency(Bootstrap.list,"theoretical")[[b]]),   # c() flattens the matrix to consider it like a vector
-                      c(Boot_get.adjacency(Bootstrap.list,what)[[b]]))
+           stats::cor(c(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]]),   # c() flattens the matrix to consider it like a vector
+                      c(Boot_get.list(Bootstrap.list,what,"adjacency")[[b]]))
          }
   )
 }
 # HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
+
+
+# Simulation workflow tools -----------------------------------------------
+
+#' Title
+#'
+#' @param Adj
+#' @param total_scan
+#' @param n.cores
+#' @param cl
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' #Internal use in Simulation_script.R.
+initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()-1),cl=NULL){
+  OBS.PROB<- list(trait.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = NULL,reverse = FALSE),
+                  trait.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = function(i,j) 1/prod(i,j),bias_fun = NULL,reverse = FALSE),
+                  network.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
+                                              bias_fun = function(node) igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
+                                              reverse = FALSE),
+                  network.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
+                                              bias_fun = function(node) 1/igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
+                                              reverse = FALSE)
+  )
+  OBS.PROB<- c({unb<- seq(0.1,0.9,by = 0.2);names(unb)<- paste0("unbiased_",unb);as.list(unb)},OBS.PROB) # c() over two lists makes them flat while allowing for shorter calls
+  MODE<- if(identical(Adj,t(Adj))) {as.list(c("max"))} else  {as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))}
+  FOCAL.LIST<- list(random = sample(rownames(Adj),total_scan,replace = TRUE),  # consider checking if can be implemented for each boot (leaving it NULL?)
+                    even = rep_len(rownames(Adj),length.out = total_scan),
+                    biased = "TO IMPLEMENT")
+
+  parameters.comb<- expand.grid(
+    list(mode = 1:length(MODE),
+         focal.list = 1:length(FOCAL.LIST[1:2]),
+         obs.prob = 1:length(OBS.PROB)
+    )
+  )
+
+  if(is.null(cl)) {cl<- snow::makeCluster(n.cores);doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))} # left to avoid error if the function is used alone, but should probably be used internally from Boot_scans() now.
+  parameters.list<- foreach::`%dopar%`(
+    foreach::foreach(p=1:nrow(parameters.comb)),
+    list(
+      obs.prob = {
+        obs.prob<- OBS.PROB[[parameters.comb[p,"obs.prob"]]];
+        attr(obs.prob,"name")<- names(OBS.PROB)[parameters.comb[p,"obs.prob"]];
+        obs.prob
+      },
+      focal.list = {
+        focal.list<- FOCAL.LIST[[parameters.comb[p,"focal.list"]]];
+        attr(focal.list,"name")<- names(FOCAL.LIST)[parameters.comb[p,"focal.list"]];
+        focal.list
+      },
+      mode = {
+        mode<- MODE[[parameters.comb[p,"mode"]]];
+        attr(mode,"name")<- names(MODE)[parameters.comb[p,"mode"]];
+        modeT
+      }
+    )
+  )
+  parameters.list
+}
+
+#' Title
+#'
+#' @param B
+#' @param Bootstrap.list
+#' @param parameters.list
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' #Internal use in Simulation_script.R.
+Get.data<- function(B,Bootstrap.list,parameters.list){
+  rbind_lapply(seq_along(Bootstrap.list),
+               function(b){
+                 rbind(data.frame(Network = B,boot = b,method = "group",
+                                  Boot_get.param(parameters.list[[b]]),
+                                  cor = adjacency_cor(Bootstrap = Bootstrap.list[[b]],what = "observed")),
+                       data.frame(Network = B,boot = b,method = "focal",
+                                  Boot_get.param(parameters.list[[b]]),
+                                  cor = adjacency_cor(Bootstrap = Bootstrap.list[[b]],what = "focal")))
+               }
+  )
+}
