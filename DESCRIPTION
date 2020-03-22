@@ -15,7 +15,9 @@ Imports:
     snow,
     parallel,
     pbapply,
-    igraph
+    igraph,
+    intergraph,
+    sna
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true

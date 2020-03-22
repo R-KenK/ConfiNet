@@ -227,7 +227,10 @@ Boot_get.param<- function(parameters){
 #' @examples
 #' #Internal use in Simulation_script.R.
 Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
-  data.frame(cor = adjacency_cor(Bootstrap.list = Bootstrap.list,method = method)#,
+  data.frame(cor = adjacency_cor(Bootstrap.list = Bootstrap.list,method = method),
+             degree = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.deg),
+             strength = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.strength),
+             EV = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.EV)
              # HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
   )
 }
@@ -250,14 +253,66 @@ Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
 #' #Internal use in Simulation_script.R.
 adjacency_cor<- function(Bootstrap.list,method = c("group","focal")){
   method<- match.arg(method)
-  if(method=="group") {method<- "observed"}
+  if(method=="group" & attr(Bootstrap.list,"keep")==TRUE) {method<- "observed"}
   n.boot = length(Bootstrap.list)
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
          function(b) {
-           stats::cor(c(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]]),   # c() flattens the matrix to consider it like a vector
-                      c(Boot_get.list(Bootstrap.list,method,"adjacency")[[b]]))
+           stats::cor(
+             c(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]]),   # c() flattens the matrix to consider it like a vector
+             c(Boot_get.list(Bootstrap.list,method,"adjacency")[[b]])
+           )
          }
   )
+}
+
+#' Wrapper to calculate coefficient of correlation between centrality indices
+#'
+#' @param Bootstrap.list an output of Boot_scan()
+#' @param method character scalar, indicate if the function should output the coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
+#' @param centrality.fun a centrality function taking an igraph object (or an adjacency matrix but transforms it to an igraph object first) and returns an ordered vector of vertex centralities
+#'
+#' @return a vector of coefficient of correlations between theoretical and empirical methods derived network node centralities.
+#' @export
+#'
+#' @examples
+#' #Internal use in Simulation_script.R.
+centrality_cor<- function(Bootstrap.list,method = c("group","focal"),centrality.fun){
+  method<- match.arg(method)
+  if(method=="group" & attr(Bootstrap.list,"keep")==TRUE) {method<- "observed"}
+  n.boot = length(Bootstrap.list)
+  mode<- attr(Bootstrap.list,"mode")
+  sapply(1:n.boot,  # needs function to gather and structure in a data frame
+         function(b) {
+           cor(
+             centrality.fun(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]],mode=mode),
+             centrality.fun(Boot_get.list(Bootstrap.list,method,"adjacency")[[b]],mode=mode)
+           )
+         }
+  )
+}
+
+compute.EV<- function(graph,mode){
+  if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
+  EV<- igraph::eigen_centrality(graph, weights = igraph::E(graph)$weight,scale = FALSE)$vector
+  names(EV)<- igraph::vertex_attr(graph)[[1]] # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
+  EV
+}
+compute.deg<- function(graph,mode){
+  if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
+  deg<- igraph::degree(graph)
+  names(deg)<- igraph::vertex_attr(graph)[[1]] # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
+  deg
+}
+compute.strength<- function(graph,mode){
+  if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
+  igraph::strength(graph)
+}
+compute.flowbet<- function(graph,mode){
+  if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
+  graph.network<- intergraph::asNetwork(graph)
+  FB<- sna::flowbet(graph.network)
+  names(FB)<- igraph::vertex_attr(graph)[[1]] # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
+  FB
 }
 
 # Simulation workflow tools -----------------------------------------------
