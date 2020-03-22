@@ -97,7 +97,9 @@ TOTAL_SCAN<- lapply(asnr.weighted.dir[which(sapply(asnr.list,length)==1)],get.to
 with.total_scan<- !sapply(TOTAL_SCAN,is.null)
 ADJ<- ADJ[with.total_scan]
 TOTAL_SCAN<- TOTAL_SCAN[with.total_scan]
-
+with.total_scan.inf1000<- sapply(TOTAL_SCAN,function(t) t<1000)
+ADJ<- ADJ[with.total_scan.inf1000]
+TOTAL_SCAN<- TOTAL_SCAN[with.total_scan.inf1000]
 # Parameter choices -------------------------------------------------------
 # for each variable type, there should be only a non-nested list of parameters. I'll figure out later how to group similar values through factor ifelse() and substring I guess...
 # ADJ<- lapply(net.weighted,
@@ -117,14 +119,14 @@ TOTAL_SCAN<- TOTAL_SCAN[with.total_scan]
 # ADJ<- ADJ[non.binary.sup.to.one]
 
 initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()-1),cl=NULL){
-  OBS.PROB<- list(trait.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = NULL,reverse = FALSE,cl = cl),
-                  trait.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = function(i,j) 1/prod(i,j),bias_fun = NULL,reverse = FALSE,cl = cl),
+  OBS.PROB<- list(trait.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = NULL,reverse = FALSE),
+                  trait.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = function(i,j) 1/prod(i,j),bias_fun = NULL,reverse = FALSE),
                   network.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
                                               bias_fun = function(node) igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
-                                              reverse = FALSE,cl = cl),
+                                              reverse = FALSE),
                   network.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
                                               bias_fun = function(node) 1/igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
-                                              reverse = FALSE,cl = cl)
+                                              reverse = FALSE)
   )
   OBS.PROB<- c({unb<- seq(0.1,0.9,by = 0.2);names(unb)<- paste0("unbiased_",unb);as.list(unb)},OBS.PROB) # c() over two lists makes them flat while allowing for shorter calls
   MODE<- if(identical(Adj,t(Adj))) {as.list(c("max"))} else  {as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))}
@@ -189,7 +191,7 @@ sapply(ADJ,
 
 Boot.list<- lapply(seq_along(ADJ),
                    function(a){
-                     cat(a,"/",length(ADJ),"\n")
+                     cat(paste0(a,"/",length(ADJ)," @ ",Sys.time(),"\n"))
                      Adj<- ADJ[[a]]
                      total_scan<- TOTAL_SCAN[[a]]
                      parameters.list<- PARAMETERS.LIST[[a]]
@@ -200,7 +202,7 @@ Boot.list<- lapply(seq_along(ADJ),
                                                focal.list<- parameters.list[[p]]$focal.list
                                                boot_progress.param(p,parameters.list = parameters.list)
                                                Boot_scans(Adj = Adj,n.boot = n.boot,total_scan = total_scan,obs.prob = obs.prob,keep = TRUE,
-                                                          method = "both",focal.list = focal.list,scaled = TRUE,mode = mode,output = "all",n.cores = 7)
+                                                          method = "both",focal.list = focal.list,scaled = TRUE,mode = mode,output = "adjacency",n.cores = 7)
                                              }
                      )
                      Bootstrap.list
@@ -226,9 +228,6 @@ Boot.list<- lapply(seq_along(ADJ),
 # stop-start
 # Bootstrap.list
 
-Bootstrap.list<- Boot.list[[1]]
-parameters.list<- initialize_parameters(Adj,total_scan)
-
 Get.data<- function(B,Bootstrap.list,parameters.list){
   rbind_lapply(seq_along(Bootstrap.list),
                function(b){
@@ -244,23 +243,12 @@ Get.data<- function(B,Bootstrap.list,parameters.list){
 
 data.long<- rbind_lapply(seq_along(Boot.list),
                          function(B){
-                           cat(paste0(B,"/",length(ADJ.test)," @ ",Sys.time(),"\n"))
-                           Adj<- ADJ.test[[B]]
-                           total_scan<- round(max(Adj)*1.25)
-                           parameters.list<- initialize_parameters(Adj,total_scan,n.cores = 7)
+                           cat(paste0(B,"/",length(ADJ)," @ ",Sys.time(),"\n"))
+                           Adj<- ADJ[[B]]
+                           total_scan<- TOTAL_SCAN[[B]]
+                           parameters.list<- PARAMETERS.LIST[[B]]
                            Bootstrap.list<- Boot.list[[B]]
                            Get.data(B,Bootstrap.list,parameters.list)
-                         }
-)
-
-data.long<- rbind_lapply(seq_along(Bootstrap.list),
-                         function(B){
-                           rbind(data.frame(boot = B,method = "group",
-                                            Boot_get.param(parameters.list[[B]]),
-                                            cor = adjacency_cor(Bootstrap = Bootstrap.list[[B]],what = "observed")),
-                                 data.frame(boot = B,method = "focal",
-                                            Boot_get.param(parameters.list[[B]]),
-                                            cor = adjacency_cor(Bootstrap = Bootstrap.list[[B]],what = "focal")))
                          }
 )
 
@@ -284,10 +272,13 @@ ggplot(data.long[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.
 ggplot(data.long[obs.prob %in% c("network","trait")],aes(interaction(method,obs.prob),cor,colour = method))+facet_grid(mode~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+theme_bw()
 ggplot(data.long[!(obs.prob %in% c("network.pos","trait.pos","network.neg","trait.neg"))],aes(interaction(method,obs.prob),cor,colour = method))+facet_grid(mode~focal.list)+geom_jitter(alpha=0.2)+geom_boxplot()+theme_bw()
 
-ggplot(data.summary[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),cor,fill = method))+
-  facet_grid(Network~focal.list)+geom_bar(stat = "identity",alpha=0.8)+geom_errorbar(aes(ymin = cor-sd,ymax=cor+sd),width = 0.2)+coord_flip()+theme_bw()
-ggplot(data.summary[obs.prob.type %in% c("net","tra")],aes(interaction(method,obs.prob.details),cor,fill = method))+
-  facet_grid(obs.prob.type+focal.list~Network)+geom_bar(stat = "identity",alpha=0.8)+geom_errorbar(aes(ymin = cor-sd,ymax=cor+sd),width = 0.2)+mytheme
+ggplot(data.summary[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),cor,fill = method))+geom_hline(yintercept = 0)+
+  geom_errorbar(aes(ymin = cor-sd,ymax=cor+sd),colour="grey50",width = 0.2)+
+  facet_grid(obs.prob.type+focal.list~Network)+geom_bar(stat = "identity",alpha=1)+mytheme
+ggplot(data.summary[obs.prob.type %in% c("net","tra")],aes(interaction(method,obs.prob.details),cor,fill = method))+geom_hline(yintercept = 0)+
+  geom_errorbar(aes(ymin = cor-sd,ymax=cor+sd),colour="grey50",width = 0.2)+
+  facet_grid(obs.prob.type+focal.list~Network)+geom_bar(stat = "identity",alpha=1)+mytheme
 ggplot(data.summary[obs.prob.type=="unb"],aes(obs.prob.details,cor,colour = method,group=interaction(method,obs.prob.type)))+
-  facet_grid(focal.list~Network)+geom_linerange(aes(ymin = cor-sd,ymax=cor+sd))+geom_line()+geom_point(shape=21,fill="white")+
-  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$cor)-0.01,1))+mytheme
+  facet_grid(focal.list~Network)+geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
+  geom_linerange(aes(ymin = cor-sd,ymax=cor+sd))+geom_line()+geom_point(shape=21,fill="white")+
+  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$cor)-0.1,1))+mytheme

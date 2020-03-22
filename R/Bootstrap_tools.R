@@ -149,6 +149,35 @@ Boot_get.list<- function(Bootstrap,what=c("group","focal","theoretical","observe
   )
 }
 
+#' Title
+#'
+#' @param Bootstrap
+#' @param what
+#'
+#' @return
+#' @export
+#'
+#' @examples
+Boot_get.adjacency<- function(Bootstrap,what=c("group","focal","theoretical","observed")){
+  what<- match.arg(what)
+
+  method<- attr(Bootstrap,"method");
+  keep<- attr(Bootstrap,"keep");
+  output<- attr(Bootstrap,"output");
+
+  if((what %in% c("theoretical","observed")) & (keep==FALSE)) {
+    warning(paste0("keep was set to FALSE in Bootstrap. Do you mean to retrieve group?"))
+    what<- "group";
+  }
+  if((what %in% c("group","focal")) & (method!="both" & method!=what)) {stop("Requested List doesn't exist in provided Bootstrap.")}
+  switch(output,
+         "list" = stop("WIP. Need to implement switch case where an adjacency is automatically retrieved from the stored list."),
+         "adjacency" = Boot_get.list(Bootstrap = Bootstrap,what = what),
+         "all" = Boot_get.list(Bootstrap = Bootstrap,what = what)$adjacency
+  )
+
+}
+
 #' Row bind list of data frames
 #' wrapper to one-function do.call rbind over a lapply list
 #'
@@ -221,8 +250,8 @@ adjacency_cor<- function(Bootstrap.list,what = c("observed","focal"),n.boot = le
   what<- match.arg(what)
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
          function(b) {
-           stats::cor(c(Boot_get.list(Bootstrap.list,"theoretical")$adjacency[[b]]),   # c() flattens the matrix to consider it like a vector
-                      c(Boot_get.list(Bootstrap.list,what)$adjacency[[b]]))
+           stats::cor(c(Boot_get.adjacency(Bootstrap.list,"theoretical")[[b]]),   # c() flattens the matrix to consider it like a vector
+                      c(Boot_get.adjacency(Bootstrap.list,what)[[b]]))
          }
   )
 }
