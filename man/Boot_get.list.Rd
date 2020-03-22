@@ -5,12 +5,18 @@
 \title{Retrieve specific data from Boot_scans() output
 Subset rich Bootstrap output choosing what's needed}
 \usage{
-Boot_get.list(Bootstrap, what = c("group", "focal", "theoretical", "observed"))
+Boot_get.list(
+  Bootstrap,
+  what = c("group", "focal", "theoretical", "observed"),
+  format = c("both", "list", "adjacency")
+)
 }
 \arguments{
-\item{Bootstrap}{Boot_scans() final output}
+\item{Bootstrap}{Bootstrap output object}
 
 \item{what}{character scalar, data type requested}
+
+\item{format}{character scalar, output format type requested ("both","list" or "adjacency").}
 }
 \value{
 list which structure depends on chosen data type and Bootstrap attributes
@@ -38,6 +44,7 @@ Boot_get.list(Bootstrap,"observed")
 Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
                        scaled = TRUE,obs.prob=0.7,keep=TRUE,
                        method = "both",mode = "directed",output = "all")
-Boot_get.list(Bootstrap,"focal")$adjacency
-Boot_get.list(Bootstrap,"observed")$list
+Boot_get.list(Bootstrap,"observed","both")
+Boot_get.list(Bootstrap,"observed","adjacency")
+Boot_get.list(Bootstrap,"observed","list")
 }

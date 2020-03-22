@@ -17,6 +17,8 @@
 #' @param output Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix
 #' @param n.cores number of threads to use while performingh the bootstrap
 #' @param cl Optional cluster object (cf snow package), experimentally set to put the makeCluster and stopCluster out of the bootable function. (WIP, next implementation should rethink this).
+#' @param Adj.subfun subsetting function of the adjacency matrix. Driven by igraph "mode" argument
+#' @param prob output of Binary.prob function. Internal use when wrapped with Boot_scans, to speed up bootstrap process
 #'
 #' @return according to output and method: a list of iterated scans, or an adjacency matrix
 #' @export
@@ -44,7 +46,7 @@
 iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),
                          focal.list=NULL,scaled=FALSE,obs.prob=NULL,keep=FALSE,
                          mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
-                         output=c("list","adjacency","all"),n.cores=(parallel::detectCores()-1),cl=NULL,Adj.subfun,prob){
+                         output=c("list","adjacency","all"),n.cores=(parallel::detectCores()-1),cl=NULL,Adj.subfun=NULL,prob=NULL){
   b<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
   if(is.null(cl)) {cl<- snow::makeCluster(n.cores);doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))} # left to avoid error if the function is used alone, but should probably be used internally from Boot_scans() now.
 

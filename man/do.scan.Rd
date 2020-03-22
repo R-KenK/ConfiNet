@@ -12,7 +12,9 @@ do.scan(
   obs.prob = NULL,
   keep = FALSE,
   mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus"),
-  output = c("group", "focal", "both")
+  method = c("group", "focal", "both"),
+  Adj.subfun = NULL,
+  prob = NULL
 )
 }
 \arguments{
@@ -33,7 +35,11 @@ do.scan(
 
 \item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
 
-\item{output}{Character scalar, specifies if the function should return a whole-group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).}
+\item{method}{Character scalar, specifies if the function should return a whole-group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).}
+
+\item{Adj.subfun}{subsetting function of the adjacency matrix. Driven by igraph "mode" argument}
+
+\item{prob}{output of Binary.prob function. Internal use when wrapped with Boot_scans, to speed up bootstrap process}
 }
 \value{
 a square binary matrix representing the whle group scan
@@ -51,12 +57,12 @@ Adj[non.diagonal(Adj)]<- sample(0:30,n*(n-1),replace = TRUE)
 Adj
 
 do.scan(Adj,42)
-do.scan(Adj,42,"c",output = "focal")
+do.scan(Adj,42,"c",method = "focal")
 Reduce("+",lapply(1:42,function(s) do.scan(Adj,42)))
 
 focal.list<- sample(nodes,42,replace = TRUE)
 table(focal.list)
-L<- lapply(1:42,function(s) do.scan(Adj,42,focal.list[s],output = "both"))
+L<- lapply(1:42,function(s) do.scan(Adj,42,focal.list[s],method = "both"))
 
 list(group = round(Reduce("+",lapply(L,function(l) l$group))/42,3),
      focal = {foc<- do.call(rbind,

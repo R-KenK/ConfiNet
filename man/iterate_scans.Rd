@@ -16,7 +16,9 @@ iterate_scans(
   mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus"),
   output = c("list", "adjacency", "all"),
   n.cores = (parallel::detectCores() - 1),
-  cl = NULL
+  cl = NULL,
+  Adj.subfun = NULL,
+  prob = NULL
 )
 }
 \arguments{
@@ -46,6 +48,10 @@ iterate_scans(
 \item{n.cores}{number of threads to use while performingh the bootstrap}
 
 \item{cl}{Optional cluster object (cf snow package), experimentally set to put the makeCluster and stopCluster out of the bootable function. (WIP, next implementation should rethink this).}
+
+\item{Adj.subfun}{subsetting function of the adjacency matrix. Driven by igraph "mode" argument}
+
+\item{prob}{output of Binary.prob function. Internal use when wrapped with Boot_scans, to speed up bootstrap process}
 }
 \value{
 according to output and method: a list of iterated scans, or an adjacency matrix

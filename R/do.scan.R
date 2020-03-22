@@ -12,7 +12,9 @@
 #' }
 #' @param keep logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.
 #' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
-#' @param output Character scalar, specifies if the function should return a whole-group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).
+#' @param method Character scalar, specifies if the function should return a whole-group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).
+#' @param Adj.subfun subsetting function of the adjacency matrix. Driven by igraph "mode" argument
+#' @param prob output of Binary.prob function. Internal use when wrapped with Boot_scans, to speed up bootstrap process
 #'
 #' @return a square binary matrix representing the whle group scan
 #' @export
@@ -26,12 +28,12 @@
 #' Adj
 #'
 #' do.scan(Adj,42)
-#' do.scan(Adj,42,"c",output = "focal")
+#' do.scan(Adj,42,"c",method = "focal")
 #' Reduce("+",lapply(1:42,function(s) do.scan(Adj,42)))
 #'
 #' focal.list<- sample(nodes,42,replace = TRUE)
 #' table(focal.list)
-#' L<- lapply(1:42,function(s) do.scan(Adj,42,focal.list[s],output = "both"))
+#' L<- lapply(1:42,function(s) do.scan(Adj,42,focal.list[s],method = "both"))
 #'
 #' list(group = round(Reduce("+",lapply(L,function(l) l$group))/42,3),
 #'      focal = {foc<- do.call(rbind,
@@ -55,7 +57,7 @@
 #' )
 do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
                    mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
-                   method = c("group","focal","both"),Adj.subfun,prob){
+                   method = c("group","focal","both"),Adj.subfun=NULL,prob=NULL){
   if(nrow(Adj)==ncol(Adj)) {n<- nrow(Adj);nodes_names<- row.names(Adj)} else {stop("Adj is not a square matrix")}
   mode<- match.arg(mode);
   method<- match.arg(method);
@@ -68,6 +70,20 @@ do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
   }
 
   Scan<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes_names,nodes_names))
+  if(is.null(Adj.subfun)) {
+    Adj.subfun<- switch(mode,
+                        "directed" = ,
+                        "undirected" = ,
+                        "max" = ,
+                        "min" = ,
+                        "plus" = non.diagonal,
+                        "upper" = upper.tri,
+                        "lower" =  lower.tri
+    )
+  }
+  if(is.null(prob)) {
+    prob<- Binary.prob(Adj=Adj,total_scan=total_scan,mode = mode)
+  }
 
   Scan[Adj.subfun(Scan)]<- sapply(1:length(Scan[Adj.subfun(Scan)]),
                                   function(dyad) {

@@ -26,6 +26,7 @@ Bootstrap_add.attributes<- function(Bootstrap,method,keep,mode,output){
 #' Retrieve specific data from Boot_scans() output
 #' Subset rich Bootstrap output choosing what's needed
 #'
+#' @param Bootstrap Bootstrap output object
 #' @param what character scalar, data type requested
 #' @param format character scalar, output format type requested ("both","list" or "adjacency").
 #'
@@ -214,12 +215,31 @@ Boot_get.param<- function(parameters){
   )
 }
 
+#' Calculate desired data from simulation
+#' Internal use. To ease the recollection of a given bootstrap performed through Boot_scans() iterations alongside a parameters.list
+#'
+#' @param Bootstrap.list Bootstrap output object
+#' @param method sampling method to retrieve data for.
+#'
+#' @return a data frame of desired data
+#' @export
+#'
+#' @examples
+#' #Internal use in Simulation_script.R.
+Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
+  data.frame(cor = adjacency_cor(Bootstrap.list = Bootstrap.list,method = method)#,
+             # HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
+  )
+}
+
+
+# analyses tools ----------------------------------------------------------
+
 #' Calculate the correlation coefficient between "flattened" adjacency matrices
 #' Provide the correlation coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
 #'
 #' @param Bootstrap.list an output of Boot_scan()
-#' @param n.boot number of Bootstrap to go through
-#' @param what character scalar, indicate if the function should output the coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
+#' @param method character scalar, indicate if the function should output the coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
 #'
 #' @return a vector of correlation coefficients
 #' @export
@@ -228,28 +248,29 @@ Boot_get.param<- function(parameters){
 #'
 #' @examples
 #' #Internal use in Simulation_script.R.
-adjacency_cor<- function(Bootstrap.list,what = c("observed","focal"),n.boot = length(Bootstrap.list)){
-  what<- match.arg(what)
+adjacency_cor<- function(Bootstrap.list,method = c("group","focal")){
+  method<- match.arg(method)
+  if(method=="group") {method<- "observed"}
+  n.boot = length(Bootstrap.list)
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
          function(b) {
            stats::cor(c(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]]),   # c() flattens the matrix to consider it like a vector
-                      c(Boot_get.list(Bootstrap.list,what,"adjacency")[[b]]))
+                      c(Boot_get.list(Bootstrap.list,method,"adjacency")[[b]]))
          }
   )
 }
-# HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
-
 
 # Simulation workflow tools -----------------------------------------------
 
-#' Title
+#' Create a list of parameter combinations
+#' to be used in simulations of network sampling
 #'
-#' @param Adj
-#' @param total_scan
-#' @param n.cores
-#' @param cl
+#' @param Adj reference adjacency matrix (especially for network-based observation bias)
+#' @param total_scan integer, total number of scan to be performed in each simulation
+#' @param n.cores number of cores to use to generate (in parallel) the parameter combinations list
+#' @param cl optional cluster object to use, otherwise automatically created when n.cores is inputted
 #'
-#' @return
+#' @return a list of lists of the different parameter combinations.
 #' @export
 #'
 #' @examples
@@ -278,6 +299,7 @@ initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()
   )
 
   if(is.null(cl)) {cl<- snow::makeCluster(n.cores);doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))} # left to avoid error if the function is used alone, but should probably be used internally from Boot_scans() now.
+  p<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
   parameters.list<- foreach::`%dopar%`(
     foreach::foreach(p=1:nrow(parameters.comb)),
     list(
@@ -301,13 +323,14 @@ initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()
   parameters.list
 }
 
-#' Title
+#' Retrieve data from list of network bootstrap results
+#' To be used in a loop/lapply. format them in a ready to be analyzed data frame
 #'
-#' @param B
-#' @param Bootstrap.list
-#' @param parameters.list
+#' @param B index of the network from which data are collected.
+#' @param Bootstrap.list list of bootstrap of a given network, through different parameters
+#' @param parameters.list list of parameters used in bootstrap. Should be loopable similarly to Bootstrap.list
 #'
-#' @return
+#' @return a data frame of collected data per network and per parameter combination
 #' @export
 #'
 #' @examples
@@ -315,12 +338,13 @@ initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()
 Get.data<- function(B,Bootstrap.list,parameters.list){
   rbind_lapply(seq_along(Bootstrap.list),
                function(b){
+                 parameters.list.df<- Boot_get.param(parameters.list[[b]])
                  rbind(data.frame(Network = B,boot = b,method = "group",
-                                  Boot_get.param(parameters.list[[b]]),
-                                  cor = adjacency_cor(Bootstrap = Bootstrap.list[[b]],what = "observed")),
+                                  parameters.list.df,
+                                  Boot_calc.data(Bootstrap.list[[b]],method = "group")),
                        data.frame(Network = B,boot = b,method = "focal",
-                                  Boot_get.param(parameters.list[[b]]),
-                                  cor = adjacency_cor(Bootstrap = Bootstrap.list[[b]],what = "focal")))
+                                  parameters.list.df,
+                                  Boot_calc.data(Bootstrap.list[[b]],method = "focal")))
                }
   )
 }
