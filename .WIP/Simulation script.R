@@ -16,7 +16,7 @@ source(".WIP/ASNR.tools.R")
 # Here preferably should be implemented as automatic import from ASNR/networkdata
 
 set.seed(42)
-n.boot<- 4;
+n.boot<- 25;
 
 asnr.weighted.dir<- list.files("C:/R/Git/asnr/Networks/Mammalia/",pattern = "_weighted",full.names = TRUE)
 
@@ -41,9 +41,9 @@ with.total_scan<- !sapply(TOTAL_SCAN,is.null)
 ADJ<- ADJ[with.total_scan]
 TOTAL_SCAN<- TOTAL_SCAN[with.total_scan]
 
-with.total_scan.inf1000<- sapply(TOTAL_SCAN,function(t) t<1000)
-ADJ<- ADJ[with.total_scan.inf1000]
-TOTAL_SCAN<- TOTAL_SCAN[with.total_scan.inf1000]
+#with.total_scan.inf1000<- sapply(TOTAL_SCAN,function(t) t<1000)
+#ADJ<- ADJ[with.total_scan.inf1000]
+#TOTAL_SCAN<- TOTAL_SCAN[with.total_scan.inf1000]
 # Parameter choices -------------------------------------------------------
 
 # Generate parameters list for each network once and for all --------------
@@ -109,7 +109,7 @@ ggplot(data.summary[obs.prob.type %in% c("net","tra")],aes(interaction(method,ob
 ggplot(data.summary[obs.prob.type=="unb"],aes(obs.prob.details,cor,colour = method,group=interaction(method,obs.prob.type)))+
   facet_grid(focal.list~Network)+geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
   geom_linerange(aes(ymin = cor-sd.cor,ymax=cor+sd.cor))+geom_line()+geom_point(shape=21,fill="white")+
-  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$cor)-0.1,1))+mytheme
+  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$cor)-max(data.summary[obs.prob.type=="unb"]$sd.cor),1))+mytheme
 
 # degree correlation
 ggplot(data.summary[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),degree,fill = method))+geom_hline(yintercept = 0)+
@@ -121,7 +121,7 @@ ggplot(data.summary[obs.prob.type %in% c("net","tra")],aes(interaction(method,ob
 ggplot(data.summary[obs.prob.type=="unb"],aes(obs.prob.details,degree,colour = method,group=interaction(method,obs.prob.type)))+
   facet_grid(focal.list~Network)+geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
   geom_linerange(aes(ymin = degree-sd.degree,ymax=degree+sd.degree))+geom_line()+geom_point(shape=21,fill="white")+
-  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$degree)-0.1,1))+mytheme
+  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$degree)-max(data.summary[obs.prob.type=="unb"]$sd.degree),1))+mytheme
 
 # strength correlation
 ggplot(data.summary[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),strength,fill = method))+geom_hline(yintercept = 0)+
@@ -133,7 +133,7 @@ ggplot(data.summary[obs.prob.type %in% c("net","tra")],aes(interaction(method,ob
 ggplot(data.summary[obs.prob.type=="unb"],aes(obs.prob.details,strength,colour = method,group=interaction(method,obs.prob.type)))+
   facet_grid(focal.list~Network)+geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
   geom_linerange(aes(ymin = strength-sd.strength,ymax=strength+sd.strength))+geom_line()+geom_point(shape=21,fill="white")+
-  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$strength)-0.1,1))+mytheme
+  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$strength)-max(data.summary[obs.prob.type=="unb"]$sd.strength),1))+mytheme
 
 # eigen-vector correlation
 ggplot(data.summary[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),EV,fill = method))+geom_hline(yintercept = 0)+
@@ -145,4 +145,4 @@ ggplot(data.summary[obs.prob.type %in% c("net","tra")],aes(interaction(method,ob
 ggplot(data.summary[obs.prob.type=="unb"],aes(obs.prob.details,EV,colour = method,group=interaction(method,obs.prob.type)))+
   facet_grid(focal.list~Network)+geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
   geom_linerange(aes(ymin = EV-sd.EV,ymax=EV+sd.EV))+geom_line()+geom_point(shape=21,fill="white")+
-  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$EV)-0.1,1))+mytheme
+  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$EV)-max(data.summary[obs.prob.type=="unb"]$sd.EV),1))+mytheme
