@@ -230,7 +230,10 @@ Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
   data.frame(cor = adjacency_cor(Bootstrap.list = Bootstrap.list,method = method),
              degree = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.deg),
              strength = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.strength),
-             EV = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.EV)
+             EV = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.EV),
+             gw = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Ken_gw),
+             frob = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Frobenius_from_adjacency),
+             L_p.inv = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Pseudo.inv_Laplacian.dist)
              # HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
   )
 }
@@ -274,6 +277,8 @@ adjacency_cor<- function(Bootstrap.list,method = c("group","focal")){
 #' @return a vector of coefficient of correlations between theoretical and empirical methods derived network node centralities.
 #' @export
 #'
+#' @importFrom stats cor
+#'
 #' @examples
 #' #Internal use in Simulation_script.R.
 centrality_cor<- function(Bootstrap.list,method = c("group","focal"),centrality.fun){
@@ -283,7 +288,7 @@ centrality_cor<- function(Bootstrap.list,method = c("group","focal"),centrality.
   mode<- attr(Bootstrap.list,"mode")
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
          function(b) {
-           cor(
+           stat::cor(
              centrality.fun(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]],mode=mode),
              centrality.fun(Boot_get.list(Bootstrap.list,method,"adjacency")[[b]],mode=mode)
            )
@@ -313,6 +318,84 @@ compute.flowbet<- function(graph,mode){
   FB<- sna::flowbet(graph.network)
   names(FB)<- igraph::vertex_attr(graph)[[1]] # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
   FB
+}
+
+#' Wrapper to calculate adjacency/network distances
+#'
+#' @param Bootstrap.list an output of Boot_scan()
+#' @param method character scalar, indicate if the function should output the coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
+#' @param centrality.fun a centrality function taking an igraph object (or an adjacency matrix but transforms it to an igraph object first) and returns an ordered vector of vertex centralities
+#'
+#' @return a vector of coefficient of correlations between theoretical and empirical methods derived network node centralities.
+#' @export
+#'
+#' @importFrom stats cor
+#'
+#' @examples
+#' #Internal use in Simulation_script.R.
+adj_distance<- function(Bootstrap.list,method = c("group","focal"),dist.fun,mode=NULL){
+  method<- match.arg(method)
+  if(method=="group" & attr(Bootstrap.list,"keep")==TRUE) {method<- "observed"}
+  n.boot = length(Bootstrap.list)
+  mode<- attr(Bootstrap.list,"mode")
+  sapply(1:n.boot,  # needs function to gather and structure in a data frame
+         function(b) {
+           dist.fun(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]],Boot_get.list(Bootstrap.list,method,"adjacency")[[b]],mode = mode)
+         }
+  )
+}
+# arg
+# adj_distance(tost,"group",Frobenius_from_adjacency)
+# adj_distance(tost,"group",Pseudo.inv_Laplacian.dist)
+# adj_distance(tost,"group",Ken_gw)
+
+#' Prototype Gorov-Wasserstein network/adjacency matrix distance
+#' USE WITH CAUTION. THEORETICAL BACKGROUND NOT WELL DEFINED
+#'
+#' @param X an adjacency matrix
+#' @param Y another adjacency matrix to calculate the distance with X
+#'
+#' @return a GW distance ?
+#' @export
+#' @importFrom gwDist solve_FLB_Rglpk
+#' @importFrom gwDist gwDist
+#'
+#' @examples
+#' #Internal prototype
+Ken_gw<- function(X,Y,mode){
+  Adj.subfun<- switch(mode,
+                      "directed" = non.diagonal,
+                      "plus" = ,
+                      "undirected" = ,
+                      "max" = ,
+                      "min" = ,
+                      "upper" = upper.tri,
+                      "lower" =  lower.tri
+  )
+  points_X<- X[Adj.subfun(X)];points_Y<- Y[Adj.subfun(Y)]
+  d_X<- sapply(seq_along(points_X), function(i) sapply(seq_along(points_X), function(j) sqrt((points_X[i]-points_X[j])^2)));
+  d_Y<- sapply(seq_along(points_Y), function(i) sapply(seq_along(points_Y), function(j) sqrt((points_Y[i]-points_Y[j])^2)));
+  prob_X<- prob_Y<- rep(1/length(points_X),length(points_X));
+  sol <- gwDist::solve_FLB_Rglpk(X = points_X,Y = points_Y,d_X = d_X,d_Y = d_Y,mu_X = prob_X,mu_Y = prob_Y,p = 1)$solution
+  gwDist::gwDist(sol, d_X, d_Y, prob_X, prob_Y)$optimum
+}
+
+Frobenius_from_adjacency<- function(X,Y=0,...){
+  sqrt(sum((X-Y)^2))
+}
+
+# Frobenius_from_adjacency(theo)
+
+L_p.inv<- function(Adj){
+  G<-igraph::graph.adjacency(Adj,mode = "max",weighted = TRUE)
+  L<- igraph::laplacian_matrix(G,sparse = FALSE)
+  corpcor::pseudoinverse(L)
+}
+
+Pseudo.inv_Laplacian.dist<- function(X,Y,...){
+  L_p.inv.X<- L_p.inv(X)
+  L_p.inv.Y<- L_p.inv(Y)
+  Frobenius_from_adjacency(L_p.inv.X,L_p.inv.Y)^2/(Frobenius_from_adjacency(L_p.inv.X)*Frobenius_from_adjacency(L_p.inv.Y))
 }
 
 # Simulation workflow tools -----------------------------------------------
@@ -403,3 +486,10 @@ Get.data<- function(B,Bootstrap.list,parameters.list){
                }
   )
 }
+#
+# test <- Boot_calc.data(tost,method = "group")
+# plot(test$gw,test$frob)
+# plot(test$frob,test$gw)
+# test$frob.inv<- 1/test$frob
+# test$gw.inv<- 1/test$gw
+# FactoMineR::PCA(test[,c("cor","strength","EV","gw.inv","frob.inv")])

@@ -17,7 +17,10 @@ Imports:
     pbapply,
     igraph,
     intergraph,
+    gwDist,
     sna
+Remotes:
+    R-KenK/gwDist
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true
