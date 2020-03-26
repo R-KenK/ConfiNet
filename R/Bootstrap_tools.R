@@ -380,13 +380,29 @@ Ken_gw<- function(X,Y,mode){
   gwDist::gwDist(sol, d_X, d_Y, prob_X, prob_Y)$optimum
 }
 
+#' Title
+#'
+#' @param X
+#' @param Y
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 Frobenius_from_adjacency<- function(X,Y=0,...){
   sqrt(sum((X-Y)^2))
 }
 
-# Frobenius_from_adjacency(theo)
-
-L_p.inv<- function(Adj){
+#' Title
+#'
+#' @param Adj
+#'
+#' @return
+#' @export
+#'
+#' @examples
+L_p.inv<- function(Adj){ # cf https://math.stackexchange.com/questions/2087801/how-to-measure-the-similarity-between-two-graph-networks
   G<-igraph::graph.adjacency(Adj,mode = "max",weighted = TRUE)
   L<- igraph::laplacian_matrix(G,sparse = FALSE)
   corpcor::pseudoinverse(L)
@@ -396,6 +412,20 @@ Pseudo.inv_Laplacian.dist<- function(X,Y,...){
   L_p.inv.X<- L_p.inv(X)
   L_p.inv.Y<- L_p.inv(Y)
   Frobenius_from_adjacency(L_p.inv.X,L_p.inv.Y)^2/(Frobenius_from_adjacency(L_p.inv.X)*Frobenius_from_adjacency(L_p.inv.Y))
+}
+
+#' Title
+#'
+#' @param X
+#' @param Y
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
+NetStrucDiss<-function(X,Y,...){
+  "WIP"
 }
 
 # Simulation workflow tools -----------------------------------------------
