@@ -80,11 +80,11 @@ iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),
 
   switch(output,
          "list" = return(scan_list),
-         "adjacency" = return(sum_up.scans(Adj = Adj,scan_list = scan_list,keep = keep,scaled = scaled,method = method)),
+         "adjacency" = return(sum_up.scans(Adj = Adj,scan_list = scan_list,keep = keep,scaled = scaled,method = method,mode = mode)),
          "all" = return(
            list(
              list = scan_list,
-             adjacency = sum_up.scans(Adj = Adj,scan_list = scan_list,keep = keep,scaled = scaled,method = method)
+             adjacency = sum_up.scans(Adj = Adj,scan_list = scan_list,keep = keep,scaled = scaled,method = method,mode = mode)
            )
          )
   )
