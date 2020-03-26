@@ -76,7 +76,7 @@ non.zero.non.diag<- function(M) {which(M>0&!diagonal(M),arr.ind = TRUE,useNames 
 #' #Internal use
 matrix_sum_na.rm<-function(X,Y) {ifelse(!is.na(X),X,0)+ifelse(!is.na(Y),Y,0)}
 
-#' Get number of edge observations
+#' Get number of edge observations (for group scans with unobservable individuals)
 #' quantify actual edge-wise sampling effort, considering that some weren't observable in all group scans.Internal use.
 #'
 #' @param scan_list list of binary group scans, with NAs when the dyad was not observable.
@@ -91,8 +91,8 @@ n.observed_edges<- function(scan_list,diag=0){
   Reduce("+",
          lapply(scan_list,
                 function(scan){
-                  observed<- ifelse(!is.na(scan),1,0)
-                  if(!is.null(diag)) {diag(observed)<- diag}
+                  observed<- ifelse(!is.na(scan),1,0) # counting part of the algorithm
+                  if(!is.null(diag)) {diag(observed)<- diag} # doesn't count the diagonal by default. Left the option to count if self loops should be considered
                   observed
                 }
          )
@@ -122,14 +122,8 @@ adjacency_mode<- function(Adj,mode = c("directed", "undirected", "max","min", "u
   mode<- match.arg(mode)
   switch(mode,
          "undirected" = ,
-         "max" = {
-           Adj<- ifelse(Adj>t(Adj),Adj,0)
-           Adj+t(Adj)
-         },
-         "min" = {
-           Adj<- ifelse(Adj<t(Adj),Adj,0)
-           Adj+t(Adj)
-         },
+         "max" = ifelse(Adj>=t(Adj),Adj,t(Adj)),
+         "min" = ifelse(Adj<=t(Adj),Adj,t(Adj)),
          "plus" = Adj+t(Adj),
          "directed" = ,
          "upper" = ,
