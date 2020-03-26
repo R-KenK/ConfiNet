@@ -22,7 +22,7 @@ sum_up.scans<- function(Adj,scan_list,scaled=FALSE,keep=FALSE,
            if(keep){
              scan_list.theoretical<- lapply(scan_list,function(l) l$theoretical);
              scan_list.observed<- lapply(scan_list,function(l) l$observed);
-             summed_up<- Reduce(matrix_sum_na.rm,scan_list.observed)/ifelse(scaled,n.observed_edges(scan_list.observed,diag = 1),1)
+             summed_up<- Reduce(matrix_sum_na.rm,scan_list.observed)/ifelse(scaled,n.observed_edges(scan_list.observed,diag = 1),1) # here and hereafter diag = 1 because while the count of the diagonal is irrelevant, it shouldn't be 0/0.
              adj.observed<- adjacency_mode(summed_up,mode = mode)
              list(
                theoretical = Reduce(matrix_sum_na.rm,scan_list.theoretical)/ifelse(scaled,n.observed_edges(scan_list.theoretical,diag = 1),1),
