@@ -231,9 +231,7 @@ Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
              degree = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.deg),
              strength = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.strength),
              EV = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.EV),
-             gw = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Ken_gw),
-             frob = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Frobenius_from_adjacency),
-             L_p.inv = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Pseudo.inv_Laplacian.dist)
+             frob = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Frobenius_from_adjacency)
              # HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
   )
 }
@@ -288,7 +286,7 @@ centrality_cor<- function(Bootstrap.list,method = c("group","focal"),centrality.
   mode<- attr(Bootstrap.list,"mode")
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
          function(b) {
-           stat::cor(
+           stats::cor(
              centrality.fun(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]],mode=mode),
              centrality.fun(Boot_get.list(Bootstrap.list,method,"adjacency")[[b]],mode=mode)
            )
