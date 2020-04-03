@@ -70,27 +70,17 @@ do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
   }
 
   Scan<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes_names,nodes_names))
-  if(is.null(Adj.subfun)) {
-    Adj.subfun<- switch(mode,
-                        "directed" = ,
-                        "undirected" = ,
-                        "max" = ,
-                        "min" = ,
-                        "plus" = non.diagonal,
-                        "upper" = upper.tri,
-                        "lower" =  lower.tri
-    )
-  }
-  if(is.null(prob)) {
-    prob<- Binary.prob(Adj=Adj,total_scan=total_scan,mode = mode)
-  }
-
-  Scan[Adj.subfun(Scan)]<- sapply(1:length(Scan[Adj.subfun(Scan)]),
-                                  function(dyad) {
-                                    Scan[Adj.subfun(Scan)][dyad]<- sample(c(1,0),1,replace = TRUE,prob=prob[dyad,c("present","absent")])
-                                  }
+  Adj.subfun<- switch(mode,
+                      "directed" = ,
+                      "undirected" = ,
+                      "max" = ,
+                      "min" = ,
+                      "plus" = non.diagonal,
+                      "upper" = upper.tri,
+                      "lower" =  lower.tri
   )
-
+  prob<- Binary.prob(Adj=Adj,total_scan=total_scan,mode = mode)
+  Scan[Adj.subfun(Scan)]<-  rbinom(nrow(prob),1,prob$present)
   Scan<- binary_adjacency_mode(Scan,mode)
 
   if(method == "group") {
