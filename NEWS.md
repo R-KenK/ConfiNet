@@ -1,3 +1,13 @@
+# ConfiNet 0.9.4
+* Replaced in do_scan() sapply(n(n-1),sampling(c(0,1),...,pij)) by cleaner rbinom(n(n-1),1,P). Easier to read and more transparent while way faster. as.numeric(runif(n(n-1) < P) can be faster even, but perhaps less straightforward when compared to math rationale.
+
+
+# ConfiNet 0.9.3
+* Bug fix where mode wasn't passed to sum_up.scans()... Default mode of directed was always in use.
+
+# ConfiNet 0.9.2
+* Fix adjacency_mode weird behaviour with cleaner code.
+
 # ConfiNet 0.9.1
 * Revamp and huge code cleaning of simulation script. Now, considering only an unested list per variable, the parameter combinations are automatically and flexibly generated, and cleanly integrated in the different bootstraps.
 * added Boot_get.param() function to retrieve the stored parameters as a data.frame of factors, to ease further data gathering
