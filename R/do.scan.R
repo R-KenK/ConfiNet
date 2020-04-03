@@ -79,12 +79,7 @@ do.scan<- function(Adj,total_scan,focal=NULL,obs.prob=NULL,keep=FALSE,
                       "lower" =  lower.tri
   )
   prob<- Binary.prob(Adj=Adj,total_scan=total_scan,mode = mode)
-  Scan[Adj.subfun(Scan)]<- sapply(1:length(Scan[Adj.subfun(Scan)]),
-                                  function(dyad) {
-                                    Scan[Adj.subfun(Scan)][dyad]<- sample(c(1,0),1,replace = TRUE,prob=prob[dyad,c("present","absent")])
-                                  }
-  )
-
+  Scan[Adj.subfun(Scan)]<-  rbinom(nrow(prob),1,prob$present)
   Scan<- binary_adjacency_mode(Scan,mode)
 
   if(output == "group") {
