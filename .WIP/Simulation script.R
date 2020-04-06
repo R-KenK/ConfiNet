@@ -16,7 +16,7 @@ source(".WIP/ASNR.tools.R")
 # Here preferably should be implemented as automatic import from ASNR/networkdata
 
 set.seed(42)
-n.boot<- 25;
+n.boot<- 10;
 
 asnr.weighted.dir<- list.files("C:/R/Git/asnr/Networks/Mammalia/",pattern = "_weighted",full.names = TRUE)
 
@@ -41,9 +41,9 @@ with.total_scan<- !sapply(TOTAL_SCAN,is.null)
 ADJ<- ADJ[with.total_scan]
 TOTAL_SCAN<- TOTAL_SCAN[with.total_scan]
 
-#with.total_scan.inf1000<- sapply(TOTAL_SCAN,function(t) t<1000)
-#ADJ<- ADJ[with.total_scan.inf1000]
-#TOTAL_SCAN<- TOTAL_SCAN[with.total_scan.inf1000]
+with.total_scan.inf1000<- sapply(TOTAL_SCAN,function(t) t<1000)
+ADJ<- ADJ[with.total_scan.inf1000]
+TOTAL_SCAN<- TOTAL_SCAN[with.total_scan.inf1000]
 # Parameter choices -------------------------------------------------------
 
 # Generate parameters list for each network once and for all --------------
@@ -63,7 +63,7 @@ data.long<- rbind_lapply(seq_along(ADJ),
                      cat(paste0(a,"/",length(ADJ)," @ ",Sys.time(),"\n"))
                      Adj<- ADJ[[a]]
                      total_scan<- TOTAL_SCAN[[a]]
-                     parameters.list<- PARAMETERS.LIST[[a]]
+                     parameters.list<- PARAMETERS.LIST[[a]][c(1,5,9)]
                      Bootstrap.list<- lapply(seq_along(parameters.list),
                                              function(p){
                                                obs.prob<- parameters.list[[p]]$obs.prob;
@@ -97,7 +97,8 @@ data.long$obs.prob.details<- as.factor(
 data.summary<- data.long[,.(cor=median(cor),sd.cor=sd(cor),
                             degree=median(degree),sd.degree=sd(degree),
                             strength=median(strength),sd.strength=sd(strength),
-                            EV=median(EV),sd.EV=sd(EV)),by = .(Network,obs.prob.type,obs.prob.details,focal.list,mode,method)]
+                            EV=median(EV),sd.EV=sd(EV),
+                            CC=median(ClustCoef),sd.CC=sd(ClustCoef)),by = .(Network,obs.prob.type,obs.prob.details,focal.list,mode,method)]
 
 # Matrix correlation
 ggplot(data.summary[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),cor,fill = method))+geom_hline(yintercept = 0)+
@@ -146,3 +147,18 @@ ggplot(data.summary[obs.prob.type=="unb"],aes(obs.prob.details,EV,colour = metho
   facet_grid(focal.list~Network)+geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
   geom_linerange(aes(ymin = EV-sd.EV,ymax=EV+sd.EV))+geom_line()+geom_point(shape=21,fill="white")+
   scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$EV)-max(data.summary[obs.prob.type=="unb"]$sd.EV),1))+mytheme
+
+# Clusering coefficient distance
+ggplot(data.summary,aes(interaction(method,obs.prob.type,obs.prob.details),CC,fill = method))+geom_hline(yintercept = 0)+
+  geom_errorbar(aes(ymin = CC-sd.CC,ymax=CC+sd.CC),colour="grey50",width = 0.2)+
+  facet_grid(.~Network)+#facet_grid(obs.prob.type+focal.list~Network)+
+  geom_bar(stat = "identity",alpha=1)+mytheme
+ggplot(data.summary,aes(interaction(method,obs.prob.details),CC,fill = method))+geom_hline(yintercept = 0)+
+  geom_errorbar(aes(ymin = CC-sd.CC,ymax=CC+sd.CC),colour="grey50",width = 0.2)+
+  facet_grid(obs.prob.type+focal.list~Network)+
+  geom_bar(stat = "identity",alpha=1)+mytheme
+ggplot(data.summary,aes(obs.prob.details,CC,colour = method,group=interaction(method,obs.prob.type)))+
+  facet_grid(focal.list~Network)+
+  #geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
+  geom_linerange(aes(ymin = CC-sd.CC,ymax=CC+sd.CC))+geom_line()+geom_point(shape=21,fill="white")+
+  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$CC)-max(data.summary[obs.prob.type=="unb"]$sd.CC),1))+mytheme

@@ -230,7 +230,8 @@ Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
   data.frame(cor = adjacency_cor(Bootstrap.list = Bootstrap.list,method = method),
              degree = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.deg),
              strength = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.strength),
-             EV = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.EV)
+             EV = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.EV),
+             ClustCoef = net.metric.diff(Bootstrap.list = Bootstrap.list,method = method,network.fun = weighted.clustering.coeff)
              # HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
   )
 }
@@ -313,6 +314,50 @@ compute.flowbet<- function(graph,mode){
   FB<- sna::flowbet(graph.network)
   names(FB)<- igraph::vertex_attr(graph)[[1]] # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
   FB
+}
+
+#' Wrapper to calculate difference between whole-group network metric
+#'
+#' @param Bootstrap.list an output of Boot_scan()
+#' @param method character scalar, indicate if the function should output the coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
+#' @param network.fun a whole-group network metric function taking an igraph object (or an adjacency matrix but transforms it to an igraph object first) and returns a metric
+#'
+#' @return the difference between metrics of networks obtained via theoretical and empirical methods.
+#' @export
+#'
+#' @examples
+#' #Internal use in Simulation_script.R.
+net.metric.diff<- function(Bootstrap.list,method = c("group","focal"),network.fun){
+  method<- match.arg(method)
+  if(method=="group" & attr(Bootstrap.list,"keep")==TRUE) {method<- "observed"}
+  n.boot = length(Bootstrap.list)
+  mode<- attr(Bootstrap.list,"mode")
+  sapply(1:n.boot,  # needs function to gather and structure in a data frame
+         function(b) {
+           "-"(
+             network.fun(Boot_get.list(Bootstrap.list,method,"adjacency")[[b]],mode=mode),
+             network.fun(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]],mode=mode)
+             )
+         }
+  )
+}
+
+weighted.clustering.coeff<- function(graph,mode){
+  if(!is.matrix(graph)){graph<- igraph::get.adjacency(graph,type = "both",sparse = FALSE,attr = "weight")}
+  if(isSymmetric.matrix(graph)){
+    DirectedClustering::ClustF(mat = graph,type = "undirected")$GlobalCC
+  }else{
+    DirectedClustering::ClustF(mat = graph,type = "directed")$GlobaltotalCC
+  }
+}
+
+generate.null.adj<- function(Adj,total_scan,
+                             Adj.subfun = non.diagonal,scaled = TRUE,
+                             mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
+  n<- nrow(Adj);if(is.null(row.names(Adj))) {nodes<- as.character(1:n)} else {nodes<- row.names(Adj)}
+  Null<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
+  Null[Adj.subfun(Null)]<- rbinom(length(Null[Adj.subfun(Null)]),total_scan,prob = 0.5)
+  adjacency_mode(Null,mode)/ifelse(scaled,total_scan,1)
 }
 
 # Simulation workflow tools -----------------------------------------------

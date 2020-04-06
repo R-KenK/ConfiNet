@@ -28,7 +28,7 @@
 #'
 #' Binary.prob(Adj,42)
 Binary.prob<- function(Adj,total_scan,
-                                mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
+                       mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
   if(total_scan<max(Adj)) {stop("total_scan provided incompatible with the maximum value found in the provided adjacency matrix.")}
   mode<- match.arg(mode)
   Adj.subfun<- switch(mode,
@@ -41,7 +41,6 @@ Binary.prob<- function(Adj,total_scan,
                       "lower" =  lower.tri
   )
   min_resol<- 1/total_scan;
-  # prob.scaled<- (Adj[Adj.subfun(Adj)]*(1-2*min_resol)/max(Adj[Adj.subfun(Adj)]))+min_resol;
   prob.scaled<- (Adj[Adj.subfun(Adj)]*(1-2*min_resol)/total_scan)+min_resol;
   data.frame(present=prob.scaled,absent=1-prob.scaled)
 }
