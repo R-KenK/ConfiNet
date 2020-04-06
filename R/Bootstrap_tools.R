@@ -15,11 +15,13 @@
 #'
 #' @examples
 #' #Internal
-Bootstrap_add.attributes<- function(Bootstrap,method,keep,mode,output){
+Bootstrap_add.attributes<- function(Bootstrap,method,keep,scaled,mode,output,total_scan){
   attr(Bootstrap,"method")<- method;
   attr(Bootstrap,"keep")<- keep;
+  attr(Bootstrap,"scaled")<- scaled;
   attr(Bootstrap,"mode")<- mode;
   attr(Bootstrap,"output")<- output;
+  attr(Bootstrap,"total_scan")<- total_scan;
   Bootstrap
 }
 
@@ -231,7 +233,11 @@ Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
              degree = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.deg),
              strength = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.strength),
              EV = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.EV),
-             ClustCoef = net.metric.diff(Bootstrap.list = Bootstrap.list,method = method,network.fun = weighted.clustering.coeff)
+             ClustCoef = net.metric.diff(Bootstrap.list = Bootstrap.list,method = method,network.fun = weighted.clustering.coeff),
+             Frob = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Frobenius_from_adjacency),
+             Frob.GOF = adj_gof(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Frobenius_from_adjacency),
+             SLap = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Laplacian_spectral.dist),
+             SLap.GOF = adj_gof(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Laplacian_spectral.dist)
              # HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
   )
 }
@@ -358,6 +364,97 @@ generate.null.adj<- function(Adj,total_scan,
   Null<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
   Null[Adj.subfun(Null)]<- rbinom(length(Null[Adj.subfun(Null)]),total_scan,prob = 0.5)
   adjacency_mode(Null,mode)/ifelse(scaled,total_scan,1)
+}
+
+#' Wrapper to calculate adjacency/network distances
+#'
+#' @param Bootstrap.list an output of Boot_scan()
+#' @param method character scalar, indicate if the function should output the coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
+#' @param dist.fun a matrix/network distance function taking an igraph object (or an adjacency matrix but transforms it to an igraph object first) and returns an ordered vector of vertex centralities
+#'
+#' @return a vector of coefficient of correlations between theoretical and empirical methods derived network node centralities.
+#' @export
+#'
+#' @importFrom stats cor
+#'
+#' @examples
+#' #Internal use in Simulation_script.R.
+adj_distance<- function(Bootstrap.list,method = c("group","focal"),dist.fun){
+  method<- match.arg(method)
+  if(method=="group" & attr(Bootstrap.list,"keep")==TRUE) {method<- "observed"}
+  n.boot = length(Bootstrap.list)
+  mode<- attr(Bootstrap.list,"mode")
+  sapply(1:n.boot,  # needs function to gather and structure in a data frame
+         function(b) {
+           dist.fun(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]],Boot_get.list(Bootstrap.list,method,"adjacency")[[b]],mode = mode)
+         }
+  )
+}
+
+#' Wrapper to calculate goodness of fit (GOF) from adjacency/network distances
+#'
+#' @param Bootstrap.list an output of Boot_scan()
+#' @param method character scalar, indicate if the function should output the GOF between the theoretical adjacency matrix and either the empirical one from group or focal method
+#' @param dist.fun a matrix/network distance function taking an igraph object (or an adjacency matrix but transforms it to an igraph object first) and returns an ordered vector of vertex centralities
+#'
+#' @return a vector of GOF values between theoretical and empirical methods.
+#' @export
+#'
+#' @examples
+#' #Internal use in Simulation_script.R.
+adj_gof<- function(Bootstrap.list,method = c("group","focal"),dist.fun){
+  method<- match.arg(method)
+  if(method=="group" & attr(Bootstrap.list,"keep")==TRUE) {method<- "observed"}
+  n.boot = length(Bootstrap.list)
+  scaled<- attr(Bootstrap.list,"scaled")
+  mode<- attr(Bootstrap.list,"mode")
+  total_scan<- attr(Bootstrap.list,"total_scan")
+  Adj.subfun<- switch(mode,"directed" = ,"undirected" = ,"max" = ,"min" = ,"plus" = non.diagonal,
+                      "upper" = upper.tri,"lower" =  lower.tri)
+  sapply(1:n.boot,
+         function(b) {
+           Adj.theo<- Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]]
+           Adj.method<- Boot_get.list(Bootstrap.list,method,"adjacency")[[b]]
+           dist.method<- dist.fun(Adj.theo,Adj.method,mode = mode)
+           dist.null<- dist.fun(Adj.theo,generate.null.adj(Adj = Adj.theo,total_scan = total_scan,scaled = scaled,Adj.subfun = Adj.subfun,mode = mode),mode = mode)
+           1-dist.method/dist.null # cf. Shore and Lubin (2015) p. 19
+         }
+  )
+}
+
+#' Simple Frobenius distance calculation
+#'
+#' @param X an adjacency matrix
+#' @param Y another adjacency matrix, otherwise the distance measuredd is ||X||
+#' @param ... for compatibility when mode has to be inputted
+#'
+#' @return the Frobenius distance
+#' @export
+#'
+#' @examples
+#' #Internal use in Simulation_script.R.
+Frobenius_from_adjacency<- function(X,Y=0,...){
+  sqrt(sum((X-Y)^2))
+}
+
+Laplacian_spectrum<- function(Adj,mode){
+  G<- igraph::graph.adjacency(Adj,weighted = TRUE,mode = mode)
+  zapsmall(eigen(igraph::laplacian_matrix(G))$value)
+}
+
+#' Graph Laplacian spectral distance
+#'
+#' @param X an adjacency matrix
+#' @param Y another adjacency matrix, otherwise the distance measuredd is ||X||
+#' @param ... for compatibility when mode has to be inputted
+#'
+#' @return the Laplacian spectral distance
+#' @export
+#'
+#' @examples
+#' #Internal use for now only.
+Laplacian_spectral.dist<- function(X,Y=0,...){
+  sqrt(sum(Laplacian_spectrum(X,...)-Laplacian_spectrum(Y,...))^2)
 }
 
 # Simulation workflow tools -----------------------------------------------

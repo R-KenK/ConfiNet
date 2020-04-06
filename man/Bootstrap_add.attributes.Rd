@@ -5,7 +5,15 @@
 \title{Keep bootstrap parameters as attributes
 Internal use in Boot_scans(). Add "method", "keep", "mode", "output" attributes to be more easily retrieved by the get function}
 \usage{
-Bootstrap_add.attributes(Bootstrap, method, keep, mode, output)
+Bootstrap_add.attributes(
+  Bootstrap,
+  method,
+  keep,
+  scaled,
+  mode,
+  output,
+  total_scan
+)
 }
 \arguments{
 \item{Bootstrap}{Boot_scans() intermediate output}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/matrix.tools.R
 \name{n.observed_edges}
 \alias{n.observed_edges}
-\title{Get number of edge observations
+\title{Get number of edge observations (for group scans with unobservable individuals)
 quantify actual edge-wise sampling effort, considering that some weren't observable in all group scans.Internal use.}
 \usage{
 n.observed_edges(scan_list, diag = 0)
@@ -16,7 +16,7 @@ n.observed_edges(scan_list, diag = 0)
 a square matrix with element quantifying how many time a dyad has been sampled
 }
 \description{
-Get number of edge observations
+Get number of edge observations (for group scans with unobservable individuals)
 quantify actual edge-wise sampling effort, considering that some weren't observable in all group scans.Internal use.
 }
 \examples{

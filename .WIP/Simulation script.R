@@ -16,7 +16,7 @@ source(".WIP/ASNR.tools.R")
 # Here preferably should be implemented as automatic import from ASNR/networkdata
 
 set.seed(42)
-n.boot<- 10;
+n.boot<- 50;
 
 asnr.weighted.dir<- list.files("C:/R/Git/asnr/Networks/Mammalia/",pattern = "_weighted",full.names = TRUE)
 
@@ -41,9 +41,9 @@ with.total_scan<- !sapply(TOTAL_SCAN,is.null)
 ADJ<- ADJ[with.total_scan]
 TOTAL_SCAN<- TOTAL_SCAN[with.total_scan]
 
-with.total_scan.inf1000<- sapply(TOTAL_SCAN,function(t) t<1000)
-ADJ<- ADJ[with.total_scan.inf1000]
-TOTAL_SCAN<- TOTAL_SCAN[with.total_scan.inf1000]
+# with.total_scan.inf1000<- sapply(TOTAL_SCAN,function(t) t<1000)
+# ADJ<- ADJ[with.total_scan.inf1000]
+# TOTAL_SCAN<- TOTAL_SCAN[with.total_scan.inf1000]
 # Parameter choices -------------------------------------------------------
 
 # Generate parameters list for each network once and for all --------------
@@ -63,7 +63,7 @@ data.long<- rbind_lapply(seq_along(ADJ),
                      cat(paste0(a,"/",length(ADJ)," @ ",Sys.time(),"\n"))
                      Adj<- ADJ[[a]]
                      total_scan<- TOTAL_SCAN[[a]]
-                     parameters.list<- PARAMETERS.LIST[[a]][c(1,5,9)]
+                     parameters.list<- PARAMETERS.LIST[[a]]
                      Bootstrap.list<- lapply(seq_along(parameters.list),
                                              function(p){
                                                obs.prob<- parameters.list[[p]]$obs.prob;
@@ -98,7 +98,11 @@ data.summary<- data.long[,.(cor=median(cor),sd.cor=sd(cor),
                             degree=median(degree),sd.degree=sd(degree),
                             strength=median(strength),sd.strength=sd(strength),
                             EV=median(EV),sd.EV=sd(EV),
-                            CC=median(ClustCoef),sd.CC=sd(ClustCoef)),by = .(Network,obs.prob.type,obs.prob.details,focal.list,mode,method)]
+                            CC=median(ClustCoef),sd.CC=sd(ClustCoef),
+                            Frob=median(Frob),sd.Frob=sd(Frob),
+                            Frob.GOF=median(Frob.GOF),sd.Frob.GOF=sd(Frob.GOF),
+                            SLap=median(SLap),sd.SLap=sd(SLap),
+                            SLap.GOF=median(SLap.GOF),sd.SLap.GOF=sd(SLap.GOF)),by = .(Network,obs.prob.type,obs.prob.details,focal.list,mode,method)]
 
 # Matrix correlation
 ggplot(data.summary[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),cor,fill = method))+geom_hline(yintercept = 0)+
@@ -161,4 +165,44 @@ ggplot(data.summary,aes(obs.prob.details,CC,colour = method,group=interaction(me
   facet_grid(focal.list~Network)+
   #geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
   geom_linerange(aes(ymin = CC-sd.CC,ymax=CC+sd.CC))+geom_line()+geom_point(shape=21,fill="white")+
-  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$CC)-max(data.summary[obs.prob.type=="unb"]$sd.CC),1))+mytheme
+  mytheme
+
+# GOF distance
+ggplot(data.summary,aes(interaction(method,obs.prob.type,obs.prob.details),GOF,fill = method))+geom_hline(yintercept = 0)+
+  geom_errorbar(aes(ymin = GOF-sd.GOF,ymax=GOF+sd.GOF),colour="grey50",width = 0.2)+
+  facet_grid(.~Network)+#facet_grid(obs.prob.type+focal.list~Network)+
+  geom_bar(stat = "identity",alpha=1)+mytheme
+ggplot(data.summary,aes(interaction(method,obs.prob.details),GOF,fill = method))+geom_hline(yintercept = 0)+
+  geom_errorbar(aes(ymin = GOF-sd.GOF,ymax=GOF+sd.GOF),colour="grey50",width = 0.2)+
+  facet_grid(obs.prob.type+focal.list~Network)+
+  geom_bar(stat = "identity",alpha=1)+mytheme
+ggplot(data.summary,aes(obs.prob.details,GOF,colour = method,group=interaction(method,obs.prob.type)))+
+  facet_grid(focal.list~Network)+
+  geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
+  geom_linerange(aes(ymin = GOF-sd.GOF,ymax=GOF+sd.GOF))+geom_line()+geom_point(shape=21,fill="white")+
+  mytheme
+
+# Frob distance
+ggplot(data.summary,aes(interaction(method,obs.prob.type,obs.prob.details),Frob,fill = method))+geom_hline(yintercept = 0)+
+  geom_errorbar(aes(ymin = Frob-sd.frob,ymax=Frob+sd.frob),colour="grey50",width = 0.2)+
+  facet_grid(.~Network)+#facet_grid(obs.prob.type+focal.list~Network)+
+  geom_bar(stat = "identity",alpha=1)+mytheme
+ggplot(data.summary,aes(interaction(method,obs.prob.details),Frob,fill = method))+geom_hline(yintercept = 0)+
+  geom_errorbar(aes(ymin = Frob-sd.frob,ymax=Frob+sd.frob),colour="grey50",width = 0.2)+
+  facet_grid(obs.prob.type+focal.list~Network)+
+  geom_bar(stat = "identity",alpha=1)+mytheme
+ggplot(data.summary,aes(obs.prob.details,Frob,colour = method,group=interaction(method,obs.prob.type)))+
+  facet_grid(focal.list~Network)+
+  geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
+  geom_linerange(aes(ymin = Frob-sd.frob,ymax=Frob+sd.frob))+geom_line()+geom_point(shape=21,fill="white")+
+  mytheme
+
+
+# Draft PCA ---------------------------------------------------------------
+
+data.long.scaled<- data.long;
+data.long.scaled[,c("cor","degree","strength","EV","ClustCoef","Frob","Frob.GOF","SLap","SLap.GOF")]<- data.table(scale(data.long.scaled[,c("cor","degree","strength","EV","ClustCoef","Frob","Frob.GOF","SLap","SLap.GOF")]))
+PCA<- FactoMineR::PCA(data.long.scaled[Network=="1",c("cor","degree","strength","EV","ClustCoef","Frob","Frob.GOF","SLap","SLap.GOF")])
+PCA$eig
+PCA$var$contrib
+PCA$var$coord

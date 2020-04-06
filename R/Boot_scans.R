@@ -91,5 +91,6 @@ Boot_scans<- function(Adj,n.boot,total_scan,method=c("group","focal","both"),
                     method = method,mode = mode,output = output,n.cores = n.cores,cl=cl,Adj.subfun = Adj.subfun,prob = prob)
     }
   )
-  Bootstrap_add.attributes(Bootstrap = Bootstrap,method = method,keep = keep,mode = mode,output = output)
+  Bootstrap_add.attributes(Bootstrap = Bootstrap,method = method,keep = keep,scaled = scaled,
+                           mode = mode,output = output,total_scan = total_scan)
 }
