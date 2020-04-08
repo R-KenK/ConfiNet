@@ -183,6 +183,39 @@ rbind_lapply<- function(X,FUN){
   do.call(rbind,lapply(X = X,FUN = FUN))
 }
 
+#' Row bind list of data frames
+#' wrapper to one-function do.call rbind over a pblapply list
+#'
+#' @param X a list. See details \link[base]{lapply}.
+#' @param FUN a function to subset data frames (or data tables). See details \link[base]{lapply}.
+#'
+#' @return a row bound data frame
+#' @export
+#'
+#' @examples
+#' set.seed(42)
+#'
+#' X<- lapply(1:3,function(i) list(int = 42,df = data.frame(x = runif(10,0,1),y = runif(10,0,1))))
+#' rbind_lapply(X,function(x) x$df)
+rbind_pblapply<- function(X,FUN,n.cores,.export=NULL){
+  cl<- make_cl(n.cores,.export);on.exit(snow::stopCluster(cl))
+  do.call(rbind,pbapply::pblapply(X = X,FUN = FUN,cl = cl))
+}
+
+#' Title
+#'
+#' @param n.cores
+#' @param .export
+#'
+#' @return
+#' @export
+#'
+#' @examples
+make_cl<- function(n.cores,.export){
+  cl<- snow::makeCluster(n.cores);snow::clusterExport(cl,list = .export);doSNOW::registerDoSNOW(cl);
+  cl
+}
+
 #' Bootstrap specific progress bar
 #' Provide feedbacks on the simulation testing situation (which parameters, which combination of parameters over the whole list). Internal use.
 #'
