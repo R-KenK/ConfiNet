@@ -167,11 +167,28 @@ cor.boot<- rbind_lapply(seq_along(parameters.list),
 )
 
 cor.boot<- cor.boot[order(method)]
+cor.boot$method<- factor(cor.boot$method,levels = c("standard","opti.ordered","opti.random"))
+cor.boot$rareness<- cor.boot$max.obs/(cor.boot$N*cor.boot$n)
+
+# saveRDS(cor.boot,".WIP/cor.boot.rds")
 
 library(ggplot2)
-ggplot(cor.boot,aes(method,cor,colour=method))+geom_jitter(alpha=0.2)+geom_boxplot(alpha=0.8)+mytheme
+ggplot(cor.boot,aes(interaction(method,N),cor,colour=method))+
+  facet_grid(.~max.obs)+
+  geom_jitter(alpha=0.2)+geom_boxplot(alpha=0.8)+mytheme
+ggplot(cor.boot,aes(rareness,cor,colour=method,group=interaction(rareness,method)))+
+  geom_jitter(alpha=0.2)+geom_boxplot(alpha=0.8)+mytheme
 
-cor.boot$method<- factor(cor.boot$method,levels = c("standard","opti.ordered","opti.random"))
+cor.summary<- cor.boot[,.(cor=mean(cor),perc.5=quantile(cor,.05),perc.95=quantile(cor,.95)),by=.(method,n,N,max.obs)]
+ggplot(cor.summary,aes(n,cor,colour=method,fill=method,group=method))+
+  facet_grid(N~max.obs)+
+  geom_ribbon(aes(ymin = perc.5,ymax = perc.95),colour="white",alpha=0.3)+
+  geom_line()+geom_point(alpha=1)+mytheme
+ggplot(cor.summary,aes(n,cor,colour=method,fill=method,group=method))+
+  facet_grid(N~max.obs)+
+  geom_linerange(aes(ymin = perc.5,ymax = perc.95),alpha=1,position = position_dodge(50/3-1))+
+  geom_line(position = position_dodge(50/3-1))+geom_point(alpha=1,position = position_dodge(50/3-1))+mytheme
+
 
 cor.null<- glm(cor~1,data = cor.boot,family = "binomial",weights = rep(n,nrow(cor.boot)))     # Considering the coefficient of correlation is based on n points per calculation of cor
 cor.glm<- glm(cor~method,data = cor.boot,family = "binomial",weights = rep(n,nrow(cor.boot)))
