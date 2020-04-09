@@ -171,6 +171,7 @@ cor.boot$method<- factor(cor.boot$method,levels = c("standard","opti.ordered","o
 cor.boot$rareness<- cor.boot$max.obs/(cor.boot$N*cor.boot$n)
 
 # saveRDS(cor.boot,".WIP/cor.boot.rds")
+# cor.boot<- readRDS(".WIP/cor.boot.rds")
 
 library(ggplot2)
 ggplot(cor.boot,aes(interaction(method,N),cor,colour=method))+
@@ -179,16 +180,29 @@ ggplot(cor.boot,aes(interaction(method,N),cor,colour=method))+
 ggplot(cor.boot,aes(rareness,cor,colour=method,group=interaction(rareness,method)))+
   geom_jitter(alpha=0.2)+geom_boxplot(alpha=0.8)+mytheme
 
-cor.summary<- cor.boot[,.(cor=mean(cor),perc.5=quantile(cor,.05),perc.95=quantile(cor,.95)),by=.(method,n,N,max.obs)]
+cor.summary<- cor.boot[,.(cor=median(cor),perc.5=quantile(cor,.05),perc.95=quantile(cor,.95)),by=.(method,n,N,max.obs)]
 ggplot(cor.summary,aes(n,cor,colour=method,fill=method,group=method))+
   facet_grid(N~max.obs)+
   geom_ribbon(aes(ymin = perc.5,ymax = perc.95),colour="white",alpha=0.3)+
   geom_line()+geom_point(alpha=1)+mytheme
-ggplot(cor.summary,aes(n,cor,colour=method,fill=method,group=method))+
+cor.plot<- ggplot(cor.summary,aes(n,cor,colour=method,fill=method,group=method))+
   facet_grid(N~max.obs)+
   geom_linerange(aes(ymin = perc.5,ymax = perc.95),alpha=1,position = position_dodge(50/3-1))+
   geom_line(position = position_dodge(50/3-1))+geom_point(alpha=1,position = position_dodge(50/3-1))+mytheme
+cor.plot
+ggsave(filename = ".WIP/optimization_cor.plot.pdf",plot = cor.plot,width = 12,height = 7,units = "in")
 
+time.summary<- cor.boot[,.(time=median(as.numeric(time)),perc.5=quantile(as.numeric(time),.05),perc.95=quantile(as.numeric(time),.95)),by=.(method,n,N,max.obs)]
+time.plot<- ggplot(time.summary,aes(n,time,colour=method,fill=method,group=method))+
+  facet_grid(N~max.obs)+
+  geom_ribbon(aes(ymin = perc.5,ymax = perc.95),colour="white",alpha=0.3)+
+  geom_line()+geom_point(alpha=1)+mytheme
+time.plot
+ggplot(time.summary,aes(n,time,colour=method,fill=method,group=method))+
+  facet_grid(N~max.obs)+
+  geom_linerange(aes(ymin = perc.5,ymax = perc.95),alpha=1,position = position_dodge(50/3-1))+
+  geom_line(position = position_dodge(50/3-1))+geom_point(alpha=1,position = position_dodge(50/3-1))+mytheme
+ggsave(filename = ".WIP/optimization_time.plot.pdf",plot = time.plot,width = 12,height = 7,units = "in")
 
 cor.null<- glm(cor~1,data = cor.boot,family = "binomial",weights = rep(n,nrow(cor.boot)))     # Considering the coefficient of correlation is based on n points per calculation of cor
 cor.glm<- glm(cor~method,data = cor.boot,family = "binomial",weights = rep(n,nrow(cor.boot)))
