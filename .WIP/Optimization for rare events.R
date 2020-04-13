@@ -138,7 +138,7 @@ cor.bootstrap<- function(n,N,max.obs,boot){
 
 
 # Parameters list ---------------------------------------------------------
-param.comb<- expand.grid(n=c(10,50,100,150,200),
+param.comb<- expand.grid(n=c(10,50,100,150,200,500,1000),
                          N=c(500,1000,10000,50000),
                          max.obs=c(5,10,50,100,250))
 
@@ -168,7 +168,6 @@ cor.boot<- rbind_lapply(seq_along(parameters.list),
 
 cor.boot<- cor.boot[order(method)]
 cor.boot$method<- factor(cor.boot$method,levels = c("standard","opti.ordered","opti.random"))
-cor.boot$rareness<- cor.boot$max.obs/(cor.boot$N*cor.boot$n)
 
 # saveRDS(cor.boot,".WIP/cor.boot.rds")
 
