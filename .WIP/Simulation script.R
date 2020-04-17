@@ -34,6 +34,7 @@ asnr.Adj<- lapply(asnr.list[which(sapply(asnr.list,length)==1)],
                   }
 )
 ADJ<- asnr.Adj
+sapply(ADJ,function(adj) attr(adj,"path"))
 
 TOTAL_SCAN<- lapply(asnr.weighted.dir[which(sapply(asnr.list,length)==1)],get.total_scan)
 
@@ -44,6 +45,31 @@ TOTAL_SCAN<- TOTAL_SCAN[with.total_scan]
 # with.total_scan.inf1000<- sapply(TOTAL_SCAN,function(t) t<1000)
 # ADJ<- ADJ[with.total_scan.inf1000]
 # TOTAL_SCAN<- TOTAL_SCAN[with.total_scan.inf1000]
+
+
+# Special treatment of the per week racoon networks -----------------------
+# asnr.racoon.path<- list.files("C:/R/Git/asnr/Networks/Mammalia/raccoon_proximity_weighted/",pattern = ".graphml",full.names = TRUE)
+# asnr.racoon.Adj<- lapply(asnr.racoon.path,
+#                   function(path){
+#                     Adj<- import_from_graphml(path,"adjacency")
+#                     attr(Adj,"path")<- path
+#                     Adj
+#                   }
+# )
+# ADJ.racoon<- asnr.racoon.Adj
+# sapply(ADJ.racoon,function(adj) attr(adj,"path"))
+#
+# TOTAL_SCAN.racoon<- lapply("C:/R/Git/asnr/Networks/Mammalia/raccoon_proximity_weighted/",get.total_scan)
+#
+# PARAMETERS.LIST.racoon<- lapply(seq_along(ADJ.racoon),
+#                                 function(a){
+#                                   cat(paste0(a,"/",length(ADJ.racoon)," @ ",Sys.time(),"\n"))
+#                                   Adj<- ADJ.racoon[[a]]
+#                                   total_scan<- TOTAL_SCAN.racoon[[1]]
+#                                   initialize_parameters(Adj,total_scan)
+#                                 }
+# )
+
 # Parameter choices -------------------------------------------------------
 
 # Generate parameters list for each network once and for all --------------
@@ -55,7 +81,6 @@ PARAMETERS.LIST<- lapply(seq_along(ADJ),
                            initialize_parameters(Adj,total_scan)
                          }
 )
-
 
 # Iteration through networks, bootstrap and gather data in data frame -------------------------
 data.long<- rbind_lapply(seq_along(ADJ),
