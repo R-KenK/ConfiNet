@@ -66,6 +66,21 @@ import_from_graphml<- function(path,output = c("graph","adjacency")){
   )
 }
 
+#' Title
+#'
+#' @param old.path
+#' @param new.path
+#' @param correcting.factor
+#'
+#' @return
+#' @export
+#'
+#' @examples
+export_to_graphml<- function(old.path,new.path,correcting.factor){
+  Adj.corrected<- ceiling(import_from_graphml(old.path,"adjacency")*correcting.factor)
+  G.corrected<- igraph::graph.adjacency(Adj.corrected,weighted = TRUE,mode = "max")
+  igraph::write_graph(graph = G.corrected,file = new.path,format = "graphml")
+}
 
 #' Title
 #'
