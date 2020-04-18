@@ -1,8 +1,12 @@
 # Draft of optimization for rare events ----------------------------------------------------------
 set.seed(42)
-n<- 100;N<- 10000
-V<- round(runif(n,0,10))
-P<- Binary.prob(V,N)
+
+## import needed function, but ultimately should use library(ConfiNet) --------
+source("R/matrix.tools.R")
+source("R/Binary.prob.R")
+source("R/Bootstrap_tools.R")
+library(data.table)
+library(microbenchmark)
 
 #' Title
 #'
@@ -61,9 +65,9 @@ do.non.zero.scan.bis<-function(P,...,n = length(P)){
 #'
 #' @examples
 iterate_rare.scans<- function(P,N,...,n = length(P)){
-  scan<- data.table(matrix(0,N,n));
+  scan<- data.table::data.table(matrix(0,N,n));
   non.zero<- rbinom(N,1,1-prod(1-P))==1;
-  scan[non.zero,]<- data.table(rbind_lapply(seq_len(nrow(scan[non.zero,])),function(k) do.non.zero.scan(P)))
+  scan[non.zero,]<- data.table::data.table(rbind_lapply(seq_len(nrow(scan[non.zero,])),function(k) do.non.zero.scan(P)))
   scan
 }
 
@@ -88,7 +92,7 @@ iterate_rare.scans.bis<- function(P,N,...,n = length(P)){
 iterate_standard.scans<- function(P,N,...,n = length(P)){
   rbind_lapply(1:N,
                function(k){
-                 X<-rbinom(n,1,P)
+                 X<- rbinom(n,1,P)
                  if(Reduce("&",X==0)) rep(0,n) else X
                }
   )
@@ -105,42 +109,36 @@ iterate_standard.scans<- function(P,N,...,n = length(P)){
 #' @export
 #'
 #' @examples
-cor.bootstrap<- function(n,N,max.obs,boot){
+cor.bootstrap<- function(n,N,max.obs,boot=100,n.cores=1,.export){
+  V<- round(runif(n,0,max.obs))
+  P<- Binary.prob(V,N,mode = "vector")$present
   rbind_pblapply(1:boot,
                  function(b){
-                   n<- n;N<- N;max.obs<- max.obs;
-                   V<- round(runif(n,0,max.obs)) # because max.obs << N, this should be a scenario where the optimization is relevant
-                   P<- Binary.prob(V,N)
-
-                   start.std<- Sys.time()
-                   X<- iterate_standard.scans(P,N)
-                   stop.std<- Sys.time()
-
-                   start.opt<- Sys.time()
-                   X.opti<- iterate_rare.scans(P,N)
-                   stop.opt<- Sys.time()
-
-                   start.opt.bis<- Sys.time()
-                   X.opti.bis<- iterate_rare.scans.bis(P,N)
-                   stop.opt.bis<- Sys.time()
-
-                   rbind(
-                     data.table(n=n,N=N,max.obs=max.obs,method="standard",cor=cor(colSums(X),V),time = stop.std-start.std),
-                     data.table(n=n,N=N,max.obs=max.obs,method="opti.ordered",cor=cor(colSums(X.opti),V),time = stop.opt-start.opt),
-                     data.table(n=n,N=N,max.obs=max.obs,method="opti.random",cor=cor(colSums(X.opti.bis),V),time = stop.opt.bis-start.opt.bis)
+                   time<- microbenchmark(
+                     standard = {X<- iterate_standard.scans(P,N)},
+                     opti.ordered = {X.opti<- iterate_rare.scans(P,N)},
+                     opti.random = {X.opti.bis<- iterate_rare.scans.bis(P,N)},
+                     times = 1
                    )
-                 },
-                 n.cores = n.cores,.export = c("iterate_standard.scans","iterate_rare.scans","iterate_rare.scans.bis",
-                                               "do.non.zero.scan","do.non.zero.scan.bis",
-                                               "P.cond.in.order","Binary.prob","rbind_lapply","data.table")
+                   time
+
+                   cor<- data.table(n=n,N=N,max.obs=max.obs,method=c("standard","opti.ordered","opti.random"),
+                                    cor=c(cor(colSums(X),V),cor(colSums(X.opti),V),cor(colSums(X.opti.bis),V)))
+
+                   cbind(cor,time=summary(time)[["median"]],boot=b)
+                 },n.cores = n.cores,.export = .export
   )
 }
 
 
-# Parameters list ---------------------------------------------------------
-param.comb<- expand.grid(n=c(10,50,100,150,200,500,1000),
-                         N=c(500,1000,10000,50000),
-                         max.obs=c(5,10,50,100,250))
+
+  # Parameters list ---------------------------------------------------------
+param.comb<- expand.grid(n=c(500,1000),
+                         N=c(50000),
+                         max.obs=c(250))
+# param.comb<- expand.grid(n=c(10,50,100,150,200,500,1000),
+#                          N=c(500,1000,10000,50000),
+#                          max.obs=c(5,10,50,100,250))
 
 parameters.list<- lapply(1:nrow(param.comb),
                          function(p){
@@ -162,8 +160,13 @@ cor.boot<- rbind_lapply(seq_along(parameters.list),
                           N<- parameters.list[[p]]["N"];
                           max.obs<- parameters.list[[p]]["max.obs"];
                           cat(paste0("Param: n= ",n," - N= ",N," - max.obs= ",max.obs," (",p,"/",length(parameters.list),")\n"))
-                          cor.bootstrap(n,N,max.obs,100)
+                          cor.bootstrap(n,N,max.obs,boot = 20,n.cores = 7,
+                                        .export = c("parameters.list","cor.bootstrap",
+                                                    "iterate_standard.scans","iterate_rare.scans","iterate_rare.scans.bis",
+                                                    "do.non.zero.scan","do.non.zero.scan.bis","P.cond.in.order",
+                                                    "Binary.prob","rbind_lapply","data.table","microbenchmark"))
                         }
+
 )
 
 cor.boot<- cor.boot[order(method)]
@@ -176,26 +179,24 @@ library(ggplot2)
 library(data.table)
 ggplot(cor.boot,aes(interaction(method,N),cor,colour=method))+
   facet_grid(.~max.obs)+
-  geom_jitter(alpha=0.2)+geom_boxplot(alpha=0.8)+mytheme
-ggplot(cor.boot,aes(rareness,cor,colour=method,group=interaction(rareness,method)))+
-  geom_jitter(alpha=0.2)+geom_boxplot(alpha=0.8)+mytheme
+  geom_jitter(alpha=0.2)+geom_boxplot(alpha=0.8)+theme_bw()
 
 cor.summary<- cor.boot[,.(cor=median(cor),perc.5=quantile(cor,.05),perc.95=quantile(cor,.95)),by=.(method,n,N,max.obs)]
 cor.plot<- ggplot(cor.summary,aes(n,cor,colour=method,fill=method,group=method))+
   facet_wrap(N~max.obs,scales = "free")+
-  geom_ribbon(aes(ymin = perc.5,ymax = perc.95),colour="white",alpha=0.3)+
+  geom_ribbon(aes(ymin = perc.5,ymax = perc.95),colour=NA,alpha=0.3)+
   geom_line()+geom_point(alpha=1)+theme_bw()
+cor.plot
 ggplot(cor.summary,aes(n,cor,colour=method,fill=method,group=method))+
   facet_wrap(N~max.obs,scales = "free")+
   geom_linerange(aes(ymin = perc.5,ymax = perc.95),alpha=1,position = position_dodge(50/3-1))+
   geom_line(position = position_dodge(50/3-1))+geom_point(alpha=1,position = position_dodge(50/3-1))+theme_bw()
-cor.plot
 ggsave(filename = ".WIP/optimization_cor.plot.pdf",plot = cor.plot,width = 12,height = 7,units = "in")
 
 time.summary<- cor.boot[,.(time=median(as.numeric(time)),perc.5=quantile(as.numeric(time),.05),perc.95=quantile(as.numeric(time),.95)),by=.(method,n,N,max.obs)]
 time.plot<- ggplot(time.summary,aes(n,time,colour=method,fill=method,group=method))+
   facet_wrap(N~max.obs,scales = "free")+
-  geom_ribbon(aes(ymin = perc.5,ymax = perc.95),colour="white",alpha=0.3)+
+  geom_ribbon(aes(ymin = perc.5,ymax = perc.95),colour=NA,alpha=0.3)+
   geom_line()+geom_point(alpha=1)+theme_bw()
 time.plot
 ggplot(time.summary,aes(n,time,colour=method,fill=method,group=method))+
@@ -203,20 +204,3 @@ ggplot(time.summary,aes(n,time,colour=method,fill=method,group=method))+
   geom_linerange(aes(ymin = perc.5,ymax = perc.95),alpha=1,position = position_dodge(50/3-1))+
   geom_line(position = position_dodge(50/3-1))+geom_point(alpha=1,position = position_dodge(50/3-1))+theme_bw()
 ggsave(filename = ".WIP/optimization_time.plot.pdf",plot = time.plot,width = 12,height = 7,units = "in")
-
-cor.null<- glm(cor~1,data = cor.boot,family = "binomial",weights = rep(n,nrow(cor.boot)))     # Considering the coefficient of correlation is based on n points per calculation of cor
-cor.glm<- glm(cor~method,data = cor.boot,family = "binomial",weights = rep(n,nrow(cor.boot)))
-
-summary(cor.null)
-summary(cor.glm)
-
-lmtest::lrtest(cor.null,cor.glm)
-
-ggplot(cor.boot,aes(method,time,colour=method))+geom_jitter(alpha=0.2)+geom_boxplot(alpha=0.8)+mytheme
-time.null<- lm(as.numeric(time)~1,data = cor.boot)
-time.glm<- lm(as.numeric(time)~method,data = cor.boot)
-
-summary(time.null)
-summary(time.glm)
-
-lmtest::lrtest(time.null,time.glm)
