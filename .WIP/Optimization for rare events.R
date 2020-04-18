@@ -118,7 +118,7 @@ cor.bootstrap<- function(n,N,max.obs,boot=100,n.cores=1,.export){
                      standard = {X<- iterate_standard.scans(P,N)},
                      opti.ordered = {X.opti<- iterate_rare.scans(P,N)},
                      opti.random = {X.opti.bis<- iterate_rare.scans.bis(P,N)},
-                     times = 1
+                     times = 1,unit = "ms"
                    )
                    time
 
@@ -132,13 +132,10 @@ cor.bootstrap<- function(n,N,max.obs,boot=100,n.cores=1,.export){
 
 
 
-  # Parameters list ---------------------------------------------------------
-param.comb<- expand.grid(n=c(500,1000),
-                         N=c(50000),
-                         max.obs=c(250))
-# param.comb<- expand.grid(n=c(10,50,100,150,200,500,1000),
-#                          N=c(500,1000,10000,50000),
-#                          max.obs=c(5,10,50,100,250))
+# Parameters list ---------------------------------------------------------
+param.comb<- expand.grid(n=c(10,50,100,150,200,500,1000),
+                         N=c(500,1000,10000,50000),
+                         max.obs=c(5,10,50,100,250))
 
 parameters.list<- lapply(1:nrow(param.comb),
                          function(p){
@@ -160,7 +157,7 @@ cor.boot<- rbind_lapply(seq_along(parameters.list),
                           N<- parameters.list[[p]]["N"];
                           max.obs<- parameters.list[[p]]["max.obs"];
                           cat(paste0("Param: n= ",n," - N= ",N," - max.obs= ",max.obs," (",p,"/",length(parameters.list),")\n"))
-                          cor.bootstrap(n,N,max.obs,boot = 20,n.cores = 7,
+                          cor.bootstrap(n,N,max.obs,boot = 100,n.cores = 7,
                                         .export = c("parameters.list","cor.bootstrap",
                                                     "iterate_standard.scans","iterate_rare.scans","iterate_rare.scans.bis",
                                                     "do.non.zero.scan","do.non.zero.scan.bis","P.cond.in.order",
