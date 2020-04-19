@@ -15,7 +15,7 @@
 #' * and 1-min_resol instead of 1  (with min_resol supposedly small compared to 1)
 #' * cf. Keuk, unpublished yet for further details
 #'
-#' @return data frame of binary probabilities (column present and absent) for each dyad.
+#' @return matrix of probability of presence for each dyad
 #' @export
 #'
 #' @examples
@@ -31,6 +31,8 @@ Binary.prob<- function(Adj,total_scan,
                        mode = c("directed", "undirected", "max","min", "upper", "lower", "plus","vector")){
   if(total_scan<max(Adj)) {stop("total_scan provided incompatible with the maximum value found in the provided adjacency matrix.")}
   mode<- match.arg(mode)
+
+  P<- Adj
   Adj.subfun<- switch(mode,
                       "directed" = ,
                       "undirected" = ,
@@ -43,5 +45,6 @@ Binary.prob<- function(Adj,total_scan,
   )
   min_resol<- 1/total_scan;
   prob.scaled<- (Adj[Adj.subfun(Adj)]*(1-2*min_resol)/total_scan)+min_resol;
-  data.frame(present=prob.scaled,absent=1-prob.scaled)
+  P[Adj.subfun(P)]<- prob.scaled
+  P
 }
