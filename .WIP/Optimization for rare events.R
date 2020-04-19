@@ -43,6 +43,16 @@ do.non.zero.scan<-function(P,...,n = length(P)){
   X
 }
 
+#' Title
+#'
+#' @param P
+#' @param ...
+#' @param n
+#'
+#' @return
+#' @export
+#'
+#' @examples
 do.non.zero.scan.bis<-function(P,...,n = length(P)){
   X<- rep(0,n)
   rand.order<- sample(1:n,n)
@@ -71,12 +81,7 @@ iterate_rare.scans<- function(P,N,...,n = length(P)){
   scan
 }
 
-iterate_rare.scans.bis<- function(P,N,...,n = length(P)){
-  scan<- data.table(matrix(0,N,n));
-  non.zero<- rbinom(N,1,1-prod(1-P))==1;
-  scan[non.zero,]<- data.table(rbind_lapply(seq_len(nrow(scan[non.zero,])),function(k) do.non.zero.scan.bis(P)))
-  scan
-}
+
 
 #' Title
 #'

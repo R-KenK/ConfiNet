@@ -54,23 +54,27 @@
 #' # )
 Boot_scans<- function(Adj,n.boot,total_scan,method=c("group","focal","both"),
                       focal.list=NULL,scaled=FALSE,obs.prob=1,keep=FALSE,
-                      mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
-                      output=c("list","adjacency","all"),n.cores=(parallel::detectCores()-1),cl=NULL){
+                      mode = c("directed", "undirected", "max","min", "upper", "lower", "plus","vector"),
+                      output=c("list","adjacency","all"),use.rare.opti=NULL,n.cores=(parallel::detectCores()-1),cl=NULL){
   b<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
   method<- match.arg(method)
   output<- match.arg(output)
   mode<- match.arg(mode)
 
-  if(is.null(focal.list)){
-    focal.list<- sample(rownames(Adj),total_scan,replace=TRUE)
-  }else{
-    if(length(focal.list)!=total_scan) {stop("Provided focal.list's length doesn't match total number of scans to perform.")}
-  }
-
   if(is.null(cl)){
     cl<- snow::makeCluster(n.cores)
     doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))
   }
+
+
+  if(is.null(focal.list)){
+    if(method %in% c("focal","both")) {
+      focal.list<- sample(rownames(Adj),total_scan,replace=TRUE)
+    }
+  }else{
+    if(length(focal.list)!=total_scan) {stop("Provided focal.list's length doesn't match total number of scans to perform.")}
+  }
+
 
   Adj.subfun<- switch(mode,
                       "directed" = ,
@@ -79,18 +83,36 @@ Boot_scans<- function(Adj,n.boot,total_scan,method=c("group","focal","both"),
                       "min" = ,
                       "plus" = non.diagonal,
                       "upper" = upper.tri,
-                      "lower" =  lower.tri
+                      "lower" =  lower.tri,
+                      "vector" = function(V){rep(TRUE,length(V))}
   )
-  prob<- Binary.prob(Adj=Adj,total_scan=total_scan,mode = mode)
+  presence.prob<- Binary.prob(Adj=Adj,total_scan=total_scan,mode = mode)
 
-  Bootstrap<- pbapply::pblapply(
-    1:n.boot,
-    function(b){
-      iterate_scans(Adj = Adj,total_scan = total_scan,
-                    focal.list = focal.list,scaled = scaled,obs.prob=obs.prob,keep=keep,
-                    method = method,mode = mode,output = output,n.cores = n.cores,cl=cl,Adj.subfun = Adj.subfun,prob = prob)
-    }
-  )
-  Bootstrap_add.attributes(Bootstrap = Bootstrap,method = method,keep = keep,scaled = scaled,
-                           mode = mode,output = output,total_scan = total_scan)
+  if(is.null(use.rare.opti)){
+    n<- nrow(Adj)
+    use.rare.opti<- decide_use.rare.opti(n = n*(n-1),total_scan = total_scan,max.obs = max(Adj))
+  }
+  if(use.rare.opti){
+    Bootstrap<- pbapply::pblapply(
+      1:n.boot,
+      function(b){
+        iterate_rare.scans(Adj = Adj,total_scan = total_scan,presence.prob = presence.prob,
+                           focal.list = focal.list,scaled = scaled,obs.prob=obs.prob,keep=keep,
+                           method = method,mode = mode,output = output,n.cores = n.cores,cl=cl,Adj.subfun = Adj.subfun,prob = prob)
+      }
+    )
+    Bootstrap_add.attributes(Bootstrap = Bootstrap,method = method,keep = keep,scaled = scaled,
+                             mode = mode,output = output,total_scan = total_scan)
+  }else{
+    Bootstrap<- pbapply::pblapply(
+      1:n.boot,
+      function(b){
+        iterate_scans(Adj = Adj,total_scan = total_scan,presence.prob = presence.prob,
+                      focal.list = focal.list,scaled = scaled,obs.prob=obs.prob,keep=keep,
+                      method = method,mode = mode,output = output,n.cores = n.cores,cl=cl,Adj.subfun = Adj.subfun,prob = prob)
+      }
+    )
+    Bootstrap_add.attributes(Bootstrap = Bootstrap,method = method,keep = keep,scaled = scaled,
+                             mode = mode,output = output,total_scan = total_scan)
+  }
 }

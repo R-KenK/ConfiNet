@@ -17,8 +17,8 @@
 #' set.seed(42)
 #'
 #' n<- 6;
-#' Scan<- matrix(sample(c(1,0),6*6,replace=TRUE),n,n);diag(Scan)<- 0
-#' obs.prob<- matrix(runif(6*6,0,1),n,n);diag(obs.prob)<- 0
+#' Scan<- matrix(sample(c(1,0),n*n,replace=TRUE),n,n);diag(Scan)<- 0
+#' obs.prob<- matrix(runif(n*n,0,1),n,n);diag(obs.prob)<- 0
 #' traits<- rnorm(nrow(Scan),0,1)
 #' trait.bias_fun<- function(x) {traits[x]}
 #' obs.prob.trait<- obs.prob_bias(Scan,sum,bias_fun = trait.bias_fun)

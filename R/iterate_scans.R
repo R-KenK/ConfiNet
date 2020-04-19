@@ -43,7 +43,7 @@
 #' iterate_scans(Adj,42,focal.list,scaled = TRUE,obs.prob = 0.7,keep=TRUE,
 #'               method = "focal",mode = "directed",output = "list")
 
-iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),
+iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),P = P,
                          focal.list=NULL,scaled=FALSE,obs.prob=NULL,keep=FALSE,
                          mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
                          output=c("list","adjacency","all"),n.cores=(parallel::detectCores()-1),cl=NULL,Adj.subfun=NULL,prob=NULL){
