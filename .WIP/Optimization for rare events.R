@@ -188,7 +188,7 @@ ggplot(cor.summary,aes(n,cor,colour=method,fill=method,group=method))+
   facet_wrap(N~max.obs,scales = "free")+
   geom_linerange(aes(ymin = perc.5,ymax = perc.95),alpha=1,position = position_dodge(50/3-1))+
   geom_line(position = position_dodge(50/3-1))+geom_point(alpha=1,position = position_dodge(50/3-1))+theme_bw()
-ggsave(filename = ".WIP/optimization_cor.plot.pdf",plot = cor.plot,width = 12,height = 7,units = "in")
+ggsave(filename = ".WIP/optimization_cor.plot.pdf",plot = cor.plot,width = 20,height = 15,units = "in")
 
 time.summary<- cor.boot[,.(time=median(as.numeric(time)),perc.5=quantile(as.numeric(time),.05),perc.95=quantile(as.numeric(time),.95)),by=.(method,n,N,max.obs)]
 time.plot<- ggplot(time.summary,aes(n,time,colour=method,fill=method,group=method))+
@@ -200,4 +200,4 @@ ggplot(time.summary,aes(n,time,colour=method,fill=method,group=method))+
   facet_grid(N~max.obs)+
   geom_linerange(aes(ymin = perc.5,ymax = perc.95),alpha=1,position = position_dodge(50/3-1))+
   geom_line(position = position_dodge(50/3-1))+geom_point(alpha=1,position = position_dodge(50/3-1))+theme_bw()
-ggsave(filename = ".WIP/optimization_time.plot.pdf",plot = time.plot,width = 12,height = 7,units = "in")
+ggsave(filename = ".WIP/optimization_time.plot.pdf",plot = time.plot,width = 20,height = 15,units = "in")
