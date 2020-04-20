@@ -14,8 +14,9 @@ Boot_scans(
   scaled = FALSE,
   obs.prob = 1,
   keep = FALSE,
-  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus"),
+  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus", "vector"),
   output = c("list", "adjacency", "all"),
+  use.rare.opti = NULL,
   n.cores = (parallel::detectCores() - 1),
   cl = NULL
 )

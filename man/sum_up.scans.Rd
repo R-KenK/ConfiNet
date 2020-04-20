@@ -9,9 +9,8 @@ sum_up.scans(
   Adj,
   scan_list,
   scaled = FALSE,
-  keep = FALSE,
-  method = c("group", "focal", "both"),
-  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus")
+  method = c("theoretical", "group", "focal", "both"),
+  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus", "vector")
 )
 }
 \arguments{
@@ -21,14 +20,12 @@ sum_up.scans(
 
 \item{scaled}{logical, specifies if adjacency data should be scaled by sampling effort.}
 
-\item{keep}{logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.}
-
 \item{method}{Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).}
 
-\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
+\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.}
 }
 \value{
-A non-binary adjacency matrix, or a list of two if method = "both"
+An integer adjacency matrix, or a list of two if method = "both"
 }
 \description{
 Sum up and flatten list of binary scans

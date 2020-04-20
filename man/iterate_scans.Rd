@@ -6,52 +6,47 @@
 Internal use in Boot_scan. Iterate several binary group or focal scans with probabilities derived from a provided adjancecy matrix, to produce a new adjancecy matrix.}
 \usage{
 iterate_scans(
-  Adj,
+  Adj = NULL,
   total_scan,
-  method = c("group", "focal", "both"),
-  focal.list = NULL,
-  scaled = FALSE,
-  obs.prob = NULL,
-  keep = FALSE,
-  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus"),
+  method = c("theoretical", "group", "focal", "both"),
   output = c("list", "adjacency", "all"),
+  scaled = FALSE,
+  ...,
   n.cores = (parallel::detectCores() - 1),
-  cl = NULL,
-  Adj.subfun = NULL,
-  prob = NULL
+  cl
 )
 }
 \arguments{
-\item{Adj}{square integers matrix of occurences of dyads. WIP: implement method for association matrices...}
+\item{Adj}{square integers matrix of occurences of dyads. Optional if using presence.prob. WIP: implement method for association matrices...}
 
-\item{total_scan}{integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.}
+\item{total_scan}{integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision. Optional if using presence.prob.}
 
-\item{method}{Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).}
+\item{method}{Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).}
 
-\item{focal.list}{Character vector, indicate the list of focals to consider throughout the scans.}
+\item{output}{Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix}
 
 \item{scaled}{logical, specifies if adjacency data should be scaled by sampling effort.}
 
-\item{obs.prob}{either :
-\itemize{
- \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
- \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
- \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
-}}
-
-\item{keep}{logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.}
-
-\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
-
-\item{output}{Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix}
+\item{...}{additional argument to be used, to use produce a scan in a desired way.}
 
 \item{n.cores}{number of threads to use while performingh the bootstrap}
 
 \item{cl}{Optional cluster object (cf snow package), experimentally set to put the makeCluster and stopCluster out of the bootable function. (WIP, next implementation should rethink this).}
 
-\item{Adj.subfun}{subsetting function of the adjacency matrix. Driven by igraph "mode" argument}
+\item{presence.prob.}{square probability matrix of presence (as in Bernouilli trial) of dyads. Optional if using Adj and total_scan.}
 
-\item{prob}{output of Binary.prob function. Internal use when wrapped with Boot_scans, to speed up bootstrap process}
+\item{focal.list}{Character vector, indicate the list of focals to consider throughout the scans.}
+
+\item{obs.prob}{either :
+\itemize{
+ \item{"a dyad observation probability matrix (P.obs)"}{of same dimension as Adj}
+ \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+ \item{"a systematic dyad observation (P.obs constant for all i,j)"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+}}
+
+\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.}
+
+\item{Adj.subfun}{subsetting function of the adjacency matrix. Driven by igraph "mode" argument}
 }
 \value{
 according to output and method: a list of iterated scans, or an adjacency matrix
@@ -70,7 +65,6 @@ Adj
 
 focal.list<- sample(nodes,42,replace = TRUE)
 table(focal.list)
-iterate_scans(Adj,42,scaled = FALSE,method = "group",output = "adjacency",n.cores = 1)
-iterate_scans(Adj,42,focal.list,scaled = TRUE,obs.prob = 0.7,keep=TRUE,
-              method = "focal",mode = "directed",output = "list")
+iterate_scans(Adj,42,scaled = FALSE,method = "group",output = "list",n.cores = 1)
+iterate_scans(Adj,42,focal.list = focal.list,scaled = TRUE,obs.prob = 0.7,method = "both",mode = "directed",output = "all")
 }
