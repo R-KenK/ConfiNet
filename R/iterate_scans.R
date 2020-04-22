@@ -31,14 +31,20 @@
 #' @examples
 #' set.seed(42)
 #'
-#' n<- 5;nodes<- letters[1:n];
+#' n<- 5;nodes<- as.character(1:n);
 #' Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
 #' Adj[non.diagonal(Adj)]<- sample(0:42,n*(n-1),replace = TRUE)
 #' Adj
 #'
+#' presence.prob<- Binary.prob(Adj,50)
+#' obs.prob<- matrix(runif(n*n,0,1),n,n);diag(obs.prob)<- 0
+#'
 #' focal.list<- sample(nodes,42,replace = TRUE)
 #' table(focal.list)
-#' iterate_scans(Adj,42,scaled = FALSE,method = "group",output = "list",n.cores = 1)
+#'
+#' iterate_scans(Adj,42,scaled = FALSE,method = "group",output = "list",obs.prob = 0.8,n.cores = 1)
+#' iterate_scans(Adj,42,scaled = TRUE,method = "group",output = "adjacency",obs.prob = obs.prob,n.cores = 1)
+#' iterate_scans(Adj,42,scaled = FALSE,method = "focal",output = "adjacency",n.cores = 1)
 #' iterate_scans(Adj,42,focal.list = focal.list,scaled = TRUE,obs.prob = 0.7,method = "both",mode = "directed",output = "all")
 
 iterate_scans<- function(Adj=NULL,total_scan,method=c("theoretical","group","focal","both"),
@@ -47,18 +53,19 @@ iterate_scans<- function(Adj=NULL,total_scan,method=c("theoretical","group","foc
   scan.default.args(Adj = Adj,total_scan = total_scan,method = method,...)
 
   if(missing(cl)) {
-    .export<- c("do.scan","non.diagonal","quick.sample","Binary.prob","binary_adjacency_mode","scan.default.args");
+    .export<- c("do.scan","non.diagonal","quick.sample","Binary.prob","binary_adjacency_mode","scan.default.args","observable_edges");
     cl<- snow::makeCluster(n.cores);
     snow::clusterExport(cl,list = .export);snow::clusterExport(cl,list = ls(sys.frame(which = 1)),envir = sys.frame(which = 1));
     doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))
   }
 
   switch(method,
+         "theoretical" = ,
          "group" = {
            scan_list<- pbapply::pblapply(
              1:total_scan,
              function(i){
-               do.scan(presence.prob = presence.prob,method = "group",Adj.subfun = Adj.subfun,check.defaults = FALSE)
+               do.scan(presence.prob = presence.prob,method = method,obs.prob = obs.prob,Adj.subfun = Adj.subfun,check.defaults = FALSE)
              },cl = cl
            )
          },
@@ -74,7 +81,7 @@ iterate_scans<- function(Adj=NULL,total_scan,method=c("theoretical","group","foc
            scan_list<- pbapply::pblapply(
              1:total_scan,
              function(i){
-               do.scan(presence.prob = presence.prob,method = "both",focal = focal.list[i],Adj.subfun = Adj.subfun)
+               do.scan(presence.prob = presence.prob,method = "both",obs.prob = obs.prob,focal = focal.list[i],Adj.subfun = Adj.subfun)
              },cl = cl
            )
          }
@@ -82,11 +89,10 @@ iterate_scans<- function(Adj=NULL,total_scan,method=c("theoretical","group","foc
 
   switch(output,
          "list" = scan_list,
-         "adjacency" = sum_up.scans(Adj = Adj,scan_list = scan_list,scaled = scaled,method = method,mode = mode),
+         "adjacency" = sum_up.scans(scan_list = scan_list,scaled = scaled,method = method,mode = mode),
          "all" = list(
            list = scan_list,
-           adjacency = sum_up.scans(Adj = Adj,scan_list = scan_list,scaled = scaled,method = method,mode = mode
-           )
+           adjacency = sum_up.scans(scan_list = scan_list,scaled = scaled,method = method,mode = mode)
          )
   )
 }

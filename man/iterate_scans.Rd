@@ -58,13 +58,19 @@ Internal use in Boot_scan. Iterate several binary group or focal scans with prob
 \examples{
 set.seed(42)
 
-n<- 5;nodes<- letters[1:n];
+n<- 5;nodes<- as.character(1:n);
 Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
 Adj[non.diagonal(Adj)]<- sample(0:42,n*(n-1),replace = TRUE)
 Adj
 
+presence.prob<- Binary.prob(Adj,50)
+obs.prob<- matrix(runif(n*n,0,1),n,n);diag(obs.prob)<- 0
+
 focal.list<- sample(nodes,42,replace = TRUE)
 table(focal.list)
-iterate_scans(Adj,42,scaled = FALSE,method = "group",output = "list",n.cores = 1)
+
+iterate_scans(Adj,42,scaled = FALSE,method = "group",output = "list",obs.prob = 0.8,n.cores = 1)
+iterate_scans(Adj,42,scaled = TRUE,method = "group",output = "adjacency",obs.prob = obs.prob,n.cores = 1)
+iterate_scans(Adj,42,scaled = FALSE,method = "focal",output = "adjacency",n.cores = 1)
 iterate_scans(Adj,42,focal.list = focal.list,scaled = TRUE,obs.prob = 0.7,method = "both",mode = "directed",output = "all")
 }
