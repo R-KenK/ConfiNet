@@ -29,15 +29,16 @@
 #' @examples
 #' set.seed(42)
 #'
-#' n<- 5;nodes<- letters[1:n];
+#' n<- 5;nodes<- as.character(1:n);
 #' Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
 #' Adj[non.diagonal(Adj)]<- sample(0:42,n*(n-1),replace = TRUE)
 #' Adj
 #'
 #' presence.prob<- Binary.prob(Adj,50)
+#' obs.prob<- matrix(runif(n*n,0,1),n,n);diag(obs.prob)<- 0
 #'
-#' do.scan(Adj,50,method = "group")
-#' do.scan(Adj,50,method = "both")
+#' do.scan(Adj,50,method = "group",obs.prob = 0.9)
+#' do.scan(Adj,50,method = "both",obs.prob = obs.prob)
 #' do.scan(presence.prob,method = "focal")
 
 do.scan<-function(Adj=NULL,total_scan=NULL,
@@ -50,23 +51,24 @@ do.scan<-function(Adj=NULL,total_scan=NULL,
 
   scan<- matrix(0,nrow = n,ncol = n,dimnames = list(nodes_names,nodes_names))
   scan[Adj.subfun(scan)]<- rbinom(p,1,presence.P)
-  observable_edges<- function(scan,obs.prob) {scan}
   switch(method,
          "theoretical" = scan,
          "group" = list(theoretical = scan,
-                        group = observable_edges(scan,obs.prob)
+                        group = observable_edges(scan,obs.prob,Adj.subfun)
          ),
          "focal" = list(theoretical = scan,
                         focal = {
-                          focal.scan<- scan[focal,];
+                          focal.scan<- scan
+                          focal.scan[rownames(focal.scan)!=focal,]<- NA
                           attr(focal.scan,"focal")<- focal;
                           focal.scan
                         }
          ),
          "both" = list(theoretical = scan,
-                       group = observable_edges(scan,obs.prob),
+                       group = observable_edges(scan,obs.prob,Adj.subfun),
                        focal = { # should write a symmetrical to observable_edges() for the focal case
-                         focal.scan<- scan[focal,];
+                         focal.scan<- scan
+                         focal.scan[rownames(focal.scan)!=focal,]<- NA
                          attr(focal.scan,"focal")<- focal;
                          focal.scan
                        }
@@ -124,11 +126,10 @@ do.non.zero.scan<-function(Adj=NULL,total_scan=NULL,
   first.one<- min(which(runif(1)<P.cond))
   scan[Adj.subfun(scan)][rand.order][first.one]<- 1
   scan[Adj.subfun(scan)][rand.order][-first.one]<- rbinom(p-1,1,presence.P[rand.order][-first.one])
-  observable_edges<- function(scan) {scan}
   switch(method,
          "theoretical" = scan,
          "group" = list(theoretical = scan,
-                        group = observable_edges(scan)
+                        group = observable_edges(scan,obs.prob,Adj.subfun)
          ),
          "focal" = list(theoretical = scan,
                         focal = {
@@ -138,7 +139,7 @@ do.non.zero.scan<-function(Adj=NULL,total_scan=NULL,
                         }
          ),
          "both" = list(theoretical = scan,
-                       group = observable_edges(scan),
+                       group = observable_edges(scan,obs.prob,Adj.subfun),
                        focal = {
                          focal.scan<- scan[focal,];
                          attr(focal.scan,"focal")<- focal;
