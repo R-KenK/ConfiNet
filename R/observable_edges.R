@@ -6,56 +6,40 @@
 #' \itemize{
 #'  \item{"a dyad observation obs.probability matrix"}{of same dimension as Scan}
 #'  \item{"a dyad observation vector"}{subsetted similarly as Scan (through the non.diagonal() function for instance)}
-#'  \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+#'  \item{"a systematic dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
 #' }
-#' @param keep logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.
+#' @param Adj.subfun subsetting function of the adjacency matrix. Driven by igraph "mode" argument
 #'
-#' @return a similar matrix as Scan where some non diagonal edges have a obs.probability to be NAs. If keep is TRUE, returns a list with theoretical and observed scan.
+#' @return a similar matrix as Scan where some non diagonal edges have a obs.probability to be NAs.
 #' @export
 #'
 #' @examples
 #' set.seed(42)
 #'
-#' n<- 6;
-#' Scan<- matrix(sample(c(1,0),n*n,replace=TRUE),n,n);diag(Scan)<- 0
+#' n<- 6;nodes<- as.character(1:n);
+#' Scan<- matrix(rbinom(n*n,1,0.2),n,n,dimnames = list(nodes,nodes));diag(Scan)<- 0;
 #' obs.prob<- matrix(runif(n*n,0,1),n,n);diag(obs.prob)<- 0
-#' traits<- rnorm(nrow(Scan),0,1)
-#' trait.bias_fun<- function(x) {traits[x]}
-#' obs.prob.trait<- obs.prob_bias(Scan,sum,bias_fun = trait.bias_fun)
-#' obs.prob.single<- runif(1,0,1)
 #'
-#' observable_edges(Scan,obs.prob)
-#' observable_edges(Scan,obs.prob.trait)
-#' observable_edges(Scan,obs.prob.single)
-observable_edges<- function(Scan,obs.prob=NULL,keep=FALSE){
-  if(is.matrix(obs.prob)) {
-    obs.prob<- non.diagonal(obs.prob,"vector")
+#' observable_edges(Scan,obs.prob,non.diagonal)
+observable_edges<- function(Scan,obs.prob=NULL,Adj.subfun=NULL){
+  observed<- Scan
+  if(!is.null(obs.prob)){
+    if(length(obs.prob)==1) {
+      if(obs.prob<=1 & obs.prob>=0){
+        obs.prob<- rep(obs.prob,length(Adj.subfun(Scan,"vector")))
+      }else{
+        stop("Single observation obs.probability provided should be within [0,1]")
+      }
+    }else{
+      if(is.matrix(obs.prob)) {
+        obs.prob<- Adj.subfun(obs.prob,"vector")
+      }
+      if(length(obs.prob)!=length(Adj.subfun(Scan,"vector"))){
+        stop("Matrix or vector obs.prob dimension(s) incompatible with adjacency matrix's")
+      }
+    }
+    missed<- rbinom(length(obs.prob),1,obs.prob)==0
+    observed[Adj.subfun(observed)][missed]<- NA
   }
-
-  if(any(obs.prob<0)){
-    obs.prob<- obs.prob+abs(min(obs.prob))
-  }
-
-  if(length(obs.prob)==1) {
-    ifelse(obs.prob<=1 & obs.prob>=0,
-           obs.prob<- rep(obs.prob,length(non.diagonal(Scan,"vector"))),
-           stop("Single observation obs.probability provided should be within [0,1]"))
-  } else {
-    ifelse(length(obs.prob)==length(non.diagonal(Scan,"vector")),
-           obs.prob<- (obs.prob+min(obs.prob[obs.prob>0]))/(max(obs.prob)+2*min(obs.prob[obs.prob>0])),
-           stop("Matrix or vector obs.prob dimension(s) incompatible with adjacency matrix's")
-    )
-  }
-
-
-  observable<- sapply(obs.prob,function(p) sample(c(TRUE,FALSE),1,prob = c(p,1-p)))
-
-  observed<- Scan;
-  observed[non.diagonal(observed)]<- ifelse(observable,non.diagonal(Scan,"vector"),NA)
-  if(keep){
-    list("theoretical" = Scan,
-         "observed" = observed)
-  }else{
-    observed
-  }
+  observed
 }
