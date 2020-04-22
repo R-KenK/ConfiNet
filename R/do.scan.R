@@ -40,6 +40,8 @@
 #' do.scan(Adj,50,method = "group",obs.prob = 0.9)
 #' do.scan(Adj,50,method = "both",obs.prob = obs.prob)
 #' do.scan(presence.prob,method = "focal")
+#' do.scan(presence.prob,method = "focal",focal = "4")
+#' do.scan(presence.prob,method = "focal",focal = 3)
 
 do.scan<-function(Adj=NULL,total_scan=NULL,
                   method = c("theoretical","group","focal","both"),...,check.defaults=TRUE){
@@ -57,21 +59,11 @@ do.scan<-function(Adj=NULL,total_scan=NULL,
                         group = observable_edges(scan,obs.prob,Adj.subfun)
          ),
          "focal" = list(theoretical = scan,
-                        focal = {
-                          focal.scan<- scan
-                          focal.scan[rownames(focal.scan)!=focal,]<- NA
-                          attr(focal.scan,"focal")<- focal;
-                          focal.scan
-                        }
+                        focal = focal.scan(scan,focal)
          ),
          "both" = list(theoretical = scan,
                        group = observable_edges(scan,obs.prob,Adj.subfun),
-                       focal = { # should write a symmetrical to observable_edges() for the focal case
-                         focal.scan<- scan
-                         focal.scan[rownames(focal.scan)!=focal,]<- NA
-                         attr(focal.scan,"focal")<- focal;
-                         focal.scan
-                       }
+                       focal = focal.scan(scan,focal)
          )
   )
 }
@@ -107,11 +99,18 @@ do.scan<-function(Adj=NULL,total_scan=NULL,
 #' @examples
 #' set.seed(42)
 #'
-#' n<- 5;nodes<- letters[1:n];
+#' n<- 5;nodes<- as.character(1:n);
 #' Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
-#' Adj[non.diagonal(Adj)]<- sample(0:42,n*(n-1),replace = TRUE)
+#' Adj[non.diagonal(Adj)]<- sample(0:3,n*(n-1),replace = TRUE)
 #' Adj
-#' do.non.zero.scan(Adj,500,method = "both",focal=3)
+#'
+#' presence.prob<- Binary.prob(Adj,50)
+#' obs.prob<- matrix(runif(n*n,0,1),n,n);diag(obs.prob)<- 0
+#'
+#' do.non.zero.scan(Adj,50,method = "group",obs.prob = 0.9)
+#' do.non.zero.scan(Adj,50,method = "both",obs.prob = obs.prob)
+#' do.non.zero.scan(presence.prob,method = "focal")
+#' do.non.zero.scan(presence.prob,method = "focal",focal = "4")
 do.non.zero.scan<-function(Adj=NULL,total_scan=NULL,
                            method = c("theoretical","group","focal","both"),...,check.defaults=TRUE){
   method<- match.arg(method)
@@ -132,21 +131,38 @@ do.non.zero.scan<-function(Adj=NULL,total_scan=NULL,
                         group = observable_edges(scan,obs.prob,Adj.subfun)
          ),
          "focal" = list(theoretical = scan,
-                        focal = {
-                          focal.scan<- scan[focal,];
-                          attr(focal.scan,"focal")<- focal;
-                          focal.scan
-                        }
+                        focal = focal.scan(scan,focal)
          ),
          "both" = list(theoretical = scan,
                        group = observable_edges(scan,obs.prob,Adj.subfun),
-                       focal = {
-                         focal.scan<- scan[focal,];
-                         attr(focal.scan,"focal")<- focal;
-                         focal.scan
-                       }
+                       focal = focal.scan(scan,focal)
          )
   )
+}
+
+#' Focal scan from theoretical
+#'
+#' @param scan.theoretical binary matrix (the theoretical scan within do.scan())
+#' @param focal either the row index or the name of the focal
+#'
+#' @return a focal scan as a binary matrix with matching values for the row of the focal, and NAs otherwise, and the name of the focal as a "focal" attribute.
+#' @export
+#'
+#' @examples
+#' # Internal use in do.(non.zero.)scan()
+focal.scan<- function(scan.theoretical,focal){
+  focal.scan<- scan.theoretical;nodes<- rownames(scan.theoretical)
+  if(is.character(focal)){
+    focal.index<- match(focal,nodes)
+    if(is.na(focal.index)){stop("focal name not recognized.")}
+    focal.name<- focal
+  }else if(is.numeric(focal)){
+    focal.index<- focal
+    focal.name<- nodes[focal.index]
+  }else{stop("focal format unrecognized")}
+  focal.scan[-focal.index,]<- NA
+  attr(focal.scan,"focal")<- focal.name;
+  focal.scan
 }
 
 #' Set arguments to default for do.(non.zero.)scan() function when necessary
@@ -222,7 +238,7 @@ scan.default.args<- function(Adj,total_scan,method,...){
     }
   }else{assign("focal",opt.args$focal,parent.frame(n = 1))}
 
-  if(is.null(opt.args$focal.list)&!is.null(opt.args$total_scan)){
+  if(is.null(opt.args$focal.list)&!is.null(total_scan)){
     if(method!="group"){
       if(!is.null(Adj)){
         assign("focal.list",quick.sample(1:nrow(Adj),total_scan),parent.frame(n = 1))
