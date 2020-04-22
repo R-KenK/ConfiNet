@@ -30,8 +30,8 @@ rbind_lapply<- function(X,FUN){
 #'
 #' X<- lapply(1:3,function(i) list(int = 42,df = data.frame(x = runif(10,0,1),y = runif(10,0,1))))
 #' rbind_lapply(X,function(x) x$df)
-rbind_pblapply<- function(X,FUN,n.cores,.export=NULL){
-  cl<- make_cl(n.cores,.export);on.exit(snow::stopCluster(cl))
+rbind_pblapply<- function(X,FUN,n.cores=NULL,.export=NULL,cl=NULL){
+  if(is.null(cl)){cl<- make_cl(n.cores,.export)};doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))
   do.call(rbind,pbapply::pblapply(X = X,FUN = FUN,cl = cl))
 }
 
@@ -50,7 +50,7 @@ rbind_pblapply<- function(X,FUN,n.cores,.export=NULL){
 #' @examples
 #' # Internal use
 make_cl<- function(n.cores,.export){
-  cl<- snow::makeCluster(n.cores);snow::clusterExport(cl,list = .export);doSNOW::registerDoSNOW(cl);
+  cl<- snow::makeCluster(n.cores);snow::clusterExport(cl,list = .export);
   cl
 }
 
@@ -130,10 +130,18 @@ decide_use.rare.opti<- function(n,total_scan,max.obs=NULL){
 #'
 #' @examples
 #' # Internal use
-simulate.zeroes.non.zeroes<- function(total_scan,presence.prob){
+simulate.zeroes.non.zeroes<- function(total_scan,presence.prob,method){
+  nodes<- rownames(presence.prob);
+  zero.mat<- matrix(0,nrow(presence.prob),ncol(presence.prob),dimnames = list(nodes,nodes))
+  zero.list.element<- switch(method,
+                             "theoretical" = list(theoretical = zero.mat),
+                             "group" = list(theoretical = zero.mat,group = zero.mat),
+                             "focal" = list(theoretical = zero.mat,focal = zero.mat),
+                             "both" = list(theoretical = zero.mat,group = zero.mat,focal = zero.mat)
+  )
   scan_list<- vector(mode="list",length = total_scan)
   non.zeroes<- rbinom(total_scan,1,1-prod(1-presence.prob))==1;
-  scan_list[!non.zeroes]<- lapply(seq_along(scan_list[!non.zeroes]),function(scan) matrix(0,nrow(presence.prob),ncol(presence.prob)));
+  scan_list[!non.zeroes]<- lapply(scan_list[!non.zeroes],function(scan) zero.list.element)
   scan_list
 }
 
