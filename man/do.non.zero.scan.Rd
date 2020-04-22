@@ -53,9 +53,16 @@ According to edge presence probability, or a reference adjacency matrix `Adj` co
 \examples{
 set.seed(42)
 
-n<- 5;nodes<- letters[1:n];
+n<- 5;nodes<- as.character(1:n);
 Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
-Adj[non.diagonal(Adj)]<- sample(0:42,n*(n-1),replace = TRUE)
+Adj[non.diagonal(Adj)]<- sample(0:3,n*(n-1),replace = TRUE)
 Adj
-do.non.zero.scan(Adj,500,method = "both",focal=3)
+
+presence.prob<- Binary.prob(Adj,50)
+obs.prob<- matrix(runif(n*n,0,1),n,n);diag(obs.prob)<- 0
+
+do.non.zero.scan(Adj,50,method = "group",obs.prob = 0.9)
+do.non.zero.scan(Adj,50,method = "both",obs.prob = obs.prob)
+do.non.zero.scan(presence.prob,method = "focal")
+do.non.zero.scan(presence.prob,method = "focal",focal = "4")
 }

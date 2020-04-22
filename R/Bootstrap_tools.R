@@ -17,7 +17,6 @@
 #' #Internal
 Bootstrap_add.attributes<- function(Bootstrap,method,keep,scaled,mode,output,total_scan){
   attr(Bootstrap,"method")<- method;
-  attr(Bootstrap,"keep")<- keep;
   attr(Bootstrap,"scaled")<- scaled;
   attr(Bootstrap,"mode")<- mode;
   attr(Bootstrap,"output")<- output;

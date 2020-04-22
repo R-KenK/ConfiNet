@@ -5,7 +5,7 @@
 \title{Row bind list of data frames
 wrapper to one-function do.call rbind over a pblapply list}
 \usage{
-rbind_pblapply(X, FUN, n.cores, .export = NULL)
+rbind_pblapply(X, FUN, n.cores = NULL, .export = NULL, cl = NULL)
 }
 \arguments{
 \item{X}{a list. See details \link[base]{lapply}.}

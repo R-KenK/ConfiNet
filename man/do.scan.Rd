@@ -64,4 +64,6 @@ obs.prob<- matrix(runif(n*n,0,1),n,n);diag(obs.prob)<- 0
 do.scan(Adj,50,method = "group",obs.prob = 0.9)
 do.scan(Adj,50,method = "both",obs.prob = obs.prob)
 do.scan(presence.prob,method = "focal")
+do.scan(presence.prob,method = "focal",focal = "4")
+do.scan(presence.prob,method = "focal",focal = 3)
 }

@@ -7,30 +7,32 @@ Bootstrap iterated binary group or focal scans with probabilities derived from a
 \usage{
 Boot_scans(
   Adj,
-  n.boot,
   total_scan,
-  method = c("group", "focal", "both"),
+  method = c("theoretical", "group", "focal", "both"),
   focal.list = NULL,
+  n.boot,
+  ...,
   scaled = FALSE,
   obs.prob = 1,
-  keep = FALSE,
   mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus", "vector"),
   output = c("list", "adjacency", "all"),
   use.rare.opti = NULL,
   n.cores = (parallel::detectCores() - 1),
-  cl = NULL
+  cl
 )
 }
 \arguments{
 \item{Adj}{square integers matrix of occurences of dyads. WIP: implement method for association matrices...}
 
-\item{n.boot}{integer, number of bootstrap to perform.}
-
 \item{total_scan}{integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.}
 
-\item{method}{Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).}
+\item{method}{Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).}
 
 \item{focal.list}{Character vector, indicate the list of focals to consider throughout the scans.}
+
+\item{n.boot}{integer, number of bootstrap to perform.}
+
+\item{...}{additional argument to be used, to use produce a scan in a desired way.}
 
 \item{scaled}{logical, specifies if adjacency data should be scaled by sampling effort.}
 
@@ -41,9 +43,7 @@ Boot_scans(
  \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
 }}
 
-\item{keep}{logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.}
-
-\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
+\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.}
 
 \item{output}{Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix}
 
@@ -52,7 +52,7 @@ Boot_scans(
 \item{cl}{Optional cluster object (cf snow package), otherwise created according to n.cores.}
 }
 \value{
-according to output and method: a list of iterated scans, or of adjacency matrix
+according to output and method: a list of iterated scans, or of adjacency matrix, with attributes to keep track of certain data
 }
 \description{
 Bootstrap scans
@@ -70,7 +70,7 @@ focal.list<- sample(nodes,42,replace = TRUE)
 table(focal.list)
 
 Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,scaled = TRUE,
-           method = "group",mode = "directed",output = "list")
+           method = "group",use.rare.opti=FALSE,mode = "directed",output = "list")
 Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,scaled = TRUE,
            method = "focal",mode = "directed",output = "adj")
 # system.time( #single threaded
