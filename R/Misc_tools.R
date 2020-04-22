@@ -125,15 +125,15 @@ decide_use.rare.opti<- function(n,total_scan,max.obs=NULL){
 #' @param total_scan integer, sampling effort
 #' @param presence.prob presence probability matrix (or vector)
 #'
-#' @return a list of zeroes (all-zeroes scans) and NULL (non-zeroes scans to be later performed)
+#' @return a list of zero-matrices (all-zeroes scans) and NULL (non-zeroes scans to be later performed)
 #' @export
 #'
 #' @examples
 #' # Internal use
 simulate.zeroes.non.zeroes<- function(total_scan,presence.prob){
   scan_list<- vector(mode="list",length = total_scan)
-  non.zeroes<- rbinom(total_scan,1,1-prod(1-presence.prob$present))==1;
-  scan_list[!non.zeroes]<- 0;
+  non.zeroes<- rbinom(total_scan,1,1-prod(1-presence.prob))==1;
+  scan_list[!non.zeroes]<- lapply(seq_along(scan_list[!non.zeroes]),function(scan) matrix(0,nrow(presence.prob),ncol(presence.prob)));
   scan_list
 }
 
