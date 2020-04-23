@@ -56,7 +56,7 @@
 #' #             method = "both",mode = "directed",output = "adj")
 #' # )
 Boot_scans<- function(Adj,total_scan,method=c("theoretical","group","focal","both"),focal.list=NULL,n.boot,...,
-                      scaled=FALSE,obs.prob=1,
+                      scaled=FALSE,obs.prob=1,pbapply=FALSE,
                       mode = c("directed", "undirected", "max","min", "upper", "lower", "plus","vector"),
                       output=c("list","adjacency","all"),use.rare.opti=NULL,n.cores=(parallel::detectCores()-1),cl){
   b<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
@@ -65,13 +65,6 @@ Boot_scans<- function(Adj,total_scan,method=c("theoretical","group","focal","bot
   mode<- match.arg(mode)
 
   scan.default.args(Adj = Adj,total_scan = total_scan,method = method,...)
-
-  if(missing(cl)) {
-    .export<- c("do.scan","non.diagonal","quick.sample","Binary.prob","binary_adjacency_mode","scan.default.args","observable_edges","focal.scan");
-    cl<- snow::makeCluster(n.cores);
-    snow::clusterExport(cl,list = .export);snow::clusterExport(cl,list = ls(sys.frame(which = 1)),envir = sys.frame(which = 1));
-    doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))
-  }
 
   Adj.subfun<- switch(mode,
                       "directed" = ,
@@ -90,22 +83,31 @@ Boot_scans<- function(Adj,total_scan,method=c("theoretical","group","focal","bot
     # n<- nrow(Adj)
     # use.rare.opti<- decide_use.rare.opti(n = n*(n-1),total_scan = total_scan,max.obs = max(Adj))
   }
-  if(use.rare.opti){
-    Bootstrap<- pbapply::pblapply(
-      1:n.boot,
-      function(b){
-        iterate_rare.scans(Adj = Adj,total_scan = total_scan,presence.prob = presence.prob,
-                           focal.list = focal.list,scaled = scaled,obs.prob=obs.prob,
-                           method = method,mode = mode,output = output,n.cores = n.cores,cl=cl,Adj.subfun = Adj.subfun)
-      }
-    )
-  }else{
+  if(pbapply){
+    if(missing(cl)) {
+      .export<- c("iterate_scans","do.non.zero.scan","do.scan","non.diagonal",
+                  "sum_up.scans","sum_up.scan","matrix_sum_na.rm","quick.sample",
+                  "Binary.prob","binary_adjacency_mode","scan.default.args","adjacency_mode",
+                  "n.observed_edges","observable_edges","adjust.conditional.prob","focal.scan")
+      cl<- snow::makeCluster(n.cores);
+      snow::clusterExport(cl,list = .export);snow::clusterExport(cl,list = ls(sys.frame(which = 1)),envir = sys.frame(which = 1));
+      on.exit(snow::stopCluster(cl));
+    }
     Bootstrap<- pbapply::pblapply(
       1:n.boot,
       function(b){
         iterate_scans(Adj = Adj,total_scan = total_scan,presence.prob = presence.prob,
-                      focal.list = focal.list,scaled = scaled,obs.prob=obs.prob,
-                      method = method,mode = mode,output = output,n.cores = n.cores,cl=cl,Adj.subfun = Adj.subfun)
+                      focal.list = focal.list,scaled = scaled,obs.prob = obs.prob,
+                      method = method,mode = mode,output = output,use.rare.opti = use.rare.opti,Adj.subfun = Adj.subfun)
+      },cl = cl
+    )
+  }else{
+    Bootstrap<- lapply(
+      1:n.boot,
+      function(b){
+        iterate_scans(Adj = Adj,total_scan = total_scan,presence.prob = presence.prob,
+                      focal.list = focal.list,scaled = scaled,obs.prob = obs.prob,
+                      method = method,mode = mode,output = output,use.rare.opti = use.rare.opti,Adj.subfun = Adj.subfun)
       }
     )
   }

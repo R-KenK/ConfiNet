@@ -47,6 +47,8 @@ Boot_scans(
 
 \item{output}{Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix}
 
+\item{use.rare.opti}{logical: should the optimization for rare event be used? If left NULL, choice is made automatically by decide_use.rare.opti().}
+
 \item{n.cores}{number of threads to use while performingh the bootstrap}
 
 \item{cl}{Optional cluster object (cf snow package), otherwise created according to n.cores.}
