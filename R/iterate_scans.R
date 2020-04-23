@@ -7,9 +7,7 @@
 #' @param method Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).
 #' @param output Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix
 #' @param scaled logical, specifies if adjacency data should be scaled by sampling effort.
-#' @param n.cores number of threads to use while performingh the bootstrap
-#' @param cl Optional cluster object (cf snow package), experimentally set to put the makeCluster and stopCluster out of the bootable function. (WIP, next implementation should rethink this).
-#' @param ... additional argument to be used, to use produce a scan in a desired way.
+##' @param ... additional argument to be used, to use produce a scan in a desired way.
 #' @param focal.list Character vector, indicate the list of focals to consider throughout the scans.
 #' @param obs.prob either :
 #' \itemize{
@@ -31,49 +29,50 @@
 #' @examples
 #' set.seed(42)
 #'
-#' n<- 5;nodes<- as.character(1:n);total_scan<- 42;
+#' n<- 5;nodes<- as.character(1:n);total_scan<- 42;total_scan.rare<- 4200;
 #' Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
 #' Adj[non.diagonal(Adj)]<- sample(0:42,n*(n-1),replace = TRUE)
 #' Adj
+#' Adj.rare<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
+#' Adj.rare[non.diagonal(Adj.rare)]<- sample(0:10,n*(n-1),replace = TRUE)
+#' Adj.rare
 #'
 #' presence.prob<- Binary.prob(Adj,50)
 #' obs.prob<- matrix(runif(n*n,0,1),n,n);diag(obs.prob)<- 0
 #'
 #' focal.list<- sample(nodes,total_scan,replace = TRUE)
 #' table(focal.list)
+#' focal.list.rare<- sample(nodes,total_scan.rare,replace = TRUE)
+#' table(focal.list.rare)
 #'
-#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",output = "list",obs.prob = 0.8,n.cores = 1)
-#' iterate_scans(Adj,total_scan,scaled = TRUE,method = "group",output = "adjacency",obs.prob = obs.prob,n.cores = 1)
-#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "focal",output = "adjacency",n.cores = 1)
+#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",output = "list",obs.prob = 0.8)
+#' iterate_scans(Adj,total_scan,scaled = TRUE,method = "group",output = "adjacency",obs.prob = obs.prob)
+#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "focal",output = "adjacency")
 #' iterate_scans(Adj,total_scan,focal.list = focal.list,scaled = TRUE,obs.prob = 0.7,method = "both",mode = "directed",output = "all")
+#' iterate_scans(Adj.rare,total_scan.rare,scaled = FALSE,method = "both",output = "list",obs.prob = 0.8,use.rare.opti = TRUE)
+#' iterate_scans(Adj.rare,total_scan.rare,scaled = TRUE,method = "group",output = "adjacency",obs.prob = obs.prob,use.rare.opti = TRUE)
+#' iterate_scans(Adj.rare,total_scan.rare,scaled = FALSE,method = "focal",output = "adjacency",use.rare.opti = TRUE)
+#' iterate_scans(Adj.rare,total_scan.rare,focal.list = focal.list.rare,scaled = TRUE,obs.prob = 0.7,method = "both",mode = "directed",output = "all",use.rare.opti = TRUE)
 
 iterate_scans<- function(Adj=NULL,total_scan,method=c("theoretical","group","focal","both"),
                          output=c("list","adjacency","all"),scaled=FALSE,...,
-                         use.rare.opti = FALSE,n.cores=1,cl){
+                         use.rare.opti = FALSE){
   scan.default.args(Adj = Adj,total_scan = total_scan,method = method,...)
-  if(missing(cl)) {
-    .export<- c("do.non.zero.scan","do.scan","non.diagonal","quick.sample","Binary.prob","binary_adjacency_mode","scan.default.args","observable_edges","adjust.conditional.prob","focal.scan")
-    cl<- snow::makeCluster(ifelse(n.cores=="auto",(parallel::detectCores()-1),n.cores));
-    snow::clusterExport(cl,list = .export);
-    on.exit(snow::stopCluster(cl));
-  }
-  snow::clusterExport(cl,list = ls(sys.frame(which = 1)),envir = sys.frame(which = 1));
-
   if(!use.rare.opti){
-    scan_list<- pbapply::pblapply(
+    scan_list<- lapply(
       1:total_scan,
       function(i){
         do.scan(presence.prob = presence.prob,method = method,focal = focal.list[i],obs.prob = obs.prob,Adj.subfun = Adj.subfun)
-      },cl = cl
+      }
     )
   }else{
     scan_list<- simulate_zeros.non.zeros(total_scan,presence.prob)
     zero<- attr(scan_list,"n.zeros")
-    scan_list<- pbapply::pblapply(
+    scan_list<- lapply(
       seq_along(scan_list),
       function(i){
         do.non.zero.scan(presence.prob = presence.prob,method = method,focal = focal.list[i],obs.prob = obs.prob,Adj.subfun = Adj.subfun)
-      },cl = cl
+      }
     )
     attr(scan_list,"n.zeros")<- zero
   }

@@ -8,6 +8,8 @@ Internal use. Sum up binary adjacency matrices or focal vectors according to the
 sum_up.scans(
   scan_list,
   scaled = FALSE,
+  use.rare.opti = FALSE,
+  obs.prob = NULL,
   method = c("theoretical", "group", "focal", "both"),
   mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus", "vector")
 )

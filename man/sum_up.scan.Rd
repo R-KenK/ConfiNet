@@ -5,7 +5,14 @@
 \title{Sum up and flatten list of binary scans
 Internal use. Sum up binary adjacency matrices or focal vectors according to the method used. sum_up.scan*s*() is a wrapper for sum_up.scan() that returns summed_up scans for the differnet requested methods0}
 \usage{
-sum_up.scan(scan_list, method, mode = NULL, scaled)
+sum_up.scan(
+  scan_list,
+  method,
+  mode = NULL,
+  scaled,
+  use.rare.opti = FALSE,
+  obs.prob = NULL
+)
 }
 \arguments{
 \item{scan_list}{list of binary adjacency matrices, binary focal vectors, or both, outputed by iterating do.scan()}

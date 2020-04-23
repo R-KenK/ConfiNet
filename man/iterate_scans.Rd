@@ -12,8 +12,7 @@ iterate_scans(
   output = c("list", "adjacency", "all"),
   scaled = FALSE,
   ...,
-  n.cores = (parallel::detectCores() - 1),
-  cl
+  use.rare.opti = FALSE
 )
 }
 \arguments{
@@ -28,10 +27,6 @@ iterate_scans(
 \item{scaled}{logical, specifies if adjacency data should be scaled by sampling effort.}
 
 \item{...}{additional argument to be used, to use produce a scan in a desired way.}
-
-\item{n.cores}{number of threads to use while performingh the bootstrap}
-
-\item{cl}{Optional cluster object (cf snow package), experimentally set to put the makeCluster and stopCluster out of the bootable function. (WIP, next implementation should rethink this).}
 
 \item{presence.prob.}{square probability matrix of presence (as in Bernouilli trial) of dyads. Optional if using Adj and total_scan.}
 
@@ -58,19 +53,28 @@ Internal use in Boot_scan. Iterate several binary group or focal scans with prob
 \examples{
 set.seed(42)
 
-n<- 5;nodes<- as.character(1:n);total_scan<- 42;
+n<- 5;nodes<- as.character(1:n);total_scan<- 42;total_scan.rare<- 4200;
 Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
 Adj[non.diagonal(Adj)]<- sample(0:42,n*(n-1),replace = TRUE)
 Adj
+Adj.rare<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
+Adj.rare[non.diagonal(Adj.rare)]<- sample(0:10,n*(n-1),replace = TRUE)
+Adj.rare
 
 presence.prob<- Binary.prob(Adj,50)
 obs.prob<- matrix(runif(n*n,0,1),n,n);diag(obs.prob)<- 0
 
 focal.list<- sample(nodes,total_scan,replace = TRUE)
 table(focal.list)
+focal.list.rare<- sample(nodes,total_scan.rare,replace = TRUE)
+table(focal.list.rare)
 
-iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",output = "list",obs.prob = 0.8,n.cores = 1)
-iterate_scans(Adj,total_scan,scaled = TRUE,method = "group",output = "adjacency",obs.prob = obs.prob,n.cores = 1)
-iterate_scans(Adj,total_scan,scaled = FALSE,method = "focal",output = "adjacency",n.cores = 1)
+iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",output = "list",obs.prob = 0.8)
+iterate_scans(Adj,total_scan,scaled = TRUE,method = "group",output = "adjacency",obs.prob = obs.prob)
+iterate_scans(Adj,total_scan,scaled = FALSE,method = "focal",output = "adjacency")
 iterate_scans(Adj,total_scan,focal.list = focal.list,scaled = TRUE,obs.prob = 0.7,method = "both",mode = "directed",output = "all")
+iterate_scans(Adj.rare,total_scan.rare,scaled = FALSE,method = "both",output = "list",obs.prob = 0.8,use.rare.opti = TRUE)
+iterate_scans(Adj.rare,total_scan.rare,scaled = TRUE,method = "group",output = "adjacency",obs.prob = obs.prob,use.rare.opti = TRUE)
+iterate_scans(Adj.rare,total_scan.rare,scaled = FALSE,method = "focal",output = "adjacency",use.rare.opti = TRUE)
+iterate_scans(Adj.rare,total_scan.rare,focal.list = focal.list.rare,scaled = TRUE,obs.prob = 0.7,method = "both",mode = "directed",output = "all",use.rare.opti = TRUE)
 }
