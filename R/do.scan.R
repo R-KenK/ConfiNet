@@ -15,6 +15,7 @@
 #' }
 #' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
 #' @param Adj.subfun subsetting function of the adjacency matrix. Driven by igraph "mode" argument
+#' @param check.defaults logical. Should scan.default.args() be used? Implemented in case iterate_scan might provide everything neeed, but at the moment it seems buggy.
 #'
 #' @return a list of the theoretical square binary matrix representing the whole group scan, and:
 #' \itemize{
@@ -181,6 +182,7 @@ focal.scan<- function(scan.theoretical,focal){
 #' }
 #' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
 #' @param Adj.subfun subsetting function of the adjacency matrix. Driven by igraph "mode" argument. Default is non.diagonal if mode is defaulted to directed.
+#' @param check.defaults logical. Should scan.default.args() be used? Implemented in case iterate_scan might provide everything neeed, but at the moment it seems buggy.
 #'
 #' @return nothing, but assign required variable for do.(non.zero.)scan() in their environment.
 #'

@@ -22,6 +22,8 @@ do.scan(
 
 \item{...}{additional argument to be used, to use produce a scan in a desired way.}
 
+\item{check.defaults}{logical. Should scan.default.args() be used? Implemented in case iterate_scan might provide everything neeed, but at the moment it seems buggy.}
+
 \item{focal}{Only required for method = "focal" or "both" Character scalar, indicate which focal to consider for the scan.}
 
 \item{presence.prob}{square probability matrix of presence (as in Bernouilli trial) of dyads. Optional if using Adj and total_scan.}

@@ -2,6 +2,7 @@
 
 ## import needed function, but ultimately should use library(ConfiNet) --------
 source("R/matrix.tools.R")
+source('R/rare.event.optimization_tools.R')
 source("R/Misc_tools.R")
 source("R/Binary.prob.R")
 source("R/do.scan.R")

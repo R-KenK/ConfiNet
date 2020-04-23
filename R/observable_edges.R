@@ -43,3 +43,33 @@ observable_edges<- function(Scan,obs.prob=NULL,Adj.subfun=NULL){
   }
   observed
 }
+
+#' Get number of edge observations (for group scans with unobservable individuals)
+#' quantify actual edge-wise sampling effort, considering that some weren't observable in all group scans.Internal use.
+#'
+#' @param scan_list list of binary group scans, with NAs when the dyad was not observable.
+#' @param diag integer (mostly), value to replace the diagonal of the output matrix with. Use NULL if you consider self-loop (untested).
+#'
+#' @return a square matrix with element quantifying how many time a dyad has been sampled
+#' @export
+#'
+#' @examples
+#' #internal use.
+n.observed_edges<- function(scan_list,diag=0,use.rare.opti=FALSE,obs.prob=NULL,n.zeros = NULL){
+  n.observed<- Reduce("+",
+                      lapply(scan_list,
+                             function(scan){
+                               observed<- ifelse(!is.na(scan),1,0) # counting part of the algorithm
+                               # if(!is.null(diag)) {diag(observed)<- diag} # doesn't count the diagonal by default. Left the option to count if self loops should be considered
+                               observed
+                             }
+                      )
+  )
+  if(!use.rare.opti){
+    n.observed
+  }else{
+    n<- nrow(n.observed);
+    if(!is.matrix(obs.prob)){obs.prob<- matrix(obs.prob,n,n)}
+    rbind_lapply(1:n,function(i) rbinom(n,n.zeros,obs.prob[i,])+n.observed[i,])
+  }
+}

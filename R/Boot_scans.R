@@ -20,6 +20,7 @@
 #' @param output Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix
 #' @param n.cores number of threads to use while performingh the bootstrap
 #' @param cl Optional cluster object (cf snow package), otherwise created according to n.cores.
+#' @param use.rare.opti logical: should the optimization for rare event be used? If left NULL, choice is made automatically by decide_use.rare.opti().
 #'
 #' @return according to output and method: a list of iterated scans, or of adjacency matrix, with attributes to keep track of certain data
 #'

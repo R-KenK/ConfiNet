@@ -10,6 +10,8 @@ simulate_zeroes.non.zeroes(total_scan, presence.prob, method)
 \item{total_scan}{integer, sampling effort}
 
 \item{presence.prob}{presence probability matrix (or vector)}
+
+\item{method}{Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).}
 }
 \value{
 a list of zero-matrices (all-zeroes scans) and NULL (non-zeroes scans to be later performed)
