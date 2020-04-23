@@ -18,8 +18,7 @@
 #' }
 #' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
 #' @param output Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix
-#' @param n.cores number of threads to use while performingh the bootstrap
-#' @param cl Optional cluster object (cf snow package), otherwise created according to n.cores.
+#' @param cl Optional cluster object (cf snow package), left in case it's actually faster. So far benchmarks showed that with the overhead using multiple thread was actually longer...
 #' @param use.rare.opti logical: should the optimization for rare event be used? If left NULL, choice is made automatically by decide_use.rare.opti().
 #'
 #' @return according to output and method: a list of iterated scans, or of adjacency matrix, with attributes to keep track of certain data
@@ -56,9 +55,9 @@
 #' #             method = "both",mode = "directed",output = "adj")
 #' # )
 Boot_scans<- function(Adj,total_scan,method=c("theoretical","group","focal","both"),focal.list=NULL,n.boot,...,
-                      scaled=FALSE,obs.prob=1,pbapply=FALSE,
+                      scaled=FALSE,obs.prob=1,
                       mode = c("directed", "undirected", "max","min", "upper", "lower", "plus","vector"),
-                      output=c("list","adjacency","all"),use.rare.opti=NULL,n.cores=(parallel::detectCores()-1),cl){
+                      output=c("list","adjacency","all"),use.rare.opti=NULL,cl=NULL){
   b<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
   method<- match.arg(method)
   output<- match.arg(output)
@@ -83,34 +82,14 @@ Boot_scans<- function(Adj,total_scan,method=c("theoretical","group","focal","bot
     # n<- nrow(Adj)
     # use.rare.opti<- decide_use.rare.opti(n = n*(n-1),total_scan = total_scan,max.obs = max(Adj))
   }
-  if(pbapply){
-    if(missing(cl)) {
-      .export<- c("iterate_scans","do.non.zero.scan","do.scan","non.diagonal",
-                  "sum_up.scans","sum_up.scan","matrix_sum_na.rm","quick.sample",
-                  "Binary.prob","binary_adjacency_mode","scan.default.args","adjacency_mode",
-                  "n.observed_edges","observable_edges","adjust.conditional.prob","focal.scan")
-      cl<- snow::makeCluster(n.cores);
-      snow::clusterExport(cl,list = .export);snow::clusterExport(cl,list = ls(sys.frame(which = 1)),envir = sys.frame(which = 1));
-      on.exit(snow::stopCluster(cl));
-    }
-    Bootstrap<- pbapply::pblapply(
-      1:n.boot,
-      function(b){
-        iterate_scans(Adj = Adj,total_scan = total_scan,presence.prob = presence.prob,
-                      focal.list = focal.list,scaled = scaled,obs.prob = obs.prob,
-                      method = method,mode = mode,output = output,use.rare.opti = use.rare.opti,Adj.subfun = Adj.subfun)
-      },cl = cl
-    )
-  }else{
-    Bootstrap<- lapply(
-      1:n.boot,
-      function(b){
-        iterate_scans(Adj = Adj,total_scan = total_scan,presence.prob = presence.prob,
-                      focal.list = focal.list,scaled = scaled,obs.prob = obs.prob,
-                      method = method,mode = mode,output = output,use.rare.opti = use.rare.opti,Adj.subfun = Adj.subfun)
-      }
-    )
-  }
+  Bootstrap<- pbapply::pblapply(
+    1:n.boot,
+    function(b){
+      iterate_scans(Adj = Adj,total_scan = total_scan,presence.prob = presence.prob,
+                    focal.list = focal.list,scaled = scaled,obs.prob = obs.prob,
+                    method = method,mode = mode,output = output,use.rare.opti = use.rare.opti,Adj.subfun = Adj.subfun)
+    },cl = cl
+  )
   Bootstrap_add.attributes(Bootstrap = Bootstrap,method = method,scaled = scaled,
                            mode = mode,output = output,total_scan = total_scan)
 }

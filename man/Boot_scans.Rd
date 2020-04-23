@@ -17,8 +17,7 @@ Boot_scans(
   mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus", "vector"),
   output = c("list", "adjacency", "all"),
   use.rare.opti = NULL,
-  n.cores = (parallel::detectCores() - 1),
-  cl
+  cl = NULL
 )
 }
 \arguments{
@@ -49,9 +48,9 @@ Boot_scans(
 
 \item{use.rare.opti}{logical: should the optimization for rare event be used? If left NULL, choice is made automatically by decide_use.rare.opti().}
 
-\item{n.cores}{number of threads to use while performingh the bootstrap}
+\item{cl}{Optional cluster object (cf snow package), left in case it's actually faster. So far benchmarks showed that with the overhead using multiple thread was actually longer...}
 
-\item{cl}{Optional cluster object (cf snow package), otherwise created according to n.cores.}
+\item{n.cores}{number of threads to use while performingh the bootstrap}
 }
 \value{
 according to output and method: a list of iterated scans, or of adjacency matrix, with attributes to keep track of certain data
