@@ -13,7 +13,6 @@ Boot_scans(
   n.boot,
   ...,
   scaled = FALSE,
-  obs.prob = 1,
   mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus", "vector"),
   output = c("list", "adjacency", "all"),
   use.rare.opti = NULL,
@@ -35,13 +34,6 @@ Boot_scans(
 
 \item{scaled}{logical, specifies if adjacency data should be scaled by sampling effort.}
 
-\item{obs.prob}{either :
-\itemize{
- \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
- \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
- \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
-}}
-
 \item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.}
 
 \item{output}{Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix}
@@ -51,6 +43,13 @@ Boot_scans(
 \item{cl}{Optional cluster object (cf snow package), left in case it's actually faster. So far benchmarks showed that with the overhead using multiple thread was actually longer...}
 
 \item{n.cores}{number of threads to use while performingh the bootstrap}
+
+\item{obs.prob}{either :
+\itemize{
+ \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
+ \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+ \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+}}
 }
 \value{
 according to output and method: a list of iterated scans, or of adjacency matrix, with attributes to keep track of certain data
@@ -62,25 +61,23 @@ Bootstrap iterated binary group or focal scans with probabilities derived from a
 \examples{
 set.seed(42)
 
-n<- 5;nodes<- letters[1:n];
+n<- 5;nodes<- as.character(1:n);
 Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
 Adj[non.diagonal(Adj)]<- sample(0:42,n*(n-1),replace = TRUE)
 Adj
 
+obs.prob<- matrix(runif(n*n,0,1),n,n);diag(obs.prob)<- 0
 focal.list<- sample(nodes,42,replace = TRUE)
 table(focal.list)
 
-Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,scaled = TRUE,
-           method = "group",use.rare.opti=FALSE,mode = "directed",output = "list")
-Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,scaled = TRUE,
+Boot_scans(Adj,total_scan = 42,focal.list = focal.list,n.boot = 3,scaled = TRUE,
+           method = "group",use.rare.opti=FALSE,mode = "directed",obs.prob = 0.5,output = "list")
+Boot_scans(Adj,total_scan = 42,focal.list = focal.list,n.boot = 3,scaled = FALSE,
            method = "focal",mode = "directed",output = "adj")
-# system.time( #single threaded
-#   Boot_scans(Adj,10,total_scan = 42,focal.list = focal.list,scaled = TRUE,
-#              method = "both",mode = "directed",output = "adj",n.cores = 1)
-# )
-# system.time( #multi threaded (with number of thread existing - 1)
-#   Boot_scans(Adj,10,total_scan = 42,focal.list = focal.list,
-#             scaled = TRUE,obs.prob=0.7,keep=TRUE,
-#             method = "both",mode = "directed",output = "adj")
-# )
+Boot_scans(Adj,total_scan = 42,obs.prob = 0.2,n.boot=3,scaled = TRUE,
+           method = "group",mode = "directed",output = "list")
+Boot_scans(Adj,total_scan = 42,obs.prob = obs.prob,n.boot=3,scaled = TRUE,
+           method = "both",mode = "directed",output = "all")
+Boot_scans(Adj,total_scan = 4000,obs.prob = obs.prob,n.boot=3,scaled = TRUE,
+           method = "both",mode = "directed",use.rare.opti = TRUE,output = "all")
 }

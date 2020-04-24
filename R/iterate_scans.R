@@ -45,8 +45,10 @@
 #' focal.list.rare<- sample(nodes,total_scan.rare,replace = TRUE)
 #' table(focal.list.rare)
 #'
+#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "theoretical",mode = "max",output = "adjacency",obs.prob = 0.8)
 #' iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",output = "list",obs.prob = 0.8)
-#' iterate_scans(Adj,total_scan,scaled = TRUE,method = "group",output = "adjacency",obs.prob = obs.prob)
+#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",mode = "max",output = "adj",obs.prob = 0.8)
+#' iterate_scans(Adj,total_scan,scaled = TRUE,method = "group",mode = "min",output = "adjacency",obs.prob = obs.prob)
 #' iterate_scans(Adj,total_scan,scaled = FALSE,method = "focal",output = "adjacency")
 #' iterate_scans(Adj,total_scan,focal.list = focal.list,scaled = TRUE,obs.prob = 0.7,method = "both",mode = "directed",output = "all")
 #' iterate_scans(Adj.rare,total_scan.rare,scaled = FALSE,method = "both",output = "list",obs.prob = 0.8,use.rare.opti = TRUE)
@@ -57,25 +59,23 @@
 iterate_scans<- function(Adj=NULL,total_scan,method=c("theoretical","group","focal","both"),
                          output=c("list","adjacency","all"),scaled=FALSE,...,
                          use.rare.opti = FALSE){
+  output<- match.arg(output);
   scan.default.args(Adj = Adj,total_scan = total_scan,method = method,...)
   if(!use.rare.opti){
-    scan_list<- lapply(
-      1:total_scan,
-      function(i){
-        do.scan(presence.prob = presence.prob,method = method,focal = focal.list[i],obs.prob = obs.prob,Adj.subfun = Adj.subfun)
-      }
-    )
+    to.do.list<- 1:total_scan;n.zeros<- NULL;
   }else{
     scan_list<- simulate_zeros.non.zeros(total_scan,presence.prob)
-    zero<- attr(scan_list,"n.zeros")
-    scan_list<- lapply(
-      seq_along(scan_list),
-      function(i){
-        do.non.zero.scan(presence.prob = presence.prob,method = method,focal = focal.list[i],obs.prob = obs.prob,Adj.subfun = Adj.subfun)
-      }
-    )
-    attr(scan_list,"n.zeros")<- zero
+    n.zeros<- attr(scan_list,"n.zeros")
+    to.do.list<- seq_along(scan_list)
   }
+  scan_list<- lapply(
+    to.do.list,
+    function(i){
+      do.scan(presence.prob = presence.prob,method = method,focal = focal.list[i],obs.prob = obs.prob,Adj.subfun = Adj.subfun,use.rare.opti = use.rare.opti)
+    }
+  )
+  attr(scan_list,"n.zeros")<- n.zeros
+
   switch(output,
          "list" = scan_list,
          "adjacency" = sum_up.scans(scan_list = scan_list,scaled = scaled,method = method,mode = mode),

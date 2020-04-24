@@ -18,8 +18,8 @@
 #' }
 #' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
 #' @param output Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix
-#' @param cl Optional cluster object (cf snow package), left in case it's actually faster. So far benchmarks showed that with the overhead using multiple thread was actually longer...
 #' @param use.rare.opti logical: should the optimization for rare event be used? If left NULL, choice is made automatically by decide_use.rare.opti().
+#' @param cl Optional cluster object (cf snow package), left in case it's actually faster. So far benchmarks showed that with the overhead using multiple thread was actually longer...
 #'
 #' @return according to output and method: a list of iterated scans, or of adjacency matrix, with attributes to keep track of certain data
 #'
@@ -88,6 +88,6 @@ Boot_scans<- function(Adj,total_scan,method=c("theoretical","group","focal","bot
                     method = method,mode = mode,output = output,use.rare.opti = use.rare.opti,Adj.subfun = Adj.subfun)
     },cl = cl
   )
-  Bootstrap_add.attributes(Bootstrap = Bootstrap,method = method,scaled = scaled,
+  Bootstrap_add.attributes(Bootstrap = Bootstrap,method = method,scaled = scaled,use.rare.opti = use.rare.opti,
                            mode = mode,output = output,total_scan = total_scan,n.boot = n.boot)
 }

@@ -3,14 +3,14 @@
 \name{do.scan}
 \alias{do.scan}
 \title{Perform a scan
-According to edge presence probability, or a reference adjacency matrix `Adj` coupled with a sample effort `total_scan`, perform a scan in the form of a theoretical binary adjacency matrix, and simulate the empirical obtention of a group scan and/or focal scan.}
+According to edge presence probability, or a reference adjacency matrix `Adj` coupled with a sample effort `total_scan`, perform a scan in the form of a theoretical binary adjacency matrix, and simulate the empirical obtention of a group scan and/or focal scan. If the optimization for rare even is used, performs a scan knowing that at least one edge has been observed in the theoretical scan.}
 \usage{
 do.scan(
   Adj = NULL,
   total_scan = NULL,
   method = c("theoretical", "group", "focal", "both"),
   ...,
-  check.defaults = TRUE
+  use.rare.opti = FALSE
 )
 }
 \arguments{
@@ -22,7 +22,7 @@ do.scan(
 
 \item{...}{additional argument to be used, to use produce a scan in a desired way.}
 
-\item{check.defaults}{logical. Should scan.default.args() be used? Implemented in case iterate_scan might provide everything neeed, but at the moment it seems buggy.}
+\item{use.rare.opti}{logical: should the optimization for rare event be used?}
 
 \item{focal}{Only required for method = "focal" or "both" Character scalar, indicate which focal to consider for the scan.}
 
@@ -35,7 +35,7 @@ do.scan(
  \item{"a systematic dyad observation (P.obs constant for all i,j)"}{should be in [0,1], assumed to be the case when only one value is inputed)}
 }}
 
-\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
+\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.}
 
 \item{Adj.subfun}{subsetting function of the adjacency matrix. Driven by igraph "mode" argument}
 }
@@ -50,7 +50,7 @@ a list of the theoretical square binary matrix representing the whole group scan
 }
 \description{
 Perform a scan
-According to edge presence probability, or a reference adjacency matrix `Adj` coupled with a sample effort `total_scan`, perform a scan in the form of a theoretical binary adjacency matrix, and simulate the empirical obtention of a group scan and/or focal scan.
+According to edge presence probability, or a reference adjacency matrix `Adj` coupled with a sample effort `total_scan`, perform a scan in the form of a theoretical binary adjacency matrix, and simulate the empirical obtention of a group scan and/or focal scan. If the optimization for rare even is used, performs a scan knowing that at least one edge has been observed in the theoretical scan.
 }
 \examples{
 set.seed(42)
