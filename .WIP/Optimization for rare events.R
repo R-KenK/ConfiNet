@@ -184,8 +184,11 @@ ggplot(cor.boot,aes(interaction(method,N),cor,colour=method))+
   geom_jitter(alpha=0.2)+geom_boxplot(alpha=0.8)+theme_bw()
 
 cor.summary<- cor.boot[,.(cor=median(cor),perc.5=quantile(cor,.05),perc.95=quantile(cor,.95)),by=.(method,n,N,max.obs)]
+cor.summary$method<- relevel(factor(cor.summary$method),"standard")
+cor.summary$N.text<- factor(paste0("N = ",cor.summary$N),levels = paste0("N = ",unique(cor.summary$N)))
+cor.summary$max.obs.text<- factor(paste0("max.obs = ",cor.summary$max.obs),levels = paste0("max.obs = ",unique(cor.summary$max.obs)))
 cor.plot<- ggplot(cor.summary,aes(n,cor,colour=method,fill=method,group=method))+
-  facet_wrap(N~max.obs,scales = "free")+
+  facet_wrap(N.text~max.obs.text,scales = "free")+
   geom_ribbon(aes(ymin = perc.5,ymax = perc.95),colour=NA,alpha=0.3)+
   geom_line()+geom_point(alpha=1)+theme_bw()
 cor.plot
@@ -195,14 +198,44 @@ ggplot(cor.summary,aes(n,cor,colour=method,fill=method,group=method))+
   geom_line(position = position_dodge(50/3-1))+geom_point(alpha=1,position = position_dodge(50/3-1))+theme_bw()
 ggsave(filename = ".WIP/optimization_cor.plot.pdf",plot = cor.plot,width = 20,height = 15,units = "in")
 
-time.summary<- cor.boot[,.(time=median(as.numeric(time)),perc.5=quantile(as.numeric(time),.05),perc.95=quantile(as.numeric(time),.95)),by=.(method,n,N,max.obs)]
+cor.summary<- cor.boot[,.(cor=median(cor),perc.5=quantile(cor,.05),perc.95=quantile(cor,.95)),by=.(method,n,N,max.obs)]
+cor.summary<- cor.summary[method!="opti.ordered"]
+cor.summary$method<- ifelse(cor.summary$method=="standard","standard","opti")
+cor.summary$method<- relevel(factor(cor.summary$method),"standard")
+cor.summary$N.text<- factor(paste0("N = ",cor.summary$N),levels = paste0("N = ",unique(cor.summary$N)))
+cor.summary$max.obs.text<- factor(paste0("max.obs = ",cor.summary$max.obs),levels = paste0("max.obs = ",unique(cor.summary$max.obs)))
+cor.plot<- ggplot(cor.summary,aes(n,cor,colour=method,fill=method,group=method))+
+  facet_wrap(N.text~max.obs.text,scales = "free")+
+  geom_ribbon(aes(ymin = perc.5,ymax = perc.95),colour=NA,alpha=0.3)+
+  geom_line()+geom_point(alpha=1)+theme_bw()
+cor.plot
+ggsave(filename = ".WIP/optimization_cor.plot.standard.vs.opti.pdf",plot = cor.plot,width = 20,height = 15,units = "in")
+
+time.summary<- time.boot[,.(time=median(time),perc.5=quantile(time,.05),perc.95=quantile(time,.95)),by=.(method,n,N,max.obs)]
+time.summary$method<- relevel(factor(time.summary$method),"standard")
+time.summary$N.text<- factor(paste0("N = ",time.summary$N),levels = paste0("N = ",unique(time.summary$N)))
+time.summary$max.obs.text<- factor(paste0("max.obs = ",time.summary$max.obs),levels = paste0("max.obs = ",unique(time.summary$max.obs)))
 time.plot<- ggplot(time.summary,aes(n,time,colour=method,fill=method,group=method))+
-  facet_wrap(N~max.obs,scales = "free")+
+  facet_wrap(N.text~max.obs.text,scales = "free")+
   geom_ribbon(aes(ymin = perc.5,ymax = perc.95),colour=NA,alpha=0.3)+
   geom_line()+geom_point(alpha=1)+theme_bw()
 time.plot
+ggsave(filename = ".WIP/optimization_time.plot.pdf",plot = time.plot,width = 20,height = 15,units = "in")
 ggplot(time.summary,aes(n,time,colour=method,fill=method,group=method))+
   facet_grid(N~max.obs)+
   geom_linerange(aes(ymin = perc.5,ymax = perc.95),alpha=1,position = position_dodge(50/3-1))+
   geom_line(position = position_dodge(50/3-1))+geom_point(alpha=1,position = position_dodge(50/3-1))+theme_bw()
-ggsave(filename = ".WIP/optimization_time.plot.pdf",plot = time.plot,width = 20,height = 15,units = "in")
+
+time.summary<- time.summary[method!="opti.ordered"]
+time.summary$method<- ifelse(time.summary$method=="standard","standard","opti")
+time.summary$method<- relevel(factor(time.summary$method),"standard")
+time.summary$N.text<- factor(paste0("N = ",time.summary$N),levels = paste0("N = ",unique(time.summary$N)))
+time.summary$max.obs.text<- factor(paste0("max.obs = ",time.summary$max.obs),levels = paste0("max.obs = ",unique(time.summary$max.obs)))
+time.plot<- ggplot(time.summary,aes(n,time,colour=method,fill=method,group=method))+
+  facet_wrap(N.text~max.obs.text,scales = "free")+
+  geom_ribbon(aes(ymin = perc.5,ymax = perc.95),colour=NA,alpha=0.3)+
+  geom_line()+geom_point(alpha=1)+theme_bw()
+time.plot
+ggsave(filename = ".WIP/optimization_time.plot.standard.vs.opti.pdf",plot = time.plot,width = 20,height = 15,units = "in")
+
+paste0("N = ",unique(time.summary$N))
