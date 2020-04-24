@@ -19,5 +19,7 @@ Quick optimized equivalent to sample(x,size,replace=TRUE)
 }
 \examples{
 quick.sample(1:20,5)
-# microbenchmark::microbenchmark(runif={(1:20)[ceiling(runif(5,0,20))]},quick.sample=quick.sample(1:20,5),sample=sample(1:20,5,replace = TRUE),times = 1000,control = list("warmup"=100))
+# microbenchmark::microbenchmark(runif={(1:20)[ceiling(runif(5,0,20))]},
+#   quick.sample=quick.sample(1:20,5),sample=sample(1:20,5,replace = TRUE),
+#   times = 1000,control = list("warmup"=100))
 }

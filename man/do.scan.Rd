@@ -20,24 +20,20 @@ do.scan(
 
 \item{method}{Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).}
 
-\item{...}{additional argument to be used, to use produce a scan in a desired way.}
-
-\item{use.rare.opti}{logical: should the optimization for rare event be used?}
-
-\item{focal}{Only required for method = "focal" or "both" Character scalar, indicate which focal to consider for the scan.}
-
-\item{presence.prob}{square probability matrix of presence (as in Bernouilli trial) of dyads. Optional if using Adj and total_scan.}
-
-\item{obs.prob}{either :
+\item{...}{additional argument to be used, to use produce a scan in a desired way.#'
 \itemize{
- \item{"a dyad observation probability matrix (P.obs)"}{of same dimension as Adj}
- \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
- \item{"a systematic dyad observation (P.obs constant for all i,j)"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+  \item{obs.prob}{either :
+    \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
+    \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+    \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+  }
+  \item{focal}{Only required for method = "focal" or "both" Character scalar, indicate which focal to consider for the scan.}
+  \item{Adj.subfun}{subsetting function of the adjacency matrix. Driven by igraph "mode" argument}
+  \item{presence.prob} {square probability matrix of presence (as in Bernouilli trial) of dyads. Optional if using Adj and total_scan.}
+  \item{mode} {Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.}
 }}
 
-\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.}
-
-\item{Adj.subfun}{subsetting function of the adjacency matrix. Driven by igraph "mode" argument}
+\item{use.rare.opti}{logical: should the optimization for rare event be used?}
 }
 \value{
 a list of the theoretical square binary matrix representing the whole group scan, and:

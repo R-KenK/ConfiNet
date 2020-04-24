@@ -21,6 +21,9 @@ rbind_lapply<- function(X,FUN){
 #'
 #' @param X a list. See details \link[base]{lapply}.
 #' @param FUN a function to subset data frames (or data tables). See details \link[base]{lapply}.
+#' @param n.cores number or cores (threads rather) to use in the cluster.
+#' @param .export character vector of the name of the variable and function to export to each worker of the cluster
+#' @param cl cluster object
 #'
 #' @return a row bound data frame
 #' @export
@@ -59,12 +62,16 @@ make_cl<- function(n.cores,.export){
 #' @param x a vector
 #' @param size number of elements to sample
 #'
+#' @importFrom stats runif
+#'
 #' @return sample of size "size" taken from x
 #' @export
 #'
 #' @examples
 #' quick.sample(1:20,5)
-#' # microbenchmark::microbenchmark(runif={(1:20)[ceiling(runif(5,0,20))]},quick.sample=quick.sample(1:20,5),sample=sample(1:20,5,replace = TRUE),times = 1000,control = list("warmup"=100))
+#' # microbenchmark::microbenchmark(runif={(1:20)[ceiling(runif(5,0,20))]},
+#' #   quick.sample=quick.sample(1:20,5),sample=sample(1:20,5,replace = TRUE),
+#' #   times = 1000,control = list("warmup"=100))
 quick.sample<- function(x,size){
-  x[ceiling(runif(size,0,length(x)))]
+  x[ceiling(stats::runif(size,0,length(x)))]
 }

@@ -4,17 +4,18 @@
 #' @param Adj square integers matrix of occurences of dyads. Optional if using presence.prob. Update: now if presence prob is passed as Adj (thus all(Adj<1) is TRUE), it will be rightfully assigned to presence.prob. WIP: implement method for association matrices...
 #' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision. Optional if using presence.prob.
 #' @param method Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).
-#' @param ... additional argument to be used, to use produce a scan in a desired way.
-#' @param focal Only required for method = "focal" or "both" Character scalar, indicate which focal to consider for the scan.
-#' @param presence.prob square probability matrix of presence (as in Bernouilli trial) of dyads. Optional if using Adj and total_scan.
-#' @param obs.prob either :
+#' @param ... additional argument to be used, to use produce a scan in a desired way.#'
 #' \itemize{
-#'  \item{"a dyad observation probability matrix (P.obs)"}{of same dimension as Adj}
-#'  \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
-#'  \item{"a systematic dyad observation (P.obs constant for all i,j)"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+#'   \item{obs.prob}{either :
+#'     \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
+#'     \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+#'     \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+#'   }
+#'   \item{focal}{Only required for method = "focal" or "both" Character scalar, indicate which focal to consider for the scan.}
+#'   \item{Adj.subfun}{subsetting function of the adjacency matrix. Driven by igraph "mode" argument}
+#'   \item{presence.prob} {square probability matrix of presence (as in Bernouilli trial) of dyads. Optional if using Adj and total_scan.}
+#'   \item{mode} {Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.}
 #' }
-#' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
-#' @param Adj.subfun subsetting function of the adjacency matrix. Driven by igraph "mode" argument
 #' @param use.rare.opti logical: should the optimization for rare event be used?
 #'
 #' @return a list of the theoretical square binary matrix representing the whole group scan, and:
@@ -26,6 +27,8 @@
 #'  }
 #'
 #' @export
+#' @importFrom stats rbinom
+#' @importFrom stats runif
 #'
 #' @examples
 #' set.seed(42)
@@ -46,6 +49,11 @@
 
 do.scan<-function(Adj=NULL,total_scan=NULL,
                   method = c("theoretical","group","focal","both"),...,use.rare.opti=FALSE){
+  # irrelevant bit of code, only to remove annoying note in R CMD Check ----
+  opt.args<- list(...)
+  if(is.null(opt.args$obs.prob)) {obs.prob<- NULL};if(is.null(opt.args$ocal)) {focal<- NULL};if(is.null(opt.args$Adj.subfun)) {Adj.subfun<- NULL};
+  if(is.null(opt.args$presence.prob)) {presence.prob<- NULL};if(is.null(opt.args$mode)) {mode<- NULL};
+  # actual algorithm ----
   method<- match.arg(method)
   scan.default.args(Adj,total_scan,method,...)
 
@@ -54,14 +62,14 @@ do.scan<-function(Adj=NULL,total_scan=NULL,
 
   if(!use.rare.opti){
     scan<- matrix(0,nrow = n,ncol = n,dimnames = list(nodes_names,nodes_names))
-    scan[Adj.subfun(scan)]<- rbinom(p,1,presence.P)
+    scan[Adj.subfun(scan)]<- stats::rbinom(p,1,presence.P)
   }else{
     scan<- matrix(0,nrow = n,ncol = n,dimnames = list(nodes_names,nodes_names))
     rand.order<- sample(1:p,p)
     P.cond<- cumsum(adjust.conditional.prob(presence.P[rand.order]))
-    first.one<- min(which(runif(1)<P.cond))
+    first.one<- min(which(stats::runif(1)<P.cond))
     scan[Adj.subfun(scan)][rand.order][first.one]<- 1
-    scan[Adj.subfun(scan)][rand.order][-first.one]<- rbinom(p-1,1,presence.P[rand.order][-first.one])
+    scan[Adj.subfun(scan)][rand.order][-first.one]<- stats::rbinom(p-1,1,presence.P[rand.order][-first.one])
   }
 
   switch(method,
@@ -109,18 +117,18 @@ focal.scan<- function(scan.theoretical,focal){
 #' @param Adj square integers matrix of occurences of dyads. Optional if using presence.prob. WIP: implement method for association matrices...
 #' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision. Optional if using presence.prob.
 #' @param method Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).
-#' @param ... additional argument to be used, to use produce a scan in a desired way.
-#' @param focal Only required for method = "focal" or "both" Character scalar, indicate which focal to consider for the scan. Default is a random node.
-#' @param presence.prob. square probability matrix of presence (as in Bernouilli trial) of dyads. Optional if using Adj and total_scan.
-#' @param obs.prob Default behaviour is obs.prob=1. Otherwise either:
+#' @param ... additional argument to be used, to use produce a scan in a desired way.#'
 #' \itemize{
-#'  \item{"a dyad observation probability matrix (P.obs)"}{of same dimension as Adj}
-#'  \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
-#'  \item{"a systematic dyad observation (P.obs constant for all i,j)"}{should be in [0,1], assumed to be the case when only one value is inputed.}
+#'   \item{obs.prob}{either :
+#'     \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
+#'     \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+#'     \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+#'   }
+#'   \item{focal}{Only required for method = "focal" or "both" Character scalar, indicate which focal to consider for the scan.}
+#'   \item{Adj.subfun}{subsetting function of the adjacency matrix. Driven by igraph "mode" argument}
+#'   \item{presence.prob} {square probability matrix of presence (as in Bernouilli trial) of dyads. Optional if using Adj and total_scan.}
+#'   \item{mode} {Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.}
 #' }
-#' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
-#' @param Adj.subfun subsetting function of the adjacency matrix. Driven by igraph "mode" argument. Default is non.diagonal if mode is defaulted to directed.
-#' @param check.defaults logical. Should scan.default.args() be used? Implemented in case iterate_scan might provide everything neeed, but at the moment it seems buggy.
 #'
 #' @return nothing, but assign required variable for do.(non.zero.)scan() in their environment.
 #'
@@ -130,6 +138,10 @@ focal.scan<- function(scan.theoretical,focal){
 #' # Internal use in do.(non.zero.)scan()
 scan.default.args<- function(Adj,total_scan,method,...){
   opt.args<- list(...)
+  # irrelevant bit of code, only to remove annoying note in R CMD Check ----
+  if(is.null(opt.args$obs.prob)) {obs.prob<- NULL};if(is.null(opt.args$focal)) {focal<- NULL};if(is.null(opt.args$Adj.subfun)) {Adj.subfun<- NULL};
+  if(is.null(opt.args$presence.prob)) {presence.prob<- NULL};if(is.null(opt.args$mode)) {mode<- NULL};
+  # actual algorithm ----
 
   lapply(names(opt.args),function(name) assign(name,opt.args[[name]],parent.frame(n = 2)))
 
@@ -171,7 +183,7 @@ scan.default.args<- function(Adj,total_scan,method,...){
       if(!is.null(Adj)){
         assign("focal",quick.sample(1:nrow(Adj),1),parent.frame(n = 1))
       }else{
-        assign("focal",quick.sample(1:nrow(presence.prob),1),parent.frame(n = 1))
+        assign("focal",quick.sample(1:nrow(opt.args$presence.prob),1),parent.frame(n = 1))
       }
     }else{
       assign("focal",NULL,parent.frame(n = 1))
@@ -183,7 +195,7 @@ scan.default.args<- function(Adj,total_scan,method,...){
       if(!is.null(Adj)){
         assign("focal.list",quick.sample(1:nrow(Adj),total_scan),parent.frame(n = 1))
       }else{
-        assign("focal.list",quick.sample(1:nrow(presence.prob),total_scan),parent.frame(n = 1))
+        assign("focal.list",quick.sample(1:nrow(opt.args$presence.prob),total_scan),parent.frame(n = 1))
       }
     }else{
       assign("focal.list",NULL,parent.frame(n = 1))
@@ -209,7 +221,7 @@ scan.default.args<- function(Adj,total_scan,method,...){
 #' Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
 #' Adj[non.diagonal(Adj)]<- sample(0:30,n*(n-1),replace = TRUE)
 #' Adj<- iterate_scans(Adj,42,method="group",mode="directed",output = "adjacency")
-#' adjacency_mode(Adj,"max")
+#' adjacency_mode(Adj$group,"max")
 adjacency_mode<- function(Adj,mode = c("directed", "undirected", "max","min", "upper", "lower", "plus","vector")){
   mode<- match.arg(mode)
   switch(mode,

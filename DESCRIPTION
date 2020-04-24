@@ -17,7 +17,8 @@ Imports:
     pbapply,
     igraph,
     intergraph,
-    sna
+    sna,
+    DirectedClustering
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true

@@ -49,46 +49,46 @@ decide_use.rare.opti<- function(n,total_scan,max.obs=NULL){
   opti.expected.time(n,total_scan,max.obs)<standard.expected.time(n,total_scan,max.obs)
 }
 
-#' Simulate which scan returns an all-zeros matrix
-#' (old: will probably be deprecated because inefficient)
-#'
-#' @param total_scan integer, sampling effort
-#' @param presence.prob presence probability matrix (or vector)
-#' @param method Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).
-#'
-#' @return a list of zero-matrices (all-zeros scans) and NULL (non-zeros scans to be later performed)
-#' @export
-#'
-#' @examples
-#' # Internal use
-simulate_zeros.non.zeros.old<- function(total_scan,presence.prob,method){
-  nodes<- rownames(presence.prob);
-  zero.mat<- matrix(0,nrow(presence.prob),ncol(presence.prob),dimnames = list(nodes,nodes))
-  zero.list.element<- switch(method,
-                             "theoretical" = list(theoretical = zero.mat),
-                             "group" = list(theoretical = zero.mat,group = zero.mat),
-                             "focal" = list(theoretical = zero.mat,focal = zero.mat),
-                             "both" = list(theoretical = zero.mat,group = zero.mat,focal = zero.mat)
-  )
-  scan_list<- vector(mode="list",length = total_scan)
-  non.zeros<- rbinom(total_scan,1,1-prod(1-presence.prob))==1;
-  scan_list[!non.zeros]<- lapply(scan_list[!non.zeros],function(scan) zero.list.element)
-  scan_list
-}
+# #' Simulate which scan returns an all-zeros matrix
+# #' (old: will probably be deprecated because inefficient)
+# #'
+# #' @param total_scan integer, sampling effort
+# #' @param presence.prob presence probability matrix (or vector)
+# #' @param method Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).
+# #'
+# #' @return a list of zero-matrices (all-zeros scans) and NULL (non-zeros scans to be later performed)
+# #' @export
+# #'
+# #' @examples
+# #' # Internal use
+# simulate_zeros.non.zeros.old<- function(total_scan,presence.prob,method){
+#   nodes<- rownames(presence.prob);
+#   zero.mat<- matrix(0,nrow(presence.prob),ncol(presence.prob),dimnames = list(nodes,nodes))
+#   zero.list.element<- switch(method,
+#                              "theoretical" = list(theoretical = zero.mat),
+#                              "group" = list(theoretical = zero.mat,group = zero.mat),
+#                              "focal" = list(theoretical = zero.mat,focal = zero.mat),
+#                              "both" = list(theoretical = zero.mat,group = zero.mat,focal = zero.mat)
+#   )
+#   scan_list<- vector(mode="list",length = total_scan)
+#   non.zeros<- rbinom(total_scan,1,1-prod(1-presence.prob))==1;
+#   scan_list[!non.zeros]<- lapply(scan_list[!non.zeros],function(scan) zero.list.element)
+#   scan_list
+# }
 
 #' Simulate which scan returns an all-zeros matrix
 #'
 #' @param total_scan integer, sampling effort
 #' @param presence.prob presence probability matrix (or vector)
-#' @param method Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).
 #'
-#' @return a list of zero-matrices (all-zeros scans) and NULL (non-zeros scans to be later performed)
+#' @return a list of NULL representing the non-zero scan to run with an attribute `n.zero` being the number of full-zero scans
 #' @export
+#' @importFrom stats rbinom
 #'
 #' @examples
 #' # Internal use
 simulate_zeros.non.zeros<- function(total_scan,presence.prob){
-  zero.non.zero<- table(ifelse(rbinom(total_scan,1,1-prod(1-presence.prob))==1,"n.non.zeros","n.zeros"));
+  zero.non.zero<- table(ifelse(stats::rbinom(total_scan,1,1-prod(1-presence.prob))==1,"n.non.zeros","n.zeros"));
   scan_list<- vector(mode="list",length = zero.non.zero["n.non.zeros"])
   attr(scan_list,"n.zeros")<- zero.non.zero["n.zeros"]
   scan_list

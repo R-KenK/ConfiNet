@@ -19,6 +19,15 @@ sum_up.scans(
 
 \item{scaled}{logical, specifies if adjacency data should be scaled by sampling effort.}
 
+\item{use.rare.opti}{logical: should the optimization for rare event be used?}
+
+\item{obs.prob}{either :
+\itemize{
+ \item{"a dyad observation probability matrix (P.obs)"}{of same dimension as Adj}
+ \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+ \item{"a systematic dyad observation (P.obs constant for all i,j)"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+}}
+
 \item{method}{Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).}
 
 \item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.}

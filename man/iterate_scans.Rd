@@ -26,22 +26,19 @@ iterate_scans(
 
 \item{scaled}{logical, specifies if adjacency data should be scaled by sampling effort.}
 
-\item{...}{additional argument to be used, to use produce a scan in a desired way.}
-
-\item{presence.prob.}{square probability matrix of presence (as in Bernouilli trial) of dyads. Optional if using Adj and total_scan.}
-
-\item{focal.list}{Character vector, indicate the list of focals to consider throughout the scans.}
-
-\item{obs.prob}{either :
+\item{...}{additional argument to be used, to use produce a scan in a desired way.#'
 \itemize{
- \item{"a dyad observation probability matrix (P.obs)"}{of same dimension as Adj}
- \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
- \item{"a systematic dyad observation (P.obs constant for all i,j)"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+  \item{obs.prob}{either :
+    \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
+    \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+    \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+  }
+  \item{focal.list}{Character vector, indicate the list of focals to consider throughout the scans.}
+  \item{Adj.subfun}{subsetting function of the adjacency matrix. Driven by igraph "mode" argument}
+  \item{presence.prob} {square probability matrix of presence (as in Bernouilli trial) of dyads. Optional if using Adj and total_scan.}
 }}
 
-\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.}
-
-\item{Adj.subfun}{subsetting function of the adjacency matrix. Driven by igraph "mode" argument}
+\item{use.rare.opti}{logical: should the optimization for rare event be used?}
 }
 \value{
 according to output and method: a list of iterated scans, or an adjacency matrix
@@ -69,14 +66,25 @@ table(focal.list)
 focal.list.rare<- sample(nodes,total_scan.rare,replace = TRUE)
 table(focal.list.rare)
 
-iterate_scans(Adj,total_scan,scaled = FALSE,method = "theoretical",mode = "max",output = "adjacency",obs.prob = 0.8)
-iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",output = "list",obs.prob = 0.8)
-iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",mode = "max",output = "adj",obs.prob = 0.8)
-iterate_scans(Adj,total_scan,scaled = TRUE,method = "group",mode = "min",output = "adjacency",obs.prob = obs.prob)
-iterate_scans(Adj,total_scan,scaled = FALSE,method = "focal",output = "adjacency")
-iterate_scans(Adj,total_scan,focal.list = focal.list,scaled = TRUE,obs.prob = 0.7,method = "both",mode = "directed",output = "all")
-iterate_scans(Adj.rare,total_scan.rare,scaled = FALSE,method = "both",output = "list",obs.prob = 0.8,use.rare.opti = TRUE)
-iterate_scans(Adj.rare,total_scan.rare,scaled = TRUE,method = "group",output = "adjacency",obs.prob = obs.prob,use.rare.opti = TRUE)
-iterate_scans(Adj.rare,total_scan.rare,scaled = FALSE,method = "focal",output = "adjacency",use.rare.opti = TRUE)
-iterate_scans(Adj.rare,total_scan.rare,focal.list = focal.list.rare,scaled = TRUE,obs.prob = 0.7,method = "both",mode = "directed",output = "all",use.rare.opti = TRUE)
+iterate_scans(Adj,total_scan,scaled = FALSE,method = "theoretical",
+              mode = "max",output = "adjacency",obs.prob = 0.8)
+iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",
+              output = "list",obs.prob = 0.8)
+iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",
+              mode = "max",output = "adj",obs.prob = 0.8)
+iterate_scans(Adj,total_scan,scaled = TRUE,method = "group",
+              mode = "min",output = "adjacency",obs.prob = obs.prob)
+iterate_scans(Adj,total_scan,scaled = FALSE,method = "focal",
+              output = "adjacency")
+iterate_scans(Adj,total_scan,focal.list = focal.list,scaled = TRUE,
+              obs.prob = 0.7,method = "both",mode = "directed",output = "all")
+iterate_scans(Adj.rare,total_scan.rare,scaled = FALSE,method = "both",
+              output = "list",obs.prob = 0.8,use.rare.opti = TRUE)
+iterate_scans(Adj.rare,total_scan.rare,scaled = TRUE,method = "group",
+              output = "adjacency",obs.prob = obs.prob,use.rare.opti = TRUE)
+iterate_scans(Adj.rare,total_scan.rare,scaled = FALSE,method = "focal",
+              output = "adjacency",use.rare.opti = TRUE)
+iterate_scans(Adj.rare,total_scan.rare,focal.list = focal.list.rare,
+              scaled = TRUE,obs.prob = 0.7,method = "both",
+              mode = "directed",output = "all",use.rare.opti = TRUE)
 }

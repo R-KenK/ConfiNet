@@ -7,14 +7,13 @@
 #' @param method Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).
 #' @param focal.list Character vector, indicate the list of focals to consider throughout the scans.
 #' @param scaled logical, specifies if adjacency data should be scaled by sampling effort.
-#' @param n.cores number of threads to use while performingh the bootstrap
 #' @param cl Optional cluster object (cf snow package), experimentally set to put the makeCluster and stopCluster out of the bootable function. (WIP, next implementation should rethink this).
 #' @param ... additional argument to be used, to use produce a scan in a desired way.
-#' @param obs.prob either :
+#' @param obs.prob either:
 #' \itemize{
-#'  \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
-#'  \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
-#'  \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+#'   \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
+#'   \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+#'   \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
 #' }
 #' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
 #' @param output Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix
@@ -53,7 +52,7 @@
 #' Boot_scans(Adj,total_scan = 4000,obs.prob = obs.prob,n.boot=3,scaled = TRUE,
 #'            method = "both",mode = "directed",use.rare.opti = TRUE,output = "all")
 Boot_scans<- function(Adj,total_scan,method=c("theoretical","group","focal","both"),focal.list=NULL,n.boot,...,
-                      scaled=FALSE,
+                      scaled=FALSE,obs.prob = NULL,
                       mode = c("directed", "undirected", "max","min", "upper", "lower", "plus","vector"),
                       output=c("list","adjacency","all"),use.rare.opti=NULL,cl=NULL){
   b<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...

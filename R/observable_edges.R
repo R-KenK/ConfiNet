@@ -49,6 +49,16 @@ observable_edges<- function(Scan,obs.prob=NULL,Adj.subfun=NULL){
 #'
 #' @param scan_list list of binary group scans, with NAs when the dyad was not observable.
 #' @param diag integer (mostly), value to replace the diagonal of the output matrix with. Use NULL if you consider self-loop (untested).
+#' @param use.rare.opti logical: should the optimization for rare event be used?
+#' @param obs.prob either :
+#' \itemize{
+#'  \item{"a dyad observation probability matrix (P.obs)"}{of same dimension as Adj}
+#'  \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+#'  \item{"a systematic dyad observation (P.obs constant for all i,j)"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+#' }
+#' @param n.zeros integer, the attribute outputed by `simulate_zeros.non.zeros`, representing the number of full-zero scans. Used only when use.rare.opti=TRUE
+#'
+#' @importFrom stats rbinom
 #'
 #' @return a square matrix with element quantifying how many time a dyad has been sampled
 #' @export

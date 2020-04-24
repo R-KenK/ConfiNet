@@ -13,6 +13,7 @@ Boot_scans(
   n.boot,
   ...,
   scaled = FALSE,
+  obs.prob = NULL,
   mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus", "vector"),
   output = c("list", "adjacency", "all"),
   use.rare.opti = NULL,
@@ -34,6 +35,13 @@ Boot_scans(
 
 \item{scaled}{logical, specifies if adjacency data should be scaled by sampling effort.}
 
+\item{obs.prob}{either:
+\itemize{
+  \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
+  \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+  \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+}}
+
 \item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.}
 
 \item{output}{Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix}
@@ -41,15 +49,6 @@ Boot_scans(
 \item{use.rare.opti}{logical: should the optimization for rare event be used? If left NULL, choice is made automatically by decide_use.rare.opti().}
 
 \item{cl}{Optional cluster object (cf snow package), left in case it's actually faster. So far benchmarks showed that with the overhead using multiple thread was actually longer...}
-
-\item{n.cores}{number of threads to use while performingh the bootstrap}
-
-\item{obs.prob}{either :
-\itemize{
- \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
- \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
- \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
-}}
 }
 \value{
 according to output and method: a list of iterated scans, or of adjacency matrix, with attributes to keep track of certain data

@@ -11,6 +11,12 @@ rbind_pblapply(X, FUN, n.cores = NULL, .export = NULL, cl = NULL)
 \item{X}{a list. See details \link[base]{lapply}.}
 
 \item{FUN}{a function to subset data frames (or data tables). See details \link[base]{lapply}.}
+
+\item{n.cores}{number or cores (threads rather) to use in the cluster.}
+
+\item{.export}{character vector of the name of the variable and function to export to each worker of the cluster}
+
+\item{cl}{cluster object}
 }
 \value{
 a row bound data frame

@@ -10,11 +10,9 @@ simulate_zeros.non.zeros(total_scan, presence.prob)
 \item{total_scan}{integer, sampling effort}
 
 \item{presence.prob}{presence probability matrix (or vector)}
-
-\item{method}{Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).}
 }
 \value{
-a list of zero-matrices (all-zeros scans) and NULL (non-zeros scans to be later performed)
+a list of NULL representing the non-zero scan to run with an attribute `n.zero` being the number of full-zero scans
 }
 \description{
 Simulate which scan returns an all-zeros matrix
