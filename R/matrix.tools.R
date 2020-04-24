@@ -76,60 +76,7 @@ non.zero.non.diag<- function(M) {which(M>0&!diagonal(M),arr.ind = TRUE,useNames 
 #' #Internal use
 matrix_sum_na.rm<-function(X,Y) {ifelse(!is.na(X),X,0)+ifelse(!is.na(Y),Y,0)}
 
-#' Get number of edge observations (for group scans with unobservable individuals)
-#' quantify actual edge-wise sampling effort, considering that some weren't observable in all group scans.Internal use.
-#'
-#' @param scan_list list of binary group scans, with NAs when the dyad was not observable.
-#' @param diag integer (mostly), value to replace the diagonal of the output matrix with. Use NULL if you consider self-loop (untested).
-#'
-#' @return a square matrix with element quantifying how many time a dyad has been sampled
-#' @export
-#'
-#' @examples
-#' #internal use.
-n.observed_edges<- function(scan_list,diag=0){
-  Reduce("+",
-         lapply(scan_list,
-                function(scan){
-                  observed<- ifelse(!is.na(scan),1,0) # counting part of the algorithm
-                  if(!is.null(diag)) {diag(observed)<- diag} # doesn't count the diagonal by default. Left the option to count if self loops should be considered
-                  observed
-                }
-         )
-  )
-}
 
-# Adjacency mode tools ----------------------------------------------------
-
-#' Make Adjacency fit the selected mode
-#' From a directed adjacency matrix, make it fit the selected mode.
-#'
-#' @param Adj an adjacency matrix
-#' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
-#'
-#' @return an adjacency matrix fitting the selected mode
-#' @export
-#'
-#' @examples
-#' set.seed(42)
-#'
-#' n<- 5;nodes<- letters[1:n];
-#' Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
-#' Adj[non.diagonal(Adj)]<- sample(0:30,n*(n-1),replace = TRUE)
-#' Adj<- iterate_scans(Adj,42,method="group",mode="directed",output = "adjacency",n.cores = 1)
-#' adjacency_mode(Adj,"max")
-adjacency_mode<- function(Adj,mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
-  mode<- match.arg(mode)
-  switch(mode,
-         "undirected" = ,
-         "max" = ifelse(Adj>=t(Adj),Adj,t(Adj)),
-         "min" = ifelse(Adj<=t(Adj),Adj,t(Adj)),
-         "plus" = Adj+t(Adj),
-         "directed" = ,
-         "upper" = ,
-         "lower" =  Adj
-  )
-}
 
 #' Make Binary Adjacency fit the selected mode
 #' From a directed binary adjacency matrix, make it fit the selected mode.
@@ -149,7 +96,7 @@ adjacency_mode<- function(Adj,mode = c("directed", "undirected", "max","min", "u
 #' Adj
 #'
 #' Adj<- do.scan(Adj,42)
-#' binary_adjacency_mode(Adj,"plus")
+#' binary_adjacency_mode(Adj$theoretical,"plus")
 binary_adjacency_mode<- function(Adj,mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
   mode<- match.arg(mode)
   switch(mode,

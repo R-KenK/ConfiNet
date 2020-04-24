@@ -31,5 +31,5 @@ Adj[non.diagonal(Adj)]<- sample(0:30,n*(n-1),replace = TRUE)
 Adj
 
 Adj<- do.scan(Adj,42)
-binary_adjacency_mode(Adj,"plus")
+binary_adjacency_mode(Adj$theoretical,"plus")
 }

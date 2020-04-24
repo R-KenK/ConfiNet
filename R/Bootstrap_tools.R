@@ -1,36 +1,37 @@
-
-# Bootstrap "object" specific tools ---------------------------------------
-
 #' Keep bootstrap parameters as attributes
 #' Internal use in Boot_scans(). Add "method", "keep", "mode", "output" attributes to be more easily retrieved by the get function
 #'
 #' @param Bootstrap Boot_scans() intermediate output
 #' @param method Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).
-#' @param keep logical. Indicate if the original "theoretical" scan should be kept track of.
 #' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
 #' @param output Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix
+#' @param scaled logical, specifies if adjacency data should be scaled by sampling effort.
+#' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.
+#' @param n.boot integer, number of bootstrap performed.
+#' @param use.rare.opti logical: has the optimization for rare event been used?
 #'
 #' @return list which structure depends on chosen parameters, with parameters stored as attributes.
 #' @export
 #'
 #' @examples
 #' #Internal
-Bootstrap_add.attributes<- function(Bootstrap,method,keep,scaled,mode,output,total_scan){
+Bootstrap_add.attributes<- function(Bootstrap,method,scaled,mode,output,total_scan,n.boot,use.rare.opti){
   attr(Bootstrap,"method")<- method;
-  attr(Bootstrap,"keep")<- keep;
   attr(Bootstrap,"scaled")<- scaled;
   attr(Bootstrap,"mode")<- mode;
   attr(Bootstrap,"output")<- output;
   attr(Bootstrap,"total_scan")<- total_scan;
+  attr(Bootstrap,"n.boot")<- n.boot;
+  attr(Bootstrap,"use.rare.opti")<- use.rare.opti;
   Bootstrap
 }
 
-#' Retrieve specific data from Boot_scans() output
+#' Retrieve data from specific method from Boot_scans() output
 #' Subset rich Bootstrap output choosing what's needed
 #'
 #' @param Bootstrap Bootstrap output object
-#' @param what character scalar, data type requested
-#' @param format character scalar, output format type requested ("both","list" or "adjacency").
+#' @param what character scalar, data type requested ("theoretical","group" or "focal")
+#' @param get.format character scalar, output format type requested ("list","adjacency" or "all").
 #'
 #' @return list which structure depends on chosen data type and Bootstrap attributes
 #' @export
@@ -46,174 +47,74 @@ Bootstrap_add.attributes<- function(Bootstrap,method,keep,scaled,mode,output,tot
 #'
 #' focal.list<- sample(nodes,42,replace = TRUE)
 #' Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
-#'                        scaled = FALSE,obs.prob=0.7,keep=TRUE,
+#'                        scaled = FALSE,obs.prob=0.7,
 #'                        method = "group",mode = "directed",output = "list")
 #' Boot_get.list(Bootstrap,"theoretical")
-#' Boot_get.list(Bootstrap,"observed")
+#' Boot_get.list(Bootstrap,"group")
 #'
 #' Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
 #'                        scaled = TRUE,obs.prob=0.7,keep=TRUE,
 #'                        method = "both",mode = "directed",output = "all")
-#' Boot_get.list(Bootstrap,"observed","both")
-#' Boot_get.list(Bootstrap,"observed","adjacency")
-#' Boot_get.list(Bootstrap,"observed","list")
-Boot_get.list<- function(Bootstrap,what=c("group","focal","theoretical","observed"),format = c("both","list","adjacency")){
+#' Boot_get.list(Bootstrap,"focal","all")
+#' Boot_get.list(Bootstrap,"group","adjacency")
+#' Boot_get.list(Bootstrap,"group","list")
+Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
+                         get.format = c("list","adjacency","all")){
   what<- match.arg(what)
-  format<- match.arg(format)
+  get.format<- match.arg(get.format)
 
   method<- attr(Bootstrap,"method");
-  keep<- attr(Bootstrap,"keep");
   output<- attr(Bootstrap,"output");
+  total_scan<- attr(Bootstrap,"total_scan");
+  n.boot<- attr(Bootstrap,"n.boot");
+  scaled<- attr(Bootstrap,"scaled");
+  mode<- attr(Bootstrap,"mode");
+  use.rare.opti<- attr(Bootstrap,"use.rare.opti");
 
-  if((what %in% c("theoretical","observed")) & (keep==FALSE)) {
-    warning(paste0("keep was set to FALSE in Bootstrap. Do you mean to retrieve group?"))
-    what<- "group";
-  }
-  if((what %in% c("group","focal")) & (method!="both" & method!=what)) {stop("Requested List doesn't exist in provided Bootstrap.")}
-  if(output=="list"&format=="adjacency") {stop("WIP.")}
+  if(what!="theoretical" & method!="both" & what!=method){stop("Element requested unavailable in `",substitute(Bootstrap),"`.")}
+
+  Bootstrap[1:n.boot][[what]]
 
   switch(output,
-         "list" =  switch(method,
-                          "group" = if(keep){
-                            lapply(Bootstrap,function(B) lapply(B,function(l) l[[what]]))
-                          }else{
-                            lapply(Bootstrap,function(B) lapply(B,function(l) l))
-                          },
-                          "focal" = lapply(Bootstrap,function(B) lapply(B,function(l) l)),
-                          "both" = {
-                            if(keep){
-                              switch(what,
-                                     "group" = ,
-                                     "focal" = lapply(Bootstrap,function(B) lapply(B,function(l) l[[what]])),
-                                     "theoretical" = ,
-                                     "observed" = lapply(Bootstrap,function(B) lapply(B,function(l) l[["group"]][[what]])),
-                              )
-                            }else{
-                              lapply(Bootstrap,function(B) lapply(B,function(l) l[[what]]))
-                            }
-                          }
+         "list" = switch(get.format,
+                         "list" = lapply(Bootstrap,function(boot) lapply(boot, function(scan) scan[[what]])),
+                         "adjacency" = lapply(Bootstrap,
+                                              function(boot){
+                                                sum_up.scans(scan_list = lapply(boot, function(scan) scan[[what]]),
+                                                             scaled = scaled,method = what,mode = mode,use.rare.opti = use.rare.opti)
+                                              }
+                         ),
+                         "all" = {
+                           list(
+                             list = lapply(Bootstrap,function(boot) lapply(boot, function(scan) scan[[what]])),
+                             adjacency = lapply(Bootstrap,
+                                                function(boot){
+                                                  sum_up.scans(scan_list = lapply(boot, function(scan) scan[[what]]),
+                                                               scaled = scaled,method = what,mode = mode,use.rare.opti = use.rare.opti)
+                                                }
+                             )
+                           )
+                         }
          ),
-         "adjacency" = switch(method,
-                              "group" = if(keep){
-                                lapply(Bootstrap,function(B) B[[what]])
-                              }else{
-                                lapply(Bootstrap,function(B) B)
-                              },
-                              "focal" = lapply(Bootstrap,function(B) B),
-                              "both" = {
-                                if(keep){
-                                  switch(what,
-                                         "group" = ,
-                                         "focal" = lapply(Bootstrap,function(B) B[[what]]),
-                                         "theoretical" = ,
-                                         "observed" = lapply(Bootstrap,function(B) B[["group"]][[what]]),
-                                  )
-                                }else{
-                                  lapply(Bootstrap,function(B) B[[what]])
-                                }
+         "adjacency" = switch(get.format,
+                              "list" = stop("Only summed-up adjacency matrices have been stored in Bootstrap object."),
+                              "adjacency" = lapply(Bootstrap,function(boot) lapply(boot, function(scan) scan[[what]])),
+                              "all" = {
+                                warning("Only summed-up adjacency matrices have been stored in Bootstrap object.")
+                                lapply(Bootstrap,function(boot) lapply(boot, function(scan) scan[[what]]))
                               }
          ),
-         "all" = {
-           all<- list(
-             list = switch(method,
-                           "group" = if(keep){
-                             lapply(Bootstrap,function(B) lapply(B$list,function(l) l[[what]]))
-                           }else{
-                             lapply(Bootstrap,function(B) lapply(B$list,function(l) l))
-                           },
-                           "focal" = lapply(Bootstrap,function(B) lapply(B$list,function(l) l)),
-                           "both" = {
-                             if(keep){
-                               switch(what,
-                                      "group" = ,
-                                      "focal" = lapply(Bootstrap,function(B) lapply(B$list,function(l) l[[what]])),
-                                      "theoretical" = ,
-                                      "observed" = lapply(Bootstrap,function(B) lapply(B$list,function(l) l[["group"]][[what]])),
-                               )
-                             }else{
-                               lapply(Bootstrap,function(B) lapply(B$list,function(l) l[[what]]))
-                             }
-                           }
-             ),
-             adjacency = switch(method,
-                                "group" = if(keep){
-                                  lapply(Bootstrap,function(B) B$adjacency[[what]])
-                                }else{
-                                  lapply(Bootstrap,function(B) B$adjacency)
-                                },
-                                "focal" = lapply(Bootstrap,function(B) B$adjacency),
-                                "both" = {
-                                  if(keep){
-                                    switch(what,
-                                           "group" = ,
-                                           "focal" = lapply(Bootstrap,function(B) B$adjacency[[what]]),
-                                           "theoretical" = ,
-                                           "observed" = lapply(Bootstrap,function(B) B$adjacency[["group"]][[what]]),
-                                    )
-                                  }else{
-                                    lapply(Bootstrap,function(B) B$adjacency[[what]])
-                                  }
-                                }
-             )
-           )
-           switch(format,
-                  "both" = all,
-                  "list" = all$list,
-                  "adjacency" = all$adjacency
-           )
-         }
+         "all" = switch(get.format,
+                        "list" = lapply(Bootstrap,function(boot) lapply(boot[["list"]], function(scan) scan[[what]])),
+                        "adjacency" = lapply(Bootstrap,function(boot) boot[["adjacency"]][[what]]),
+                        "all" = {
+                          list(
+                            list = lapply(Bootstrap,function(boot) lapply(boot[["list"]], function(scan) scan[[what]])),
+                            adjancency = lapply(Bootstrap,function(boot) boot[["adjacency"]][[what]])
+                          )
+                        }
+         )
   )
-}
-
-#' Row bind list of data frames
-#' wrapper to one-function do.call rbind over a lapply list
-#'
-#' @param X a list. See details \link[base]{lapply}.
-#' @param FUN a function to subset data frames (or data tables). See details \link[base]{lapply}.
-#'
-#' @return a row bound data frame
-#' @export
-#'
-#' @examples
-#' set.seed(42)
-#'
-#' X<- lapply(1:3,function(i) list(int = 42,df = data.frame(x = runif(10,0,1),y = runif(10,0,1))))
-#' rbind_lapply(X,function(x) x$df)
-rbind_lapply<- function(X,FUN){
-  do.call(rbind,lapply(X = X,FUN = FUN))
-}
-
-#' Row bind list of data frames
-#' wrapper to one-function do.call rbind over a pblapply list
-#'
-#' @param X a list. See details \link[base]{lapply}.
-#' @param FUN a function to subset data frames (or data tables). See details \link[base]{lapply}.
-#'
-#' @return a row bound data frame
-#' @export
-#'
-#' @examples
-#' set.seed(42)
-#'
-#' X<- lapply(1:3,function(i) list(int = 42,df = data.frame(x = runif(10,0,1),y = runif(10,0,1))))
-#' rbind_lapply(X,function(x) x$df)
-rbind_pblapply<- function(X,FUN,n.cores,.export=NULL){
-  cl<- make_cl(n.cores,.export);on.exit(snow::stopCluster(cl))
-  do.call(rbind,pbapply::pblapply(X = X,FUN = FUN,cl = cl))
-}
-
-#' Title
-#'
-#' @param n.cores
-#' @param .export
-#'
-#' @return
-#' @export
-#'
-#' @examples
-make_cl<- function(n.cores,.export){
-  cl<- snow::makeCluster(n.cores);snow::clusterExport(cl,list = .export);doSNOW::registerDoSNOW(cl);
-  cl
 }
 
 #' Bootstrap specific progress bar
@@ -266,7 +167,7 @@ Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
              degree = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.deg),
              strength = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.strength),
              EV = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.EV),
-             CC = net.metric.diff(Bootstrap.list = Bootstrap.list,method = method,network.fun = weighted.clustering.coeff),
+             # CC = net.metric.diff(Bootstrap.list = Bootstrap.list,method = method,network.fun = weighted.clustering.coeff),
              Frob = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Frobenius_from_adjacency),
              Frob.GOF = adj_gof(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Frobenius_from_adjacency),
              SLap = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Laplacian_spectral.dist),
@@ -293,7 +194,6 @@ Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
 #' #Internal use in Simulation_script.R.
 adjacency_cor<- function(Bootstrap.list,method = c("group","focal")){
   method<- match.arg(method)
-  if(method=="group" & attr(Bootstrap.list,"keep")==TRUE) {method<- "observed"}
   n.boot = length(Bootstrap.list)
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
          function(b) {
@@ -318,7 +218,6 @@ adjacency_cor<- function(Bootstrap.list,method = c("group","focal")){
 #' #Internal use in Simulation_script.R.
 centrality_cor<- function(Bootstrap.list,method = c("group","focal"),centrality.fun){
   method<- match.arg(method)
-  if(method=="group" & attr(Bootstrap.list,"keep")==TRUE) {method<- "observed"}
   n.boot = length(Bootstrap.list)
   mode<- attr(Bootstrap.list,"mode")
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
@@ -368,7 +267,6 @@ compute.flowbet<- function(graph,mode){
 #' #Internal use in Simulation_script.R.
 net.metric.diff<- function(Bootstrap.list,method = c("group","focal"),network.fun){
   method<- match.arg(method)
-  if(method=="group" & attr(Bootstrap.list,"keep")==TRUE) {method<- "observed"}
   n.boot = length(Bootstrap.list)
   mode<- attr(Bootstrap.list,"mode")
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
@@ -381,6 +279,18 @@ net.metric.diff<- function(Bootstrap.list,method = c("group","focal"),network.fu
   )
 }
 
+#' Weighted clustering coefficient
+#'
+#' @param graph a graph
+#' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
+#'
+#' @return the clustering coefficient
+#' @export
+#'
+#' @importFrom DirectedClustering ClustF
+#'
+#' @examples
+#' # Internal use.
 weighted.clustering.coeff<- function(graph,mode){
   if(!is.matrix(graph)){graph<- igraph::get.adjacency(graph,type = "both",sparse = FALSE,attr = "weight")}
   if(isSymmetric.matrix(graph)){
@@ -389,15 +299,15 @@ weighted.clustering.coeff<- function(graph,mode){
     DirectedClustering::ClustF(mat = graph,type = "directed")$GlobaltotalCC
   }
 }
-
-generate.null.adj<- function(Adj,total_scan,
-                             Adj.subfun = non.diagonal,scaled = TRUE,
-                             mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
-  n<- nrow(Adj);if(is.null(row.names(Adj))) {nodes<- as.character(1:n)} else {nodes<- row.names(Adj)}
-  Null<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
-  Null[Adj.subfun(Null)]<- rbinom(length(Null[Adj.subfun(Null)]),total_scan,prob = 0.5)
-  adjacency_mode(Null,mode)/ifelse(scaled,total_scan,1)
-}
+#
+# generate.null.adj<- function(Adj,total_scan,
+#                              Adj.subfun = non.diagonal,scaled = TRUE,
+#                              mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
+#   n<- nrow(Adj);if(is.null(row.names(Adj))) {nodes<- as.character(1:n)} else {nodes<- row.names(Adj)}
+#   Null<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
+#   Null[Adj.subfun(Null)]<- rbinom(length(Null[Adj.subfun(Null)]),total_scan,prob = 0.5)
+#   adjacency_mode(Null,mode)/ifelse(scaled,total_scan,1)
+# }
 
 #' Wrapper to calculate adjacency/network distances
 #'
@@ -414,7 +324,6 @@ generate.null.adj<- function(Adj,total_scan,
 #' #Internal use in Simulation_script.R.
 adj_distance<- function(Bootstrap.list,method = c("group","focal"),dist.fun){
   method<- match.arg(method)
-  if(method=="group" & attr(Bootstrap.list,"keep")==TRUE) {method<- "observed"}
   n.boot = length(Bootstrap.list)
   mode<- attr(Bootstrap.list,"mode")
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
@@ -437,7 +346,6 @@ adj_distance<- function(Bootstrap.list,method = c("group","focal"),dist.fun){
 #' #Internal use in Simulation_script.R.
 adj_gof<- function(Bootstrap.list,method = c("group","focal"),dist.fun){
   method<- match.arg(method)
-  if(method=="group" & attr(Bootstrap.list,"keep")==TRUE) {method<- "observed"}
   n.boot = length(Bootstrap.list)
   scaled<- attr(Bootstrap.list,"scaled")
   mode<- attr(Bootstrap.list,"mode")
@@ -455,6 +363,30 @@ adj_gof<- function(Bootstrap.list,method = c("group","focal"),dist.fun){
   )
 }
 
+#' Generate a random matrix as a null following similarly designed matrix generation
+#' used in adj_gof
+#'
+#' @param Adj square integers matrix of occurences of dyads. Optional if using presence.prob. Update: now if presence prob is passed as Adj (thus all(Adj<1) is TRUE), it will be rightfully assigned to presence.prob. WIP: implement method for association matrices...
+#' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision. Optional if using presence.prob.
+#' @param Adj.subfun subsetting function of the adjacency matrix. Driven by igraph "mode" argument
+#' @param scaled logical, specifies if adjacency data should be scaled by sampling effort.
+#' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
+#'
+#' @importFrom stats rbinom
+#'
+#' @return a weighted adjacency matrix randomly drawn from binomial trials, comparably to how adjacency matrices are simulated with iterate_scans()
+#' @export
+#'
+#' @examples
+#' # internal use in adj_gof
+generate.null.adj<- function(Adj,total_scan,
+                             Adj.subfun = non.diagonal,scaled = TRUE,
+                             mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
+  n<- nrow(Adj);if(is.null(row.names(Adj))) {nodes<- as.character(1:n)} else {nodes<- row.names(Adj)}
+  Null<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
+  Null[Adj.subfun(Null)]<- stats::rbinom(length(Null[Adj.subfun(Null)]),total_scan,prob = 0.5)
+  adjacency_mode(Null,mode)/ifelse(scaled,total_scan,1)
+}
 #' Simple Frobenius distance calculation
 #'
 #' @param X an adjacency matrix
@@ -506,51 +438,52 @@ Laplacian_spectral.dist<- function(X,Y=0,...){
 #' @examples
 #' #Internal use in Simulation_script.R.
 initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()-1),cl=NULL){
-  OBS.PROB<- list(trait.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = NULL,reverse = FALSE),
-                  trait.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = function(i,j) 1/prod(i,j),bias_fun = NULL,reverse = FALSE),
-                  network.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
-                                              bias_fun = function(node) igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
-                                              reverse = FALSE),
-                  network.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
-                                              bias_fun = function(node) 1/igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
-                                              reverse = FALSE)
-  )
-  OBS.PROB<- c({unb<- seq(0.1,0.9,by = 0.2);names(unb)<- paste0("unbiased_",unb);as.list(unb)},OBS.PROB) # c() over two lists makes them flat while allowing for shorter calls
-  MODE<- if(identical(Adj,t(Adj))) {as.list(c("max"))} else  {as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))}
-  FOCAL.LIST<- list(random = sample(rownames(Adj),total_scan,replace = TRUE),  # consider checking if can be implemented for each boot (leaving it NULL?)
-                    even = rep_len(rownames(Adj),length.out = total_scan),
-                    biased = "TO IMPLEMENT")
-
-  parameters.comb<- expand.grid(
-    list(mode = 1:length(MODE),
-         focal.list = 1:length(FOCAL.LIST[1:2]),
-         obs.prob = 1:length(OBS.PROB)
-    )
-  )
-
-  if(is.null(cl)) {cl<- snow::makeCluster(n.cores);doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))} # left to avoid error if the function is used alone, but should probably be used internally from Boot_scans() now.
-  p<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
-  parameters.list<- foreach::`%dopar%`(
-    foreach::foreach(p=1:nrow(parameters.comb)),
-    list(
-      obs.prob = {
-        obs.prob<- OBS.PROB[[parameters.comb[p,"obs.prob"]]];
-        attr(obs.prob,"name")<- names(OBS.PROB)[parameters.comb[p,"obs.prob"]];
-        obs.prob
-      },
-      focal.list = {
-        focal.list<- FOCAL.LIST[[parameters.comb[p,"focal.list"]]];
-        attr(focal.list,"name")<- names(FOCAL.LIST)[parameters.comb[p,"focal.list"]];
-        focal.list
-      },
-      mode = {
-        mode<- MODE[[parameters.comb[p,"mode"]]];
-        attr(mode,"name")<- names(MODE)[parameters.comb[p,"mode"]];
-        mode
-      }
-    )
-  )
-  parameters.list
+  # OBS.PROB<- list(trait.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = NULL,reverse = FALSE),
+  #                 trait.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = function(i,j) 1/prod(i,j),bias_fun = NULL,reverse = FALSE),
+  #                 network.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
+  #                                             bias_fun = function(node) igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
+  #                                             reverse = FALSE),
+  #                 network.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
+  #                                             bias_fun = function(node) 1/igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
+  #                                             reverse = FALSE)
+  # )
+  # OBS.PROB<- c({unb<- seq(0.1,0.9,by = 0.2);names(unb)<- paste0("unbiased_",unb);as.list(unb)},OBS.PROB) # c() over two lists makes them flat while allowing for shorter calls
+  # MODE<- if(identical(Adj,t(Adj))) {as.list(c("max"))} else  {as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))}
+  # FOCAL.LIST<- list(random = sample(rownames(Adj),total_scan,replace = TRUE),  # consider checking if can be implemented for each boot (leaving it NULL?)
+  #                   even = rep_len(rownames(Adj),length.out = total_scan),
+  #                   biased = "TO IMPLEMENT")
+  #
+  # parameters.comb<- expand.grid(
+  #   list(mode = 1:length(MODE),
+  #        focal.list = 1:length(FOCAL.LIST[1:2]),
+  #        obs.prob = 1:length(OBS.PROB)
+  #   )
+  # )
+  #
+  # if(is.null(cl)) {cl<- snow::makeCluster(n.cores);doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))} # left to avoid error if the function is used alone, but should probably be used internally from Boot_scans() now.
+  # p<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
+  # parameters.list<- foreach::`%dopar%`(
+  #   foreach::foreach(p=1:nrow(parameters.comb)),
+  #   list(
+  #     obs.prob = {
+  #       obs.prob<- OBS.PROB[[parameters.comb[p,"obs.prob"]]];
+  #       attr(obs.prob,"name")<- names(OBS.PROB)[parameters.comb[p,"obs.prob"]];
+  #       obs.prob
+  #     },
+  #     focal.list = {
+  #       focal.list<- FOCAL.LIST[[parameters.comb[p,"focal.list"]]];
+  #       attr(focal.list,"name")<- names(FOCAL.LIST)[parameters.comb[p,"focal.list"]];
+  #       focal.list
+  #     },
+  #     mode = {
+  #       mode<- MODE[[parameters.comb[p,"mode"]]];
+  #       attr(mode,"name")<- names(MODE)[parameters.comb[p,"mode"]];
+  #       mode
+  #     }
+  #   )
+  # )
+  # parameters.list
+  message("to clean")
 }
 
 #' Retrieve data from list of network bootstrap results

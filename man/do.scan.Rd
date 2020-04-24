@@ -2,86 +2,66 @@
 % Please edit documentation in R/do.scan.R
 \name{do.scan}
 \alias{do.scan}
-\title{Single group scan
-Generate a random whole group or focal scan based on provided reference adjacency matrix and sampling effort.}
+\title{Perform a scan
+According to edge presence probability, or a reference adjacency matrix `Adj` coupled with a sample effort `total_scan`, perform a scan in the form of a theoretical binary adjacency matrix, and simulate the empirical obtention of a group scan and/or focal scan. If the optimization for rare even is used, performs a scan knowing that at least one edge has been observed in the theoretical scan.}
 \usage{
 do.scan(
-  Adj,
-  total_scan,
-  focal = NULL,
-  obs.prob = NULL,
-  keep = FALSE,
-  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus"),
-  method = c("group", "focal", "both"),
-  Adj.subfun = NULL,
-  prob = NULL
+  Adj = NULL,
+  total_scan = NULL,
+  method = c("theoretical", "group", "focal", "both"),
+  ...,
+  use.rare.opti = FALSE
 )
 }
 \arguments{
-\item{Adj}{square integers matrix of occurences of dyads. WIP: implement method for association matrices...}
+\item{Adj}{square integers matrix of occurences of dyads. Optional if using presence.prob. Update: now if presence prob is passed as Adj (thus all(Adj<1) is TRUE), it will be rightfully assigned to presence.prob. WIP: implement method for association matrices...}
 
-\item{total_scan}{integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.}
+\item{total_scan}{integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision. Optional if using presence.prob.}
 
-\item{focal}{Character scalar, indicate which focal to consider for the scan.}
+\item{method}{Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).}
 
-\item{obs.prob}{either :
+\item{...}{additional argument to be used, to use produce a scan in a desired way.#'
 \itemize{
- \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
- \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
- \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+  \item{obs.prob}{either :
+    \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
+    \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+    \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+  }
+  \item{focal}{Only required for method = "focal" or "both" Character scalar, indicate which focal to consider for the scan.}
+  \item{Adj.subfun}{subsetting function of the adjacency matrix. Driven by igraph "mode" argument}
+  \item{presence.prob} {square probability matrix of presence (as in Bernouilli trial) of dyads. Optional if using Adj and total_scan.}
+  \item{mode} {Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.}
 }}
 
-\item{keep}{logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.}
-
-\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
-
-\item{method}{Character scalar, specifies if the function should return a whole-group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).}
-
-\item{Adj.subfun}{subsetting function of the adjacency matrix. Driven by igraph "mode" argument}
-
-\item{prob}{output of Binary.prob function. Internal use when wrapped with Boot_scans, to speed up bootstrap process}
+\item{use.rare.opti}{logical: should the optimization for rare event be used?}
 }
 \value{
-a square binary matrix representing the whle group scan
+a list of the theoretical square binary matrix representing the whole group scan, and:
+\itemize{
+ \item{"method = theoretical"}{that's all,}
+ \item{"method = group"}{the empirical group scan square binary matrix}
+ \item{"method = focal"}{the empirical focal scan binary vector (and the focal identity as a "focal" attribute)}
+ \item{"method = both"}{or the three above}
+ }
 }
 \description{
-Single group scan
-Generate a random whole group or focal scan based on provided reference adjacency matrix and sampling effort.
+Perform a scan
+According to edge presence probability, or a reference adjacency matrix `Adj` coupled with a sample effort `total_scan`, perform a scan in the form of a theoretical binary adjacency matrix, and simulate the empirical obtention of a group scan and/or focal scan. If the optimization for rare even is used, performs a scan knowing that at least one edge has been observed in the theoretical scan.
 }
 \examples{
 set.seed(42)
 
-n<- 5;nodes<- letters[1:n];
+n<- 5;nodes<- as.character(1:n);
 Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
-Adj[non.diagonal(Adj)]<- sample(0:30,n*(n-1),replace = TRUE)
+Adj[non.diagonal(Adj)]<- sample(0:42,n*(n-1),replace = TRUE)
 Adj
 
-do.scan(Adj,42)
-do.scan(Adj,42,"c",method = "focal")
-Reduce("+",lapply(1:42,function(s) do.scan(Adj,42)))
+presence.prob<- Binary.prob(Adj,50)
+obs.prob<- matrix(runif(n*n,0,1),n,n);diag(obs.prob)<- 0
 
-focal.list<- sample(nodes,42,replace = TRUE)
-table(focal.list)
-L<- lapply(1:42,function(s) do.scan(Adj,42,focal.list[s],method = "both"))
-
-list(group = round(Reduce("+",lapply(L,function(l) l$group))/42,3),
-     focal = {foc<- do.call(rbind,
-                            lapply(nodes,
-                                   function(node) {
-                                     L.focal<- L[sapply(L,function(l) attr(l$focal,"focal"))==node]
-                                     round(
-                                           Reduce("+",
-                                                  lapply(L.focal,
-                                                         function(l) {
-                                                           l$focal
-                                                         }
-                                                  )
-                                           )/length(L.focal),3
-                                     )
-                                   }
-                             )
-                     );
-              row.names(foc)<-nodes
-                             foc}
-)
+do.scan(Adj,50,method = "group",obs.prob = 0.9)
+do.scan(Adj,50,method = "both",obs.prob = obs.prob)
+do.scan(presence.prob,method = "focal")
+do.scan(presence.prob,method = "focal",focal = "4")
+do.scan(presence.prob,method = "focal",focal = 3)
 }

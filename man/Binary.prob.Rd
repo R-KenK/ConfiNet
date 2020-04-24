@@ -8,7 +8,7 @@ Internal use. Provide binary probability for each weight, taking into account th
 Binary.prob(
   Adj,
   total_scan,
-  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus")
+  mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus", "vector")
 )
 }
 \arguments{
@@ -16,10 +16,10 @@ Binary.prob(
 
 \item{total_scan}{integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.}
 
-\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
+\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}. Added also a vector mode.}
 }
 \value{
-data frame of binary probabilities (column present and absent) for each dyad.
+matrix of probability of presence for each dyad
 }
 \description{
 Binarize from adjacency matrix

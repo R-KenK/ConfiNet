@@ -1,93 +1,99 @@
 #' Iterate scans
 #' Internal use in Boot_scan. Iterate several binary group or focal scans with probabilities derived from a provided adjancecy matrix, to produce a new adjancecy matrix.
 #'
-#' @param Adj square integers matrix of occurences of dyads. WIP: implement method for association matrices...
-#' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.
-#' @param method Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).
-#' @param focal.list Character vector, indicate the list of focals to consider throughout the scans.
-#' @param scaled logical, specifies if adjacency data should be scaled by sampling effort.
-#' @param obs.prob either :
-#' \itemize{
-#'  \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
-#'  \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
-#'  \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
-#' }
-#' @param keep logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.
-#' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
+#' @param Adj square integers matrix of occurences of dyads. Optional if using presence.prob. WIP: implement method for association matrices...
+#' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision. Optional if using presence.prob.
+#' @param method Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).
 #' @param output Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix
-#' @param n.cores number of threads to use while performingh the bootstrap
-#' @param cl Optional cluster object (cf snow package), experimentally set to put the makeCluster and stopCluster out of the bootable function. (WIP, next implementation should rethink this).
-#' @param Adj.subfun subsetting function of the adjacency matrix. Driven by igraph "mode" argument
-#' @param prob output of Binary.prob function. Internal use when wrapped with Boot_scans, to speed up bootstrap process
+#' @param scaled logical, specifies if adjacency data should be scaled by sampling effort.
+#' @param ... additional argument to be used, to use produce a scan in a desired way.#'
+#' \itemize{
+#'   \item{obs.prob}{either :
+#'     \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
+#'     \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+#'     \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+#'   }
+#'   \item{focal.list}{Character vector, indicate the list of focals to consider throughout the scans.}
+#'   \item{Adj.subfun}{subsetting function of the adjacency matrix. Driven by igraph "mode" argument}
+#'   \item{presence.prob} {square probability matrix of presence (as in Bernouilli trial) of dyads. Optional if using Adj and total_scan.}
+#' }
+#' @param use.rare.opti logical: should the optimization for rare event be used?
 #'
 #' @return according to output and method: a list of iterated scans, or an adjacency matrix
 #' @export
-#' @importFrom parallel detectCores
-#' @importFrom snow makeCluster
-#' @importFrom snow stopCluster
-#' @importFrom doSNOW registerDoSNOW
-#' @importFrom foreach `%dopar%`
-#' @importFrom foreach foreach
 #'
 #' @examples
 #' set.seed(42)
 #'
-#' n<- 5;nodes<- letters[1:n];
+#' n<- 5;nodes<- as.character(1:n);total_scan<- 42;total_scan.rare<- 4200;
 #' Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
 #' Adj[non.diagonal(Adj)]<- sample(0:42,n*(n-1),replace = TRUE)
 #' Adj
+#' Adj.rare<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
+#' Adj.rare[non.diagonal(Adj.rare)]<- sample(0:10,n*(n-1),replace = TRUE)
+#' Adj.rare
 #'
-#' focal.list<- sample(nodes,42,replace = TRUE)
+#' presence.prob<- Binary.prob(Adj,50)
+#' obs.prob<- matrix(runif(n*n,0,1),n,n);diag(obs.prob)<- 0
+#'
+#' focal.list<- sample(nodes,total_scan,replace = TRUE)
 #' table(focal.list)
-#' iterate_scans(Adj,42,scaled = FALSE,method = "group",output = "adjacency",n.cores = 1)
-#' iterate_scans(Adj,42,focal.list,scaled = TRUE,obs.prob = 0.7,keep=TRUE,
-#'               method = "focal",mode = "directed",output = "list")
+#' focal.list.rare<- sample(nodes,total_scan.rare,replace = TRUE)
+#' table(focal.list.rare)
+#'
+#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "theoretical",
+#'               mode = "max",output = "adjacency",obs.prob = 0.8)
+#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",
+#'               output = "list",obs.prob = 0.8)
+#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",
+#'               mode = "max",output = "adj",obs.prob = 0.8)
+#' iterate_scans(Adj,total_scan,scaled = TRUE,method = "group",
+#'               mode = "min",output = "adjacency",obs.prob = obs.prob)
+#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "focal",
+#'               output = "adjacency")
+#' iterate_scans(Adj,total_scan,focal.list = focal.list,scaled = TRUE,
+#'               obs.prob = 0.7,method = "both",mode = "directed",output = "all")
+#' iterate_scans(Adj.rare,total_scan.rare,scaled = FALSE,method = "both",
+#'               output = "list",obs.prob = 0.8,use.rare.opti = TRUE)
+#' iterate_scans(Adj.rare,total_scan.rare,scaled = TRUE,method = "group",
+#'               output = "adjacency",obs.prob = obs.prob,use.rare.opti = TRUE)
+#' iterate_scans(Adj.rare,total_scan.rare,scaled = FALSE,method = "focal",
+#'               output = "adjacency",use.rare.opti = TRUE)
+#' iterate_scans(Adj.rare,total_scan.rare,focal.list = focal.list.rare,
+#'               scaled = TRUE,obs.prob = 0.7,method = "both",
+#'               mode = "directed",output = "all",use.rare.opti = TRUE)
 
-iterate_scans<- function(Adj,total_scan,method=c("group","focal","both"),
-                         focal.list=NULL,scaled=FALSE,obs.prob=NULL,keep=FALSE,
-                         mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),
-                         output=c("list","adjacency","all"),n.cores=(parallel::detectCores()-1),cl=NULL,Adj.subfun=NULL,prob=NULL){
-  b<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
-  if(is.null(cl)) {cl<- snow::makeCluster(n.cores);doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))} # left to avoid error if the function is used alone, but should probably be used internally from Boot_scans() now.
-
-  switch(method,
-         "group" = {
-           scan_list<- foreach::`%dopar%`(
-             foreach::foreach(b=1:total_scan,
-                              .export = c("do.scan","non.diagonal","Binary.prob","observable_edges","binary_adjacency_mode")),
-             do.scan(Adj = Adj,total_scan = total_scan,
-                     focal = NULL,obs.prob=obs.prob,keep=keep,
-                     mode = mode, method = "group",Adj.subfun = Adj.subfun,prob = prob)
-           )
-         },
-         "focal" = {
-           scan_list<- foreach::`%dopar%`(
-             foreach::foreach(b=1:total_scan,
-                              .export = c("do.scan","non.diagonal","Binary.prob","binary_adjacency_mode")),
-             do.scan(Adj = Adj,total_scan = total_scan,
-                     focal = focal.list[b],obs.prob=NULL,keep=FALSE,
-                     mode = mode,method = "focal",Adj.subfun = Adj.subfun,prob = prob)
-           )
-         },
-         "both" = {
-           scan_list<- foreach::`%dopar%`(
-             foreach::foreach(b=1:total_scan,
-                              .export = c("do.scan","non.diagonal","Binary.prob","observable_edges","binary_adjacency_mode")),
-             do.scan(Adj = Adj,total_scan = total_scan,
-                     focal = focal.list[b],obs.prob=obs.prob,keep=keep,
-                     mode = mode,method = "both",Adj.subfun = Adj.subfun,prob = prob)
-           )
-         }
+iterate_scans<- function(Adj=NULL,total_scan,method=c("theoretical","group","focal","both"),
+                         output=c("list","adjacency","all"),scaled=FALSE,...,
+                         use.rare.opti = FALSE){
+  # irrelevant bit of code, only to remove annoying note in R CMD Check ----
+  opt.args<- list(...)
+  if(is.null(opt.args$obs.prob)) {obs.prob<- NULL};if(is.null(opt.args$focal.list)) {focal.list<- NULL};
+  if(is.null(opt.args$Adj.subfun)) {Adj.subfun<- NULL};if(is.null(opt.args$presence.prob)) {presence.prob<- NULL};
+  # actual algorithm ----
+  output<- match.arg(output);
+  scan.default.args(Adj = Adj,total_scan = total_scan,method = method,...)
+  if(!use.rare.opti){
+    to.do.list<- 1:total_scan;n.zeros<- NULL;
+  }else{
+    scan_list<- simulate_zeros.non.zeros(total_scan,presence.prob)
+    n.zeros<- attr(scan_list,"n.zeros")
+    to.do.list<- seq_along(scan_list)
+  }
+  scan_list<- lapply(
+    to.do.list,
+    function(i){
+      do.scan(presence.prob = presence.prob,method = method,focal = focal.list[i],obs.prob = obs.prob,Adj.subfun = Adj.subfun,use.rare.opti = use.rare.opti)
+    }
   )
+  attr(scan_list,"n.zeros")<- n.zeros
 
   switch(output,
-         "list" = return(scan_list),
-         "adjacency" = return(sum_up.scans(Adj = Adj,scan_list = scan_list,keep = keep,scaled = scaled,method = method,mode = mode)),
-         "all" = return(
-           list(
-             list = scan_list,
-             adjacency = sum_up.scans(Adj = Adj,scan_list = scan_list,keep = keep,scaled = scaled,method = method,mode = mode)
-           )
+         "list" = scan_list,
+         "adjacency" = sum_up.scans(scan_list = scan_list,scaled = scaled,method = method,mode = mode),
+         "all" = list(
+           list = scan_list,
+           adjacency = sum_up.scans(scan_list = scan_list,scaled = scaled,method = method,mode = mode)
          )
   )
 }
