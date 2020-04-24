@@ -57,13 +57,13 @@ do.scan<-function(Adj=NULL,total_scan=NULL,
   switch(method,
          "theoretical" = scan,
          "group" = list(theoretical = scan,
-                        group = observable_edges(scan,obs.prob,Adj.subfun)
+                        group = observable_edges(Scan = scan,obs.prob = obs.prob,Adj.subfun = Adj.subfun)
          ),
          "focal" = list(theoretical = scan,
                         focal = focal.scan(scan,focal)
          ),
          "both" = list(theoretical = scan,
-                       group = observable_edges(scan,obs.prob,Adj.subfun),
+                       group = observable_edges(Scan = scan,obs.prob = obs.prob,Adj.subfun = Adj.subfun),
                        focal = focal.scan(scan,focal)
          )
   )
