@@ -1,3 +1,10 @@
+# ConfiNet (development version)
+
+# ConfiNet 0.10.0
+* HUGE revamp from the base up to implement diverse optimization according to succesive benchamrk results. Notably relying solely on rbinom, implementing an alternative algorithm in the case of rare event (cf. Optimization for rare events.R), and homogenization of outputs according to the different method (avoiding additional list levels).
+* Also now benefitting from the use of "..." to clean code, although R CMD check require nullifying a few optional parameters...
+* few checks and need figuring out the expected time according to use.rare.opti, then should be pushable to master. 
+
 # ConfiNet 0.9.1
 * Revamp and huge code cleaning of simulation script. Now, considering only an unested list per variable, the parameter combinations are automatically and flexibly generated, and cleanly integrated in the different bootstraps.
 * added Boot_get.param() function to retrieve the stored parameters as a data.frame of factors, to ease further data gathering
