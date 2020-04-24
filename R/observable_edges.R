@@ -6,56 +6,80 @@
 #' \itemize{
 #'  \item{"a dyad observation obs.probability matrix"}{of same dimension as Scan}
 #'  \item{"a dyad observation vector"}{subsetted similarly as Scan (through the non.diagonal() function for instance)}
-#'  \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+#'  \item{"a systematic dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
 #' }
-#' @param keep logical. Relevant if group scans are performed. Indicate if the original "theoretical" group scan should be kept track of.
+#' @param Adj.subfun subsetting function of the adjacency matrix. Driven by igraph "mode" argument
 #'
-#' @return a similar matrix as Scan where some non diagonal edges have a obs.probability to be NAs. If keep is TRUE, returns a list with theoretical and observed scan.
+#' @return a similar matrix as Scan where some non diagonal edges have a obs.probability to be NAs.
 #' @export
 #'
 #' @examples
 #' set.seed(42)
 #'
-#' n<- 6;
-#' Scan<- matrix(sample(c(1,0),6*6,replace=TRUE),n,n);diag(Scan)<- 0
-#' obs.prob<- matrix(runif(6*6,0,1),n,n);diag(obs.prob)<- 0
-#' traits<- rnorm(nrow(Scan),0,1)
-#' trait.bias_fun<- function(x) {traits[x]}
-#' obs.prob.trait<- obs.prob_bias(Scan,sum,bias_fun = trait.bias_fun)
-#' obs.prob.single<- runif(1,0,1)
+#' n<- 6;nodes<- as.character(1:n);
+#' Scan<- matrix(rbinom(n*n,1,0.2),n,n,dimnames = list(nodes,nodes));diag(Scan)<- 0;
+#' obs.prob<- matrix(runif(n*n,0,1),n,n);diag(obs.prob)<- 0
 #'
-#' observable_edges(Scan,obs.prob)
-#' observable_edges(Scan,obs.prob.trait)
-#' observable_edges(Scan,obs.prob.single)
-observable_edges<- function(Scan,obs.prob=NULL,keep=FALSE){
-  if(is.matrix(obs.prob)) {
-    obs.prob<- non.diagonal(obs.prob,"vector")
+#' observable_edges(Scan,obs.prob,non.diagonal)
+observable_edges<- function(Scan,obs.prob=NULL,Adj.subfun=NULL){
+  observed<- Scan
+  if(!is.null(obs.prob)){
+    if(length(obs.prob)==1) {
+      if(obs.prob<=1 & obs.prob>=0){
+        obs.prob<- rep(obs.prob,length(Adj.subfun(Scan,"vector")))
+      }else{
+        stop("Single observation obs.probability provided should be within [0,1]")
+      }
+    }else{
+      if(is.matrix(obs.prob)) {
+        obs.prob<- Adj.subfun(obs.prob,"vector")
+      }
+      if(length(obs.prob)!=length(Adj.subfun(Scan,"vector"))){
+        stop("Matrix or vector obs.prob dimension(s) incompatible with adjacency matrix's")
+      }
+    }
+    missed<- rbinom(length(obs.prob),1,obs.prob)==0
+    observed[Adj.subfun(observed)][missed]<- NA
   }
+  observed
+}
 
-  if(any(obs.prob<0)){
-    obs.prob<- obs.prob+abs(min(obs.prob))
-  }
-
-  if(length(obs.prob)==1) {
-    ifelse(obs.prob<=1 & obs.prob>=0,
-           obs.prob<- rep(obs.prob,length(non.diagonal(Scan,"vector"))),
-           stop("Single observation obs.probability provided should be within [0,1]"))
-  } else {
-    ifelse(length(obs.prob)==length(non.diagonal(Scan,"vector")),
-           obs.prob<- (obs.prob+min(obs.prob[obs.prob>0]))/(max(obs.prob)+2*min(obs.prob[obs.prob>0])),
-           stop("Matrix or vector obs.prob dimension(s) incompatible with adjacency matrix's")
-    )
-  }
-
-
-  observable<- sapply(obs.prob,function(p) sample(c(TRUE,FALSE),1,prob = c(p,1-p)))
-
-  observed<- Scan;
-  observed[non.diagonal(observed)]<- ifelse(observable,non.diagonal(Scan,"vector"),NA)
-  if(keep){
-    list("theoretical" = Scan,
-         "observed" = observed)
+#' Get number of edge observations (for group scans with unobservable individuals)
+#' quantify actual edge-wise sampling effort, considering that some weren't observable in all group scans.Internal use.
+#'
+#' @param scan_list list of binary group scans, with NAs when the dyad was not observable.
+#' @param diag integer (mostly), value to replace the diagonal of the output matrix with. Use NULL if you consider self-loop (untested).
+#' @param use.rare.opti logical: should the optimization for rare event be used?
+#' @param obs.prob either :
+#' \itemize{
+#'  \item{"a dyad observation probability matrix (P.obs)"}{of same dimension as Adj}
+#'  \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
+#'  \item{"a systematic dyad observation (P.obs constant for all i,j)"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+#' }
+#' @param n.zeros integer, the attribute outputed by `simulate_zeros.non.zeros`, representing the number of full-zero scans. Used only when use.rare.opti=TRUE
+#'
+#' @importFrom stats rbinom
+#'
+#' @return a square matrix with element quantifying how many time a dyad has been sampled
+#' @export
+#'
+#' @examples
+#' #internal use.
+n.observed_edges<- function(scan_list,diag=0,use.rare.opti=FALSE,obs.prob=NULL,n.zeros = NULL){
+  n.observed<- Reduce("+",
+                      lapply(scan_list,
+                             function(scan){
+                               observed<- ifelse(!is.na(scan),1,0) # counting part of the algorithm
+                               # if(!is.null(diag)) {diag(observed)<- diag} # doesn't count the diagonal by default. Left the option to count if self loops should be considered
+                               observed
+                             }
+                      )
+  )
+  if(!use.rare.opti){
+    n.observed
   }else{
-    observed
+    n<- nrow(n.observed);
+    if(!is.matrix(obs.prob)){obs.prob<- matrix(obs.prob,n,n)}
+    rbind_lapply(1:n,function(i) rbinom(n,n.zeros,obs.prob[i,])+n.observed[i,])
   }
 }

@@ -2,21 +2,27 @@
 % Please edit documentation in R/Bootstrap_tools.R
 \name{Boot_get.list}
 \alias{Boot_get.list}
-\title{Retrieve specific data from Boot_scans() output
+\title{Retrieve data from specific method from Boot_scans() output
 Subset rich Bootstrap output choosing what's needed}
 \usage{
-Boot_get.list(Bootstrap, what = c("group", "focal", "theoretical", "observed"))
+Boot_get.list(
+  Bootstrap,
+  what = c("theoretical", "group", "focal"),
+  get.format = c("list", "adjacency", "all")
+)
 }
 \arguments{
-\item{Bootstrap}{Boot_scans() final output}
+\item{Bootstrap}{Bootstrap output object}
 
-\item{what}{character scalar, data type requested}
+\item{what}{character scalar, data type requested ("theoretical","group" or "focal")}
+
+\item{get.format}{character scalar, output format type requested ("list","adjacency" or "all").}
 }
 \value{
 list which structure depends on chosen data type and Bootstrap attributes
 }
 \description{
-Retrieve specific data from Boot_scans() output
+Retrieve data from specific method from Boot_scans() output
 Subset rich Bootstrap output choosing what's needed
 }
 \examples{
@@ -30,14 +36,15 @@ Adj
 
 focal.list<- sample(nodes,42,replace = TRUE)
 Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
-                       scaled = FALSE,obs.prob=0.7,keep=TRUE,
+                       scaled = FALSE,obs.prob=0.7,
                        method = "group",mode = "directed",output = "list")
 Boot_get.list(Bootstrap,"theoretical")
-Boot_get.list(Bootstrap,"observed")
+Boot_get.list(Bootstrap,"group")
 
 Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
                        scaled = TRUE,obs.prob=0.7,keep=TRUE,
                        method = "both",mode = "directed",output = "all")
-Boot_get.list(Bootstrap,"focal")$adjacency
-Boot_get.list(Bootstrap,"observed")$list
+Boot_get.list(Bootstrap,"focal","all")
+Boot_get.list(Bootstrap,"group","adjacency")
+Boot_get.list(Bootstrap,"group","list")
 }

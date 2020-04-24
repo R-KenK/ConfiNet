@@ -5,18 +5,33 @@
 \title{Keep bootstrap parameters as attributes
 Internal use in Boot_scans(). Add "method", "keep", "mode", "output" attributes to be more easily retrieved by the get function}
 \usage{
-Bootstrap_add.attributes(Bootstrap, method, keep, mode, output)
+Bootstrap_add.attributes(
+  Bootstrap,
+  method,
+  scaled,
+  mode,
+  output,
+  total_scan,
+  n.boot,
+  use.rare.opti
+)
 }
 \arguments{
 \item{Bootstrap}{Boot_scans() intermediate output}
 
 \item{method}{Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).}
 
-\item{keep}{logical. Indicate if the original "theoretical" scan should be kept track of.}
+\item{scaled}{logical, specifies if adjacency data should be scaled by sampling effort.}
 
 \item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
 
 \item{output}{Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix}
+
+\item{total_scan}{integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.}
+
+\item{n.boot}{integer, number of bootstrap performed.}
+
+\item{use.rare.opti}{logical: has the optimization for rare event been used?}
 }
 \value{
 list which structure depends on chosen parameters, with parameters stored as attributes.
