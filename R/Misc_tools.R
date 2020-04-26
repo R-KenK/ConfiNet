@@ -34,7 +34,7 @@ rbind_lapply<- function(X,FUN){
 #' X<- lapply(1:3,function(i) list(int = 42,df = data.frame(x = runif(10,0,1),y = runif(10,0,1))))
 #' rbind_lapply(X,function(x) x$df)
 rbind_pblapply<- function(X,FUN,n.cores=NULL,.export=NULL,cl=NULL){
-  if(is.null(cl)){cl<- make_cl(n.cores,.export)};doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))
+  if(is.null(cl)){cl<- make_cl(n.cores,.export);on.exit(snow::stopCluster(cl))}
   do.call(rbind,pbapply::pblapply(X = X,FUN = FUN,cl = cl))
 }
 
