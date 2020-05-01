@@ -75,7 +75,7 @@ cor.bootstrap<- function(n,total_scan,max.obs,boot=100){
 
 
 # Parameters list ---------------------------------------------------------
-param.comb<- expand.grid(n=c(10,50,100,150,200,500,1000,1500),
+param.comb<- expand.grid(n=seq(4,50,by=2),
                          total_scan=c(500,1000,5000,10000,25000),
                          max.obs=c(5,10,50,100,250))
 
@@ -92,19 +92,21 @@ parameters.list<- lapply(1:nrow(param.comb),
 ## then record coefficient of correlation of cumulated sum of the bernouilli trials with original vector of observations
 ## as well as the time to perform each method
 
-cl<- snow::makeCluster(7);snow::clusterExport(cl = cl,list = ls(envir = .GlobalEnv));doSNOW::registerDoSNOW(cl)
+# cl<- snow::makeCluster(7);snow::clusterExport(cl = cl,list = ls(envir = .GlobalEnv));doSNOW::registerDoSNOW(cl)
 system.time(
-  cor.boot<- rbind_pblapply(seq_along(parameters.list),
-                          function(p){
+  cor.boot<- rbind_lapply(seq_along(parameters.list),
+                            # cor.boot<- rbind_pblapply(seq_along(parameters.list),
+                            function(p){
                             n<- parameters.list[[p]]["n"];
                             total_scan<- parameters.list[[p]]["total_scan"];
                             max.obs<- parameters.list[[p]]["max.obs"];
                             cat(paste0("Param: n= ",n," - total_scan= ",total_scan," - max.obs= ",max.obs," (",p,"/",length(parameters.list),") @ ",Sys.time(),"\n"))
                             cor.bootstrap(n = n,total_scan = total_scan,max.obs = max.obs,boot = 30)
-                          },cl = cl
+                            # },cl = cl
+                          }
   )
 )
-snow::stopCluster(cl)
+# snow::stopCluster(cl)
 cor.boot<- cor.boot[order(algorithm)][,c("algorithm","n","total_scan","max.obs","method","cor","time","boot"),with=FALSE]
 cor.boot$algorithm<- factor(cor.boot$algorithm,levels = c("standard","opti"))
 cor.boot$method<- factor(cor.boot$method,levels = c("group","focal","both"))
