@@ -1,80 +1,109 @@
 # Rare events optimization related functions ------------------------------
 
-#' Placeholder for calculating expected time using the optimization for rare event
+#' Generate new data using orthogonal polynoms of input variable
 #'
-#' @param n number of node of the original network
-#' @param total_scan sampling effort
-#' @param max.obs maximum value of the weighted adjacency matrix of the original network
+#' @param n integer, number of node of the network
+#' @param total_scan integer, sampling effort
+#' @param max.obs integer, maximum number of observation after `total_scan` scans
+#' @param algorithm character, which algorithm to produce new data for.
 #'
-#' @return a time value to be compared with the one using the standard approach
+#' @return a data.frame inputed on the same orthogonal polynomial scale as the one used by the standard and optimized models of expected time
 #' @export
+#' @importFrom stats predict
 #'
 #' @examples
-#' # Internal use in decide_use.rare.opti
-opti.expected.time<- function(n,total_scan,max.obs){
-  # try and model?
+#' # Internal use in opti.expected.time
+new.data.poly<- function(n,total_scan,max.obs,algorithm = c("standard","optimization for rare event")){
+  algorithm<- match.arg(algorithm)
+  switch(algorithm,
+         "standard" = {
+           n.poly<- n.poly.std
+           total.poly<- total.poly.std
+           max.poly<- max.poly.std
+         },
+         "optimization for rare event" = {
+           n.poly<- n.poly.opt
+           total.poly<- total.poly.opt
+           max.poly<- max.poly.opt
+         }
+  )
+  cbind(data.frame(n = n,total_scan = total_scan,max.obs = max.obs),
+        n = stats::predict(n.poly,n),
+        total_scan = stats::predict(total.poly,total_scan),
+        max.obs = stats::predict(max.poly,max.obs))
 }
 
-#' Placeholder for calculating expected time using the standard scan method
-#' i.e. performing all scans
+#' Calculating expected time using the standard scan method from glm model
 #'
 #' @param n number of node of the original network
 #' @param total_scan sampling effort
 #' @param max.obs maximum value of the weighted adjacency matrix of the original network
+#' @param se.fit logical, should the standard error be computed by the predict() function?
 #'
-#' @return a time value to be compared with the one using the optimization for rare event
+#' @return the result of the expected time model predictions (in milliseconds), i.e. a vector with values `fit`, `se.fit`, and `residual.scale`.
 #' @export
+#' @importFrom stats predict
 #'
 #' @examples
 #' # Internal use in decide_use.rare.opti
-standard.expected.time<- function(n,total_scan,max.obs){
-  # try and model?
+standard.expected.time<- function(n,total_scan,max.obs,se.fit = TRUE){
+  new.dat<- new.data.poly(n = n,total_scan = total_scan,max.obs = max.obs,algorithm = "standard")
+  stats::predict(standard.model,newdata = new.dat,type = "response",se.fit = se.fit)
+}
+
+#' Calculating expected time using the optimization for rare event from glm model
+#'
+#' @param n number of node of the original network
+#' @param total_scan sampling effort
+#' @param max.obs maximum value of the weighted adjacency matrix of the original network
+#' @param se.fit logical, should the standard error be computed by the predict() function?
+#'
+#' @return the result of the expected time model predictions (in milliseconds), i.e. a vector with values `fit`, `se.fit`, and `residual.scale`.
+#' @export
+#' @importFrom stats predict
+#'
+#' @examples
+#' # Internal use in decide_use.rare.opti
+opti.expected.time<- function(n,total_scan,max.obs,se.fit = TRUE){
+  new.dat<- new.data.poly(n = n,total_scan = total_scan,max.obs = max.obs,algorithm = "opti")
+  stats::predict(opti.model,newdata = new.dat,type = "response",se.fit = se.fit)
 }
 
 #' Decide based on expected times if the otpimization for rare event should be used
 #'
-#' @param n number of node of the original network
-#' @param total_scan sampling effort
-#' @param max.obs maximum value of the weighted adjacency matrix of the original network
+#' @param n number of node of the original network, or can be an adjacency matrix
+#' @param total_scan integer, sampling effort.
+#' @param max.obs maximum value of the weighted adjacency matrix of the original network. Optional if n is inputted as an adjacency matrix.
+#' @param alpha numerical in [0,1], type I error significance level.
 #'
-#' @return a logical value meaning that the optimization for rare events should be use when TRUE is returned
+#' @return a logical value meaning that the optimization for rare events should be use when TRUE is returned.
 #' @export
 #'
 #' @examples
-#' # Internal use
-decide_use.rare.opti<- function(n,total_scan,max.obs=NULL){
+#' decide_use.rare.opti(30,900,10)
+#' decide_use.rare.opti(30,9000,10)
+decide_use.rare.opti<- function(n,total_scan,max.obs=NULL,alpha=0.05){
   if(is.null(max.obs)&is.matrix(n)){max.obs<- max(n)}
   if(is.matrix(n)){n<- nrow(n)}
-  # Figure out how to relate n, N and max.obs through opti.expected.time(n,total_scan,max.obs)
-  opti.expected.time(n,total_scan,max.obs)<standard.expected.time(n,total_scan,max.obs)
+  expected.time.std<- standard.expected.time(n = n,total_scan = total_scan,max.obs = max.obs)
+  expected.time.opt<- opti.expected.time(n = n,total_scan = total_scan,max.obs = max.obs)
+
+  if(any(is.infinite(expected.time.std$fit),is.infinite(expected.time.opt$fit))){return(FALSE)}
+
+  test<- t_test_from_summary(m1 = expected.time.std$fit,
+                             m2 = expected.time.opt$fit,
+                             sd1 = expected.time.std$se.fit,
+                             sd2 = expected.time.opt$se.fit,
+                             n1 = n,n2 = n,
+                             m0 = 0,equal.variance = FALSE)
+
+  if(test[["Difference of means"]]>0){ # m1-m2 <=> if optimization is faster
+    test[["p-value"]]<=alpha # If difference between optimization and standard is significative. Otherwise favor the standard method
+  }else{
+    FALSE
+  }
 }
 
-# #' Simulate which scan returns an all-zeros matrix
-# #' (old: will probably be deprecated because inefficient)
-# #'
-# #' @param total_scan integer, sampling effort
-# #' @param presence.prob presence probability matrix (or vector)
-# #' @param method Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).
-# #'
-# #' @return a list of zero-matrices (all-zeros scans) and NULL (non-zeros scans to be later performed)
-# #' @export
-# #'
-# #' @examples
-# #' # Internal use
-# simulate_zeros.non.zeros.old<- function(total_scan,presence.prob,method){
-#   nodes<- rownames(presence.prob);
-#   zero.mat<- matrix(0,nrow(presence.prob),ncol(presence.prob),dimnames = list(nodes,nodes))
-#   zero.list.element<- switch(method,
-#                              "theoretical" = list(theoretical = zero.mat),
-#                              "group" = list(theoretical = zero.mat,group = zero.mat),
-#                              "focal" = list(theoretical = zero.mat,focal = zero.mat),
-#                              "both" = list(theoretical = zero.mat,group = zero.mat,focal = zero.mat)
-#   )
-#   scan_list<- vector(mode="list",length = total_scan)
-#   non.zeros<- rbinom(total_scan,1,1-prod(1-presence.prob))==1;
-#   scan_list[!non.zeros]<- lapply(scan_list[!non.zeros],function(scan) zero.list.element)
-#   scan_list
-# }
 
 #' Simulate which scan returns an all-zeros matrix
 #'

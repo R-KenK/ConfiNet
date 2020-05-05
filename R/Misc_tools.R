@@ -75,3 +75,37 @@ make_cl<- function(n.cores,.export){
 quick.sample<- function(x,size){
   x[ceiling(stats::runif(size,0,length(x)))]
 }
+
+#' Two-sample t-tests from sample statistics
+#' cf. https://stats.stackexchange.com/a/30450/255116
+#'
+#' @param m1 numeric, sample mean in population 1.
+#' @param m2 numeric, sample mean in population 2.
+#' @param sd1 numeric, sample standard deviation in population 1.
+#' @param sd2 numeric, sample standard deviation in population 2.
+#' @param n1 integer, sample size of population 1.
+#' @param n2 integer, sample size of population 1.
+#' @param m0 numeric, null value for the difference in means to be tested for. Default is 0.
+#' @param equal.variance logical, whether or not to assume equal variance. Default is FALSE.
+#'
+#' @return vector of `Difference of means`, `Std Error`, `t`, `p-value` of the t-test from summary data.
+#' @export
+#' @importFrom stats pt
+#'
+#' @examples
+#' t_test_from_summary(15,18,2,1.8,20,23)
+t_test_from_summary<- function(m1,m2,sd1,sd2,n1,n2,m0=0,equal.variance=FALSE){
+  if(!equal.variance){
+    se <- sqrt( (sd1^2/n1) + (sd2^2/n2) )
+    # welch-satterthwaite df
+    df <- ( (sd1^2/n1 + sd2^2/n2)^2 )/( (sd1^2/n1)^2/(n1-1) + (sd2^2/n2)^2/(n2-1) )
+  }else{
+    # pooled standard deviation, scaled by the sample sizes
+    se <- sqrt( (1/n1 + 1/n2) * ((n1-1)*sd1^2 + (n2-1)*sd2^2)/(n1+n2-2) )
+    df <- n1+n2-2
+  }
+  t <- (m1-m2-m0)/se
+  dat <- c(m1-m2, se, t, 2*stats::pt(-abs(t),df))
+  names(dat) <- c("Difference of means", "Std Error", "t", "p-value")
+  dat
+}
