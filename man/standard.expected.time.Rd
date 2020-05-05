@@ -2,10 +2,9 @@
 % Please edit documentation in R/rare.event.optimization_tools.R
 \name{standard.expected.time}
 \alias{standard.expected.time}
-\title{Placeholder for calculating expected time using the standard scan method
-i.e. performing all scans}
+\title{Calculating expected time using the standard scan method from glm model}
 \usage{
-standard.expected.time(n, total_scan, max.obs)
+standard.expected.time(n, total_scan, max.obs, se.fit = TRUE)
 }
 \arguments{
 \item{n}{number of node of the original network}
@@ -13,13 +12,14 @@ standard.expected.time(n, total_scan, max.obs)
 \item{total_scan}{sampling effort}
 
 \item{max.obs}{maximum value of the weighted adjacency matrix of the original network}
+
+\item{se.fit}{logical, should the standard error be computed by the predict() function?}
 }
 \value{
-a time value to be compared with the one using the optimization for rare event
+the result of the expected time model predictions (in milliseconds), i.e. a vector with values `fit`, `se.fit`, and `residual.scale`.
 }
 \description{
-Placeholder for calculating expected time using the standard scan method
-i.e. performing all scans
+Calculating expected time using the standard scan method from glm model
 }
 \examples{
 # Internal use in decide_use.rare.opti

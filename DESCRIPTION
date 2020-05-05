@@ -1,6 +1,6 @@
 Package: ConfiNet
 Title: Network Tools, especially for uncertainty estimations
-Version: 0.10.0.9000
+Version: 0.10.1.9000
 Authors@R: 
     person(given = "Kenneth",
            family = "Keuk",
@@ -23,3 +23,5 @@ License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.0
+Depends: 
+    R (>= 2.10)

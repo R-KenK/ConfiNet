@@ -75,10 +75,10 @@ Boot_scans<- function(Adj,total_scan,method=c("theoretical","group","focal","bot
   presence.prob<- Binary.prob(Adj=Adj,total_scan=total_scan,mode = mode)
 
   if(is.null(use.rare.opti)){
-    use.rare.opti<- FALSE
-    # n<- nrow(Adj)
-    # use.rare.opti<- decide_use.rare.opti(n = n*(n-1),total_scan = total_scan,max.obs = max(Adj))
+    n<- nrow(Adj)
+    use.rare.opti<- decide_use.rare.opti(n = n,total_scan = total_scan,max.obs = max(Adj),alpha = 0.05)
   }
+
   Bootstrap<- pbapply::pblapply(
     1:n.boot,
     function(b){

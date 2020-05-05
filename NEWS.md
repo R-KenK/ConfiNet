@@ -1,5 +1,9 @@
 # ConfiNet (development version)
 
+# ConfiNet 0.10.1
+* Cleaned expected time modelling of standard and optimized method, use the glm models as internal data.
+* Proper implementation of the decide_use.rare.opti() using those models.
+
 # ConfiNet 0.10.0
 * HUGE revamp from the base up to implement diverse optimization according to succesive benchamrk results. Notably relying solely on rbinom, implementing an alternative algorithm in the case of rare event (cf. Optimization for rare events.R), and homogenization of outputs according to the different method (avoiding additional list levels).
 * Also now benefitting from the use of "..." to clean code, although R CMD check require nullifying a few optional parameters...
