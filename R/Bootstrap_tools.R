@@ -230,23 +230,66 @@ centrality_cor<- function(Bootstrap.list,method = c("group","focal"),centrality.
   )
 }
 
-compute.EV<- function(graph,mode){
+#' Compute eigenvector centrality values from graph or adjacency matrix
+#'
+#' @param graph an igraph object (or an adjacency matrix)
+#' @param mode optional, only if `graph` is an adjacency matrix. Othewise character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
+#'
+#' @return a vector of eigenvector centrality values for each node
+#' @export
+#'
+#' @examples
+#' # Internal use
+compute.EV<- function(graph,mode=NULL){
   if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
   EV<- igraph::eigen_centrality(graph, weights = igraph::E(graph)$weight,scale = FALSE)$vector
   names(EV)<- igraph::vertex_attr(graph)[[1]] # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
   EV
 }
-compute.deg<- function(graph,mode){
+
+#' Compute node degree from graph or adjacency matrix
+#'
+#' @param graph an igraph object (or an adjacency matrix)
+#' @param mode optional, only if `graph` is an adjacency matrix. Othewise character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
+#'
+#' @return a vector of degree values for each node
+#' @export
+#'
+#' @examples
+#' # Internal use
+compute.deg<- function(graph,mode=NULL){
   if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
   deg<- igraph::degree(graph)
   names(deg)<- igraph::vertex_attr(graph)[[1]] # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
   deg
 }
-compute.strength<- function(graph,mode){
+
+#' Compute node strength from graph or adjacency matrix
+#'
+#' @param graph an igraph object (or an adjacency matrix)
+#' @param mode optional, only if `graph` is an adjacency matrix. Othewise character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
+#'
+#' @return a vector of strength values for each node
+#' @export
+#'
+#' @examples
+#' # Internal use
+compute.strength<- function(graph,mode=NULL){
   if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
   igraph::strength(graph)
 }
-compute.flowbet<- function(graph,mode){
+
+#' Compute node flow betweenness from graph or adjacency matrix
+#'
+#' @param graph an igraph object (or an adjacency matrix)
+#' @param mode optional, only if `graph` is an adjacency matrix. Othewise character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
+#'
+#' @return a vector of flow betweenness values for each node
+#' @export
+#'
+#' @examples
+#' # Internal use
+compute.flowbet<- function(graph,mode=NULL){
   if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
   graph.network<- intergraph::asNetwork(graph)
   FB<- sna::flowbet(graph.network)

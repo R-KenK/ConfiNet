@@ -87,31 +87,6 @@ do.scan<-function(Adj=NULL,total_scan=NULL,
   )
 }
 
-#' Focal scan from theoretical
-#'
-#' @param scan.theoretical binary matrix (the theoretical scan within do.scan())
-#' @param focal either the row index or the name of the focal
-#'
-#' @return a focal scan as a binary matrix with matching values for the row of the focal, and NAs otherwise, and the name of the focal as a "focal" attribute.
-#' @export
-#'
-#' @examples
-#' # Internal use in do.(non.zero.)scan()
-focal.scan<- function(scan.theoretical,focal){
-  focal.scan<- scan.theoretical;nodes<- rownames(scan.theoretical)
-  if(is.character(focal)){
-    focal.index<- match(focal,nodes)
-    if(is.na(focal.index)){stop("focal name not recognized.")}
-    focal.name<- focal
-  }else if(is.numeric(focal)){
-    focal.index<- focal
-    focal.name<- nodes[focal.index]
-  }else{stop("focal format unrecognized")}
-  focal.scan[-focal.index,]<- NA
-  attr(focal.scan,"focal")<- focal.name;
-  focal.scan
-}
-
 #' Set arguments to default for do.(non.zero.)scan() function when necessary
 #'
 #' @param Adj square integers matrix of occurences of dyads. Optional if using presence.prob. WIP: implement method for association matrices...

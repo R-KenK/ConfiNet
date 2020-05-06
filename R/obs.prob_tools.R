@@ -1,3 +1,5 @@
+# Hiding edges during group scan ------------------------------------------
+
 #' Hide unobservable edges
 #' Simulate that some dyads might reasonable not be observable during a group scan
 #'
@@ -82,4 +84,62 @@ n.observed_edges<- function(scan_list,diag=0,use.rare.opti=FALSE,obs.prob=NULL,n
     if(!is.matrix(obs.prob)){obs.prob<- matrix(obs.prob,n,n)}
     rbind_lapply(1:n,function(i) rbinom(n,n.zeros,obs.prob[i,])+n.observed[i,])
   }
+}
+
+# obs.prob tools ----------------------------------------------------------
+
+#' Produce matrix of probability of observation from user-defined function
+#'
+#' @param Adj square integers matrix of occurences of dyads.
+#' @param obs.prob_fun either a user-defined function of (i,j) that output a probability of presence for the dyad, or a single value to indicate a constant observation probability
+#' @param Adj.subfun subsetting function of the adjacency matrix. Default is non.diagonal.
+#'
+#' @return a matrix of probability of observation for each dyad (obs.prob)
+#' @export
+#'
+#' @examples
+#' set.seed(42)
+#' n<- 6;nodes<- as.character(1:n);
+#' total_scan<- 20;n.boot<- 5;
+#' focal.list<- sample(nodes,total_scan,replace = TRUE)
+#'
+#' Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
+#' Adj[non.diagonal(Adj)]<- round(runif(n*(n-1),0,total_scan*.50))
+#'
+#' make_obs.prob(Adj)
+#' make_obs.prob(Adj,obs.prob_fun = 0.2)
+#' make_obs.prob(Adj,obs.prob_fun = function(i,j) i+j)
+#' make_obs.prob(Adj,obs.prob_fun = function(i,j){EVs<- compute.EV(Adj,"directed");EVs[i]*EVs[j]})
+make_obs.prob<- function(Adj,obs.prob_fun = NULL,
+                         Adj.subfun = non.diagonal){
+  if(is.numeric(obs.prob_fun)){
+    if(length(obs.prob_fun)==1 & obs.prob_fun>0 & obs.prob_fun<1){
+      return(obs.prob_fun)
+    }else{
+      stop("incompatible numeric obs.prob_fun.")
+    }
+  }
+
+  n<- nrow(Adj);
+
+  if(is.null(obs.prob_fun)){
+    obs.prob<- matrix(runif(n,0,1),n,n,dimnames = list(rownames(Adj),colnames(Adj)))
+    diag(obs.prob)<- 0
+    return(obs.prob)
+  }
+
+  dyads<- expand.grid(row = 1:n,col = 1:n)
+  obs.prob<- matrix(nrow = n,ncol = n,dimnames = list(rownames(Adj),colnames(Adj)),
+                    data =  sapply(1:nrow(dyads),
+                                   function(ij) {
+                                     i<- dyads[["row"]];j<- dyads[["col"]];
+                                     obs.prob_fun(i,j)
+                                   }
+                    )
+  )
+  diag(obs.prob)<- 0;P<- obs.prob[Adj.subfun(obs.prob)]
+  if(any(P<=0)|any(P>=1)){
+    obs.prob[Adj.subfun(obs.prob)]<- proportional.prob(P)
+  }
+  obs.prob
 }

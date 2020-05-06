@@ -109,3 +109,30 @@ t_test_from_summary<- function(m1,m2,sd1,sd2,n1,n2,m0=0,equal.variance=FALSE){
   names(dat) <- c("Difference of means", "Std Error", "t", "p-value")
   dat
 }
+
+#' Modify a vector to be probabilities in ]0,1[
+#'
+#' @param P a vector of values not all in ]0,1[
+#'
+#' @return a vector of valid probabilities in ]0,1[
+#' @export
+#'
+#' @examples
+#' # internal use in make_obs.prob().
+proportional.prob<- function(P){
+  if(any(P<0)){
+    P<- P+abs(min(P)) # set the negative minimum to zero
+    P<- P+min(P[P>0]) # set the minimum value (zero) to the smallest
+  }
+  if(any(P==0)){
+    P<- P+min(P[P>0]) # set the minimum value (zero) to the smallest
+  }
+  if(any(P>1)){
+    P<- P/(max(P)+min(P)) # set the maximal value to <1
+  }
+  if(any(P==1)){
+    P<- P-min(P)/2 # set the maximal value to 1 - min(P)/2 and min(P) to half the previous min(P)
+  }
+  P
+}
+
