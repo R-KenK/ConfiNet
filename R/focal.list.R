@@ -27,7 +27,8 @@ focal.scan<- function(scan.theoretical,focal){
 #'
 #' @param Adj square integers matrix of occurences of dyads.
 #' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision. Optional if using presence.prob.
-#' @param focal.prob_fun a user-defined function of (n) that output a probability of being focal for each node
+#' @param focal.prob_fun a user-defined function of (n) that output a weight of being focal for each node (passed as `prob` argument to sample() function). By default, pick focals following a uniform distribution. Special case "even" tries to even out the focal.list as much as possible before drawing randomly following a uniform distribution.
+#' @param all.sampled logical, should all individuals be sampled before letting them be sampled according to `focal.prob_fun`? Returns an error if total_scan is smaller than the number of nodes.
 #'
 #' @return a vector of focals (as integers)
 #' @export
@@ -35,20 +36,41 @@ focal.scan<- function(scan.theoretical,focal){
 #' @examples
 #' set.seed(42)
 #' n<- 6;nodes<- as.character(1:n);
-#' total_scan<- 20;n.boot<- 5;
+#' total_scan<- 22;n.boot<- 5;
 #'
 #' Adj<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
 #' Adj[non.diagonal(Adj)]<- round(runif(n*(n-1),0,total_scan*.50))
 #'
 #' make_focal.list(Adj,total_scan)
+#' make_focal.list(Adj,total_scan,focal.prob_fun = "even")
 #' make_focal.list(Adj,total_scan,focal.prob_fun = function(n) 1:n)
+#' make_focal.list(Adj,total_scan,focal.prob_fun = function(n) 1:n*1:n)
+#' make_focal.list(Adj,total_scan,focal.prob_fun = function(n) exp(1:n),all.sampled = TRUE)
+#' make_focal.list(Adj,total_scan,focal.prob_fun = function(n) log(1:n))
 #' make_focal.list(Adj,total_scan,focal.prob_fun = function(n) compute.strength(Adj,"directed"))
 make_focal.list<- function(Adj,total_scan,
-                           focal.prob_fun = NULL){
-  n<- nrow(Adj);
+                           focal.prob_fun = NULL,all.sampled = TRUE){
+
+  n<- nrow(Adj);focal.list<- rep(NA,total_scan);
+
+  if(is.character(focal.prob_fun)){
+    if(focal.prob_fun=="even"){
+      focal.list[is.na(focal.list)]<- c(rep(1:n,total_scan%/%n),sample(1:n,total_scan%%n,replace = FALSE))
+      return(focal.list[sample(seq_along(focal.list))])
+    }
+  }
+
+  if(all.sampled){
+    if(n > total_scan){stop("total_scan is too small to sample all nodes.")}
+    focal.list[sample(1:total_scan,n)]<- 1:n;total_scan<- total_scan-n;
+  }
 
   if(is.null(focal.prob_fun)){
-    return(ceiling(runif(total_scan,0,n)))
+    focal.list[is.na(focal.list)]<- ceiling(runif(total_scan,0,n))
+    return(focal.list)
   }
-  sample(1:n,total_scan,replace = TRUE,prob = focal.prob_fun(n))
+
+  P<- focal.prob_fun(n);if(any(P==0)){P<-P+min(P[P>0])}
+  focal.list[is.na(focal.list)]<- sample(1:n,total_scan,replace = TRUE,prob = P)
+  focal.list
 }
