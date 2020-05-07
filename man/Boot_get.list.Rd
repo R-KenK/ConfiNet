@@ -8,7 +8,7 @@ Subset rich Bootstrap output choosing what's needed}
 Boot_get.list(
   Bootstrap,
   what = c("theoretical", "group", "focal"),
-  get.format = c("list", "adjacency", "all")
+  get.format = c("list", "adjacency", "observed_edges", "all")
 )
 }
 \arguments{
@@ -16,7 +16,7 @@ Boot_get.list(
 
 \item{what}{character scalar, data type requested ("theoretical","group" or "focal")}
 
-\item{get.format}{character scalar, output format type requested ("list","adjacency" or "all").}
+\item{get.format}{character scalar, output format type requested ("list","adjacency", "observed_edges" or "all").}
 }
 \value{
 list which structure depends on chosen data type and Bootstrap attributes
@@ -40,11 +40,14 @@ Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
                        method = "group",mode = "directed",output = "list")
 Boot_get.list(Bootstrap,"theoretical")
 Boot_get.list(Bootstrap,"group")
+Boot_get.list(Bootstrap,"group","adj")
+Boot_get.list(Bootstrap,"group","obs")
 
 Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
                        scaled = TRUE,obs.prob=0.7,keep=TRUE,
                        method = "both",mode = "directed",output = "all")
 Boot_get.list(Bootstrap,"focal","all")
 Boot_get.list(Bootstrap,"group","adjacency")
+Boot_get.list(Bootstrap,"focal","obs")
 Boot_get.list(Bootstrap,"group","list")
 }

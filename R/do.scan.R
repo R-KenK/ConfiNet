@@ -51,14 +51,14 @@ do.scan<-function(Adj=NULL,total_scan=NULL,
                   method = c("theoretical","group","focal","both"),...,use.rare.opti=FALSE){
   # irrelevant bit of code, only to remove annoying note in R CMD Check ----
   opt.args<- list(...)
-  if(is.null(opt.args$obs.prob)) {obs.prob<- NULL};if(is.null(opt.args$ocal)) {focal<- NULL};if(is.null(opt.args$Adj.subfun)) {Adj.subfun<- NULL};
+  if(is.null(opt.args$obs.prob)) {obs.prob<- NULL};if(is.null(opt.args$focal)) {focal<- NULL};if(is.null(opt.args$focal.list)) {focal.list<- NULL};if(is.null(opt.args$Adj.subfun)) {Adj.subfun<- NULL};
   if(is.null(opt.args$presence.prob)) {presence.prob<- NULL};if(is.null(opt.args$mode)) {mode<- NULL};
   # actual algorithm ----
   method<- match.arg(method)
   scan.default.args(Adj,total_scan,method,...)
 
   if(!is.null(Adj)){n<- nrow(Adj);nodes_names<- rownames(Adj)} else {n<- nrow(presence.prob);nodes_names<- rownames(presence.prob)}
-  presence.P<- Adj.subfun(presence.prob,"vector");p<- length(presence.P)
+  presence.P<- presence.prob[Adj.subfun(presence.prob)];p<- length(presence.P)
 
   if(!use.rare.opti){
     scan<- matrix(0,nrow = n,ncol = n,dimnames = list(nodes_names,nodes_names))
@@ -87,31 +87,6 @@ do.scan<-function(Adj=NULL,total_scan=NULL,
   )
 }
 
-#' Focal scan from theoretical
-#'
-#' @param scan.theoretical binary matrix (the theoretical scan within do.scan())
-#' @param focal either the row index or the name of the focal
-#'
-#' @return a focal scan as a binary matrix with matching values for the row of the focal, and NAs otherwise, and the name of the focal as a "focal" attribute.
-#' @export
-#'
-#' @examples
-#' # Internal use in do.(non.zero.)scan()
-focal.scan<- function(scan.theoretical,focal){
-  focal.scan<- scan.theoretical;nodes<- rownames(scan.theoretical)
-  if(is.character(focal)){
-    focal.index<- match(focal,nodes)
-    if(is.na(focal.index)){stop("focal name not recognized.")}
-    focal.name<- focal
-  }else if(is.numeric(focal)){
-    focal.index<- focal
-    focal.name<- nodes[focal.index]
-  }else{stop("focal format unrecognized")}
-  focal.scan[-focal.index,]<- NA
-  attr(focal.scan,"focal")<- focal.name;
-  focal.scan
-}
-
 #' Set arguments to default for do.(non.zero.)scan() function when necessary
 #'
 #' @param Adj square integers matrix of occurences of dyads. Optional if using presence.prob. WIP: implement method for association matrices...
@@ -135,7 +110,7 @@ focal.scan<- function(scan.theoretical,focal){
 #' @export
 #'
 #' @examples
-#' # Internal use in do.(non.zero.)scan()
+#' # Internal use.
 scan.default.args<- function(Adj,total_scan,method,...){
   opt.args<- list(...)
   # irrelevant bit of code, only to remove annoying note in R CMD Check ----
@@ -193,9 +168,9 @@ scan.default.args<- function(Adj,total_scan,method,...){
   if(is.null(opt.args$focal.list)&!is.null(total_scan)){
     if(method!="group"){
       if(!is.null(Adj)){
-        assign("focal.list",quick.sample(1:nrow(Adj),total_scan),parent.frame(n = 1))
+        assign("focal.list","even",parent.frame(n = 1))
       }else{
-        assign("focal.list",quick.sample(1:nrow(opt.args$presence.prob),total_scan),parent.frame(n = 1))
+        assign("focal.list","even",parent.frame(n = 1))
       }
     }else{
       assign("focal.list",NULL,parent.frame(n = 1))

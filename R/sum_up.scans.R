@@ -81,5 +81,8 @@ sum_up.scan<- function(scan_list,method,mode = NULL,scaled,use.rare.opti = FALSE
       summed_up.method<- ifelse(!is.nan(summed_up.method),summed_up.method,NA)
     }
   }
-  adjacency_mode(summed_up.method,mode = mode)
+  summed_up.method<- adjacency_mode(summed_up.method,mode = mode)
+  attr(summed_up.method,"observed_edges")<- n.observed_edges(scan_list.method,diag = 0,use.rare.opti = use.rare.opti,obs.prob = obs.prob,n.zeros = n.zeros)
+  summed_up.method
+
 }
