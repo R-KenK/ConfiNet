@@ -33,5 +33,5 @@ nothing, but assign required variable for do.(non.zero.)scan() in their environm
 Set arguments to default for do.(non.zero.)scan() function when necessary
 }
 \examples{
-# Internal use in do.(non.zero.)scan()
+# Internal use.
 }

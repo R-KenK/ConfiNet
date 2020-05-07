@@ -9,10 +9,10 @@ source("R/do.scan.R")
 source("R/sum_up.scans.R")
 source("R/iterate_scans.R")
 source("R/Boot_scans.R")
-source("R/observable_edges.R")
+source("R/obs.prob_tools.R")
 source("R/Bootstrap_tools.R")
 source(".WIP/ASNR.tools.R")
-
+load("C:/R/Git/ConfiNet/R/sysdata.rda")
 
 # import and generate objects ---------------------------------------------
 # Here preferably should be implemented as automatic import from ASNR/networkdata

@@ -5,7 +5,7 @@
 #' @param n.boot integer, number of bootstrap to perform.
 #' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.
 #' @param method Character scalar, specifies if the function should return a theoretical perfect group scan, an  empirical group scan (a similarly dimensioned matrix as Adj), or a focal scan (a vector representing the given focal's row in the group scan matrix).
-#' @param focal.list Character vector, indicate the list of focals to consider throughout the scans.
+#' @param focal.list Character vector, indicate the list of focals to consider throughout the scans. Can also be carried to `make_focal.list` as the `focal.prob_fun`argument (i.e. either "even" or a user-defined function).
 #' @param scaled logical, specifies if adjacency data should be scaled by sampling effort.
 #' @param cl Optional cluster object (cf snow package), experimentally set to put the makeCluster and stopCluster out of the bootable function. (WIP, next implementation should rethink this).
 #' @param ... additional argument to be used, to use produce a scan in a desired way.
@@ -45,6 +45,10 @@
 #'            method = "group",use.rare.opti=FALSE,mode = "directed",obs.prob = 0.5,output = "list")
 #' Boot_scans(Adj,total_scan = 42,focal.list = focal.list,n.boot = 3,scaled = FALSE,
 #'            method = "focal",mode = "directed",output = "adj")
+#' Boot_scans(Adj,total_scan = 42,focal.list = "even",n.boot = 3,scaled = TRUE,
+#'            method = "focal",mode = "directed",output = "adj")
+#' Boot_scans(Adj,total_scan = 42,focal.list = function(n) 1:n*1:n,n.boot = 3,scaled = TRUE,
+#'            method = "focal",mode = "directed",output = "adj")
 #' Boot_scans(Adj,total_scan = 42,obs.prob = 0.2,n.boot=3,scaled = TRUE,
 #'            method = "group",mode = "directed",output = "list")
 #' Boot_scans(Adj,total_scan = 42,obs.prob = obs.prob,n.boot=3,scaled = TRUE,
@@ -55,24 +59,15 @@ Boot_scans<- function(Adj,total_scan,method=c("theoretical","group","focal","bot
                       scaled=FALSE,obs.prob = NULL,
                       mode = c("directed", "undirected", "max","min", "upper", "lower", "plus","vector"),
                       output=c("list","adjacency","all"),use.rare.opti=NULL,cl=NULL){
-  b<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
+  #irrelevant bit of code, only to remove annoying note in R CMD Check...
+  # irrelevant bit of code, only to remove annoying note in R CMD Check ----
+  b<-NULL;opt.args<- list(...);if(is.null(opt.args$Adj.subfun)) {Adj.subfun<- NULL};if(is.null(opt.args$presence.prob)) {presence.prob<- NULL};
+  # actual algorithm ----
   method<- match.arg(method)
   output<- match.arg(output)
   mode<- match.arg(mode)
 
-  scan.default.args(Adj = Adj,total_scan = total_scan,method = method,...)
-
-  Adj.subfun<- switch(mode,
-                      "directed" = ,
-                      "undirected" = ,
-                      "max" = ,
-                      "min" = ,
-                      "plus" = non.diagonal,
-                      "upper" = upper.tri,
-                      "lower" =  lower.tri,
-                      "vector" = function(V){rep(TRUE,length(V))}
-  )
-  presence.prob<- Binary.prob(Adj=Adj,total_scan=total_scan,mode = mode)
+  scan.default.args(Adj = Adj,total_scan = total_scan,method = method,obs.prob = obs.prob,mode = mode,focal.list = focal.list,...)
 
   if(is.null(use.rare.opti)){
     n<- nrow(Adj)
