@@ -31,7 +31,7 @@ Bootstrap_add.attributes<- function(Bootstrap,method,scaled,mode,output,total_sc
 #'
 #' @param Bootstrap Bootstrap output object
 #' @param what character scalar, data type requested ("theoretical","group" or "focal")
-#' @param get.format character scalar, output format type requested ("list","adjacency" or "all").
+#' @param get.format character scalar, output format type requested ("list","adjacency", "observed_edges" or "all").
 #'
 #' @return list which structure depends on chosen data type and Bootstrap attributes
 #' @export
@@ -51,15 +51,18 @@ Bootstrap_add.attributes<- function(Bootstrap,method,scaled,mode,output,total_sc
 #'                        method = "group",mode = "directed",output = "list")
 #' Boot_get.list(Bootstrap,"theoretical")
 #' Boot_get.list(Bootstrap,"group")
+#' Boot_get.list(Bootstrap,"group","adj")
+#' Boot_get.list(Bootstrap,"group","obs")
 #'
 #' Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
 #'                        scaled = TRUE,obs.prob=0.7,keep=TRUE,
 #'                        method = "both",mode = "directed",output = "all")
 #' Boot_get.list(Bootstrap,"focal","all")
 #' Boot_get.list(Bootstrap,"group","adjacency")
+#' Boot_get.list(Bootstrap,"focal","obs")
 #' Boot_get.list(Bootstrap,"group","list")
 Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
-                         get.format = c("list","adjacency","all")){
+                         get.format = c("list","adjacency","observed_edges","all")){
   what<- match.arg(what)
   get.format<- match.arg(get.format)
 
@@ -73,16 +76,23 @@ Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
 
   if(what!="theoretical" & method!="both" & what!=method){stop("Element requested unavailable in `",substitute(Bootstrap),"`.")}
 
-  Bootstrap[1:n.boot][[what]]
-
   switch(output,
          "list" = switch(get.format,
                          "list" = lapply(Bootstrap,function(boot) lapply(boot, function(scan) scan[[what]])),
                          "adjacency" = lapply(Bootstrap,
                                               function(boot){
-                                                sum_up.scans(scan_list = lapply(boot, function(scan) scan[[what]]),
-                                                             scaled = scaled,method = what,mode = mode,use.rare.opti = use.rare.opti)
+                                                sum_up.scans(scan_list = boot,
+                                                             scaled = scaled,method = what,mode = mode,use.rare.opti = use.rare.opti)[[what]]
                                               }
+                         ),
+                         "observed_edges" = lapply(Bootstrap,
+                                                   function(boot){
+                                                     attr(
+                                                       sum_up.scans(scan_list = boot,
+                                                                  scaled = scaled,method = what,mode = mode,use.rare.opti = use.rare.opti)[[what]],
+                                                       "observed_edges"
+                                                     )
+                                                   }
                          ),
                          "all" = {
                            list(
@@ -99,6 +109,7 @@ Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
          "adjacency" = switch(get.format,
                               "list" = stop("Only summed-up adjacency matrices have been stored in Bootstrap object."),
                               "adjacency" = lapply(Bootstrap,function(boot) lapply(boot, function(scan) scan[[what]])),
+                              "observed_edges" = lapply(Bootstrap,function(boot) lapply(boot, function(scan) attr(scan[[what]],"observed_edges"))),
                               "all" = {
                                 warning("Only summed-up adjacency matrices have been stored in Bootstrap object.")
                                 lapply(Bootstrap,function(boot) lapply(boot, function(scan) scan[[what]]))
@@ -107,6 +118,7 @@ Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
          "all" = switch(get.format,
                         "list" = lapply(Bootstrap,function(boot) lapply(boot[["list"]], function(scan) scan[[what]])),
                         "adjacency" = lapply(Bootstrap,function(boot) boot[["adjacency"]][[what]]),
+                        "observed_edges" = lapply(Bootstrap,function(boot) attr(boot[["adjacency"]][[what]],"observed_edges")),
                         "all" = {
                           list(
                             list = lapply(Bootstrap,function(boot) lapply(boot[["list"]], function(scan) scan[[what]])),

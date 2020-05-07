@@ -49,7 +49,7 @@ focal.scan<- function(scan.theoretical,focal){
 #' make_focal.list(Adj,total_scan,focal.prob_fun = function(n) log(1:n))
 #' make_focal.list(Adj,total_scan,focal.prob_fun = function(n) compute.strength(Adj,"directed"))
 make_focal.list<- function(Adj,total_scan,
-                           focal.prob_fun = NULL,all.sampled = TRUE){
+                           focal.prob_fun = "even",all.sampled = TRUE){
 
   n<- nrow(Adj);focal.list<- rep(NA,total_scan);
 

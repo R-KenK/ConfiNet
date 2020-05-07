@@ -28,15 +28,15 @@ observable_edges<- function(Scan,obs.prob=NULL,Adj.subfun=NULL){
   if(!is.null(obs.prob)){
     if(length(obs.prob)==1) {
       if(obs.prob<=1 & obs.prob>=0){
-        obs.prob<- rep(obs.prob,length(Adj.subfun(Scan,"vector")))
+        obs.prob<- rep(obs.prob,length(Scan[Adj.subfun(Scan)]))
       }else{
         stop("Single observation obs.probability provided should be within [0,1]")
       }
     }else{
       if(is.matrix(obs.prob)) {
-        obs.prob<- Adj.subfun(obs.prob,"vector")
+        obs.prob<- obs.prob[Adj.subfun(obs.prob)]
       }
-      if(length(obs.prob)!=length(Adj.subfun(Scan,"vector"))){
+      if(length(obs.prob)!=length(Scan[Adj.subfun(Scan)])){
         stop("Matrix or vector obs.prob dimension(s) incompatible with adjacency matrix's")
       }
     }
@@ -67,12 +67,12 @@ observable_edges<- function(Scan,obs.prob=NULL,Adj.subfun=NULL){
 #'
 #' @examples
 #' #internal use.
-n.observed_edges<- function(scan_list,diag=0,use.rare.opti=FALSE,obs.prob=NULL,n.zeros = NULL){
+n.observed_edges<- function(scan_list,diag=NULL,use.rare.opti=FALSE,obs.prob=NULL,n.zeros = NULL){
   n.observed<- Reduce("+",
                       lapply(scan_list,
                              function(scan){
                                observed<- ifelse(!is.na(scan),1,0) # counting part of the algorithm
-                               # if(!is.null(diag)) {diag(observed)<- diag} # doesn't count the diagonal by default. Left the option to count if self loops should be considered
+                               if(!is.null(diag)) {diag(observed)<- diag} # doesn't count the diagonal by default. Left the option to count if self loops should be considered
                                observed
                              }
                       )

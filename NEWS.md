@@ -1,5 +1,11 @@
 # ConfiNet (development version)
 
+# ConfiNet 0.10.2
+* Fixed bug where Boot_scan input argument was overwritten by scan.default.args
+* Added make_focal.list() to the Boot_scan and nested functions workflow: can either rely on user-defined functions to randomly draw focals for the focal.list (to implement trait- or network- based bias), be left as the default "even", or NULL for a uniform random draw, through the argument `focal.prob_fun`.
+* For retro-compatibility and the implementation of the make_focal.list() workflow, `focal.list` argument of Boot_scan() is passed to make_focal.list() as its `focal.prob_fun` argument, if it is either "even", or a function.
+* Added track of `observed_edges` attribute of adjacency matrices, originating from its generation in sum_up.scan(), as well as a method to retrieve it in Boot_get.list().
+
 # ConfiNet 0.10.1
 * Cleaned expected time modelling of standard and optimized method, use the glm models as internal data.
 * Proper implementation of the decide_use.rare.opti() using those models.

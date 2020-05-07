@@ -7,7 +7,7 @@ quantify actual edge-wise sampling effort, considering that some weren't observa
 \usage{
 n.observed_edges(
   scan_list,
-  diag = 0,
+  diag = NULL,
   use.rare.opti = FALSE,
   obs.prob = NULL,
   n.zeros = NULL

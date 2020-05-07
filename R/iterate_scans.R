@@ -72,7 +72,16 @@ iterate_scans<- function(Adj=NULL,total_scan,method=c("theoretical","group","foc
   if(is.null(opt.args$Adj.subfun)) {Adj.subfun<- NULL};if(is.null(opt.args$presence.prob)) {presence.prob<- NULL};
   # actual algorithm ----
   output<- match.arg(output);
+
   scan.default.args(Adj = Adj,total_scan = total_scan,method = method,...)
+
+
+  # Generate focal.list if necessary ----------------------------------------
+  if(is.character(focal.list) & length(focal.list)==1 | is.function(focal.list)){
+    focal.list<- make_focal.list(Adj,total_scan,focal.prob_fun = focal.list)
+  }
+
+  # Manage scan_list's characteristic according to chosen algorithm  --------
   if(!use.rare.opti){
     to.do.list<- 1:total_scan;n.zeros<- NULL;
   }else{
@@ -80,14 +89,17 @@ iterate_scans<- function(Adj=NULL,total_scan,method=c("theoretical","group","foc
     n.zeros<- attr(scan_list,"n.zeros")
     to.do.list<- seq_along(scan_list)
   }
+
+  # Iterate scans -----------------------------------------------------------
   scan_list<- lapply(
     to.do.list,
     function(i){
       do.scan(presence.prob = presence.prob,method = method,focal = focal.list[i],obs.prob = obs.prob,Adj.subfun = Adj.subfun,use.rare.opti = use.rare.opti)
     }
   )
-  attr(scan_list,"n.zeros")<- n.zeros
+  attr(scan_list,"n.zeros")<- n.zeros # absence attribute if the standard algoritm is used
 
+  # Format the output, summing up scans if necessary ------------------------
   switch(output,
          "list" = scan_list,
          "adjacency" = sum_up.scans(scan_list = scan_list,scaled = scaled,method = method,mode = mode),
