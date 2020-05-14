@@ -10,6 +10,7 @@ sum_up.scans(
   scaled = FALSE,
   use.rare.opti = FALSE,
   obs.prob = NULL,
+  focal.list = NULL,
   method = c("theoretical", "group", "focal", "both"),
   mode = c("directed", "undirected", "max", "min", "upper", "lower", "plus", "vector")
 )
@@ -27,6 +28,8 @@ sum_up.scans(
  \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
  \item{"a systematic dyad observation (P.obs constant for all i,j)"}{should be in [0,1], assumed to be the case when only one value is inputed)}
 }}
+
+\item{focal.list}{Character vector, indicate the list of focals to consider throughout the scans.}
 
 \item{method}{Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).}
 

@@ -68,11 +68,19 @@ table(focal.list.rare)
 
 iterate_scans(Adj,total_scan,scaled = FALSE,method = "theoretical",
               mode = "max",output = "adjacency",obs.prob = 0.8)
+iterate_scans(Adj,total_scan,scaled = FALSE,method = "group",
+              mode = "max",output = "adjacency",obs.prob = 0.8)
+iterate_scans(Adj,total_scan,scaled = FALSE,method = "focal",
+              mode = "max",output = "adjacency",obs.prob = 0.8)
+iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",
+              mode = "max",output = "all",obs.prob = 0.8)
+iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",
+              mode = "plus",output = "adjacency",obs.prob = 0.8)
 iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",
               output = "list",obs.prob = 0.8)
 iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",
               mode = "max",output = "adj",obs.prob = 0.8)
-iterate_scans(Adj,total_scan,scaled = TRUE,method = "group",
+iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",
               mode = "min",output = "adjacency",obs.prob = obs.prob)
 iterate_scans(Adj,total_scan,scaled = FALSE,method = "focal",
               output = "adjacency")

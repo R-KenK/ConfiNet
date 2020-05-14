@@ -73,11 +73,11 @@ table(focal.list)
 Boot_scans(Adj,total_scan = 42,focal.list = focal.list,n.boot = 3,scaled = TRUE,
            method = "group",use.rare.opti=FALSE,mode = "directed",obs.prob = 0.5,output = "list")
 Boot_scans(Adj,total_scan = 42,focal.list = focal.list,n.boot = 3,scaled = FALSE,
-           method = "focal",mode = "directed",output = "adj")
+           method = "focal",mode = "max",output = "adj")
 Boot_scans(Adj,total_scan = 42,focal.list = "even",n.boot = 3,scaled = TRUE,
-           method = "focal",mode = "directed",output = "adj")
+           method = "focal",mode = "plus",output = "adj")
 Boot_scans(Adj,total_scan = 42,focal.list = function(n) 1:n*1:n,n.boot = 3,scaled = TRUE,
-           method = "focal",mode = "directed",output = "adj")
+           method = "focal",mode = "max",output = "adj")
 Boot_scans(Adj,total_scan = 42,obs.prob = 0.2,n.boot=3,scaled = TRUE,
            method = "group",mode = "directed",output = "list")
 Boot_scans(Adj,total_scan = 42,obs.prob = obs.prob,n.boot=3,scaled = TRUE,

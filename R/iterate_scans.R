@@ -43,11 +43,19 @@
 #'
 #' iterate_scans(Adj,total_scan,scaled = FALSE,method = "theoretical",
 #'               mode = "max",output = "adjacency",obs.prob = 0.8)
+#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "group",
+#'               mode = "max",output = "adjacency",obs.prob = 0.8)
+#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "focal",
+#'               mode = "max",output = "adjacency",obs.prob = 0.8)
+#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",
+#'               mode = "max",output = "all",obs.prob = 0.8)
+#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",
+#'               mode = "plus",output = "adjacency",obs.prob = 0.8)
 #' iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",
 #'               output = "list",obs.prob = 0.8)
 #' iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",
 #'               mode = "max",output = "adj",obs.prob = 0.8)
-#' iterate_scans(Adj,total_scan,scaled = TRUE,method = "group",
+#' iterate_scans(Adj,total_scan,scaled = FALSE,method = "both",
 #'               mode = "min",output = "adjacency",obs.prob = obs.prob)
 #' iterate_scans(Adj,total_scan,scaled = FALSE,method = "focal",
 #'               output = "adjacency")
@@ -62,7 +70,6 @@
 #' iterate_scans(Adj.rare,total_scan.rare,focal.list = focal.list.rare,
 #'               scaled = TRUE,obs.prob = 0.7,method = "both",
 #'               mode = "directed",output = "all",use.rare.opti = TRUE)
-
 iterate_scans<- function(Adj=NULL,total_scan,method=c("theoretical","group","focal","both"),
                          output=c("list","adjacency","all"),scaled=FALSE,...,
                          use.rare.opti = FALSE){
@@ -75,7 +82,6 @@ iterate_scans<- function(Adj=NULL,total_scan,method=c("theoretical","group","foc
 
   scan.default.args(Adj = Adj,total_scan = total_scan,method = method,...)
 
-
   # Generate focal.list if necessary ----------------------------------------
   if(is.character(focal.list) & length(focal.list)==1 | is.function(focal.list)){
     focal.list<- make_focal.list(Adj,total_scan,focal.prob_fun = focal.list)
@@ -83,10 +89,11 @@ iterate_scans<- function(Adj=NULL,total_scan,method=c("theoretical","group","foc
 
   # Manage scan_list's characteristic according to chosen algorithm  --------
   if(!use.rare.opti){
-    to.do.list<- 1:total_scan;n.zeros<- NULL;
+    to.do.list<- 1:total_scan;n.zeros<- NULL;non.zero.list<- 1:total_scan;
   }else{
     scan_list<- simulate_zeros.non.zeros(total_scan,presence.prob)
     n.zeros<- attr(scan_list,"n.zeros")
+    non.zero.list<- attr(scan_list,"non.zero.list")
     to.do.list<- seq_along(scan_list)
   }
 
@@ -94,18 +101,19 @@ iterate_scans<- function(Adj=NULL,total_scan,method=c("theoretical","group","foc
   scan_list<- lapply(
     to.do.list,
     function(i){
-      do.scan(presence.prob = presence.prob,method = method,focal = focal.list[i],obs.prob = obs.prob,Adj.subfun = Adj.subfun,use.rare.opti = use.rare.opti)
+      do.scan(presence.prob = presence.prob,method = method,focal = focal.list[non.zero.list][i],obs.prob = obs.prob,Adj.subfun = Adj.subfun,use.rare.opti = use.rare.opti)
     }
   )
   attr(scan_list,"n.zeros")<- n.zeros # absence attribute if the standard algoritm is used
+  if(!use.rare.opti){attr(scan_list,"non.zero.list")<- NULL}else{attr(scan_list,"non.zero.list")<- non.zero.list}
 
   # Format the output, summing up scans if necessary ------------------------
   switch(output,
          "list" = scan_list,
-         "adjacency" = sum_up.scans(scan_list = scan_list,scaled = scaled,method = method,mode = mode),
+         "adjacency" = sum_up.scans(scan_list = scan_list,scaled = scaled,method = method,mode = mode,obs.prob = obs.prob,focal.list = focal.list,use.rare.opti = use.rare.opti),
          "all" = list(
            list = scan_list,
-           adjacency = sum_up.scans(scan_list = scan_list,scaled = scaled,method = method,mode = mode)
+           adjacency = sum_up.scans(scan_list = scan_list,scaled = scaled,method = method,mode = mode,obs.prob = obs.prob,focal.list = focal.list,use.rare.opti = use.rare.opti)
          )
   )
 }

@@ -110,16 +110,18 @@ decide_use.rare.opti<- function(n,total_scan,max.obs=NULL,alpha=0.05){
 #' @param total_scan integer, sampling effort
 #' @param presence.prob presence probability matrix (or vector)
 #'
-#' @return a list of NULL representing the non-zero scan to run with an attribute `n.zero` being the number of full-zero scans
+#' @return a list of NULL representing the non-zero scan to run with an attribute `n.zero` being the number of full-zero scans,and `non.zero.pos`
 #' @export
 #' @importFrom stats rbinom
 #'
 #' @examples
 #' # Internal use
 simulate_zeros.non.zeros<- function(total_scan,presence.prob){
-  zero.non.zero<- table(ifelse(stats::rbinom(total_scan,1,1-prod(1-presence.prob))==1,"n.non.zeros","n.zeros"));
-  scan_list<- vector(mode="list",length = zero.non.zero["n.non.zeros"])
-  attr(scan_list,"n.zeros")<- zero.non.zero["n.zeros"]
+  zero.non.zero.list<- stats::rbinom(total_scan,1,1-prod(1-presence.prob))==1
+  zero.non.zero.table<- table(ifelse(zero.non.zero.list,"n.non.zeros","n.zeros"));
+  scan_list<- vector(mode="list",length = zero.non.zero.table["n.non.zeros"])
+  attr(scan_list,"n.zeros")<- zero.non.zero.table["n.zeros"]
+  attr(scan_list,"non.zero.list")<- which(zero.non.zero.list)
   scan_list
 }
 

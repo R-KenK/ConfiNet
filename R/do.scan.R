@@ -197,16 +197,70 @@ scan.default.args<- function(Adj,total_scan,method,...){
 #' Adj[non.diagonal(Adj)]<- sample(0:30,n*(n-1),replace = TRUE)
 #' Adj<- iterate_scans(Adj,42,method="group",mode="directed",output = "adjacency")
 #' adjacency_mode(Adj$group,"max")
-adjacency_mode<- function(Adj,mode = c("directed", "undirected", "max","min", "upper", "lower", "plus","vector")){
+adjacency_mode<- function(Adj,
+                          mode = c("directed", "undirected", "max","min", "upper", "lower", "plus","vector")){
   mode<- match.arg(mode)
   switch(mode,
          "undirected" = ,
-         "max" = ifelse(Adj>=t(Adj),Adj,t(Adj)),
-         "min" = ifelse(Adj<=t(Adj),Adj,t(Adj)),
-         "plus" = Adj+t(Adj),
+         "max" = {
+           both.na<- is.na(Adj)&is.na(t(Adj))
+           ifelse(
+             test = !both.na,
+             yes = ifelse(
+               comp_with_transposed(Adj,`>=`),
+               null_na(Adj),
+               null_na(t(Adj))
+             ),
+             no = NA
+           )
+         },
+         "min" = {
+           both.na<- is.na(Adj)&is.na(t(Adj))
+           ifelse(
+             test = !both.na,
+             yes = ifelse(
+               comp_with_transposed(Adj,`<=`),
+               null_na(Adj),
+               null_na(t(Adj))
+             ),
+             no = NA
+           )
+         },
+         "plus" = {
+           both.na<- is.na(Adj)&is.na(t(Adj))
+           ifelse(!both.na,null_na(Adj)+null_na(t(Adj)),NA)
+         },
          "directed" = ,
          "upper" = ,
          "lower" =  Adj,
          "vector" = Adj
   )
+}
+
+#' Replace NAs by zeros in vectors/matrices
+#'
+#' @param X a vector or matrix
+#'
+#' @return similarly dimensioned vector or matrix with zeros instead of NAs
+#' @export
+#'
+#' @examples
+#' # Internal use
+null_na<- function(X){
+  ifelse(!is.na(X),X,0)
+}
+
+#' Compare elements of a matrix with its transposed
+#' wrapper using `null_na`
+#'
+#' @param X a numeric matrix
+#' @param comp.fun a function to compare X with t(X), in this order. Default is superior or equal
+#'
+#' @return a logical matrix
+#' @export
+#'
+#' @examples
+#' # Internal use
+comp_with_transposed<- function(X,comp.fun = `>=`){
+  comp.fun(null_na(X),null_na(t(X)))
 }
