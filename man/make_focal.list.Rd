@@ -4,7 +4,7 @@
 \alias{make_focal.list}
 \title{Produce focal.list}
 \usage{
-make_focal.list(Adj, total_scan, focal.prob_fun = NULL, all.sampled = TRUE)
+make_focal.list(Adj, total_scan, focal.prob_fun = "even", all.sampled = TRUE)
 }
 \arguments{
 \item{Adj}{square integers matrix of occurences of dyads.}

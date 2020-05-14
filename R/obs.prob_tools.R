@@ -46,46 +46,6 @@ observable_edges<- function(Scan,obs.prob=NULL,Adj.subfun=NULL){
   observed
 }
 
-#' Get number of edge observations (for group scans with unobservable individuals)
-#' quantify actual edge-wise sampling effort, considering that some weren't observable in all group scans.Internal use.
-#'
-#' @param scan_list list of binary group scans, with NAs when the dyad was not observable.
-#' @param diag integer (mostly), value to replace the diagonal of the output matrix with. Use NULL if you consider self-loop (untested).
-#' @param use.rare.opti logical: should the optimization for rare event be used?
-#' @param obs.prob either :
-#' \itemize{
-#'  \item{"a dyad observation probability matrix (P.obs)"}{of same dimension as Adj}
-#'  \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
-#'  \item{"a systematic dyad observation (P.obs constant for all i,j)"}{should be in [0,1], assumed to be the case when only one value is inputed)}
-#' }
-#' @param n.zeros integer, the attribute outputed by `simulate_zeros.non.zeros`, representing the number of full-zero scans. Used only when use.rare.opti=TRUE
-#'
-#' @importFrom stats rbinom
-#'
-#' @return a square matrix with element quantifying how many time a dyad has been sampled
-#' @export
-#'
-#' @examples
-#' #internal use.
-n.observed_edges<- function(scan_list,diag=NULL,use.rare.opti=FALSE,obs.prob=NULL,n.zeros = NULL){
-  n.observed<- Reduce("+",
-                      lapply(scan_list,
-                             function(scan){
-                               observed<- ifelse(!is.na(scan),1,0) # counting part of the algorithm
-                               if(!is.null(diag)) {diag(observed)<- diag} # doesn't count the diagonal by default. Left the option to count if self loops should be considered
-                               observed
-                             }
-                      )
-  )
-  if(!use.rare.opti){
-    n.observed
-  }else{
-    n<- nrow(n.observed);
-    if(!is.matrix(obs.prob)){obs.prob<- matrix(obs.prob,n,n)}
-    rbind_lapply(1:n,function(i) rbinom(n,n.zeros,obs.prob[i,])+n.observed[i,])
-  }
-}
-
 # obs.prob tools ----------------------------------------------------------
 
 #' Produce matrix of probability of observation from user-defined function

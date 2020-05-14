@@ -1,30 +1,33 @@
-#' Keep bootstrap parameters as attributes
+#' Keep bootstrap parameters (and more) as attributes
 #' Internal use in Boot_scans(). Add "method", "keep", "mode", "output" attributes to be more easily retrieved by the get function
 #'
 #' @param Bootstrap Boot_scans() intermediate output
-#' @param method Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).
-#' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
-#' @param output Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix
-#' @param scaled logical, specifies if adjacency data should be scaled by sampling effort.
-#' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.
-#' @param n.boot integer, number of bootstrap performed.
-#' @param use.rare.opti logical: has the optimization for rare event been used?
+#' @param ... Any named attribute to be included to the Bootstrap object. Mostly determined by the code of Boot_scan(). Will produce error later if no name is attributed to any
 #'
-#' @return list which structure depends on chosen parameters, with parameters stored as attributes.
+#' @return Bootstrap object, with stored attribute for later retrieval through Bootstrap_get.attributes(). A special attribute, attr.list stores those who have been properly inputted, to account for those with special structure.
 #' @export
 #'
 #' @examples
 #' #Internal
-Bootstrap_add.attributes<- function(Bootstrap,method,scaled,mode,output,total_scan,n.boot,use.rare.opti){
-  attr(Bootstrap,"method")<- method;
-  attr(Bootstrap,"scaled")<- scaled;
-  attr(Bootstrap,"mode")<- mode;
-  attr(Bootstrap,"output")<- output;
-  attr(Bootstrap,"total_scan")<- total_scan;
-  attr(Bootstrap,"n.boot")<- n.boot;
-  attr(Bootstrap,"use.rare.opti")<- use.rare.opti;
+Bootstrap_add.attributes<- function(Bootstrap,...){
+  attr(Bootstrap,"attr.list")<- list(...)
   Bootstrap
 }
+
+#' Retrieve bootstrap object's attributes and reassign them in caller frame
+#'
+#' @param Bootstrap Boot_scans() output
+#' @param a character, parameter stored as attribute to retrieve from `Bootstrap`.
+#'
+#' @return the value of the parameter `a`.
+#' @export
+#'
+#' @examples
+#' #Internal
+Bootstrap_get.attr<- function(Bootstrap,a){
+  attr(Bootstrap,"attr.list")[[a]]
+}
+
 
 #' Retrieve data from specific method from Boot_scans() output
 #' Subset rich Bootstrap output choosing what's needed
@@ -66,13 +69,13 @@ Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
   what<- match.arg(what)
   get.format<- match.arg(get.format)
 
-  method<- attr(Bootstrap,"method");
-  output<- attr(Bootstrap,"output");
-  total_scan<- attr(Bootstrap,"total_scan");
-  n.boot<- attr(Bootstrap,"n.boot");
-  scaled<- attr(Bootstrap,"scaled");
-  mode<- attr(Bootstrap,"mode");
-  use.rare.opti<- attr(Bootstrap,"use.rare.opti");
+  method<- Bootstrap_get.attr(Bootstrap,"method");
+  output<- Bootstrap_get.attr(Bootstrap,"output");
+  total_scan<- Bootstrap_get.attr(Bootstrap,"total_scan");
+  n.boot<- Bootstrap_get.attr(Bootstrap,"n.boot");
+  scaled<- Bootstrap_get.attr(Bootstrap,"scaled");
+  mode<- Bootstrap_get.attr(Bootstrap,"mode");
+  use.rare.opti<- Bootstrap_get.attr(Bootstrap,"use.rare.opti");
 
   if(what!="theoretical" & method!="both" & what!=method){stop("Element requested unavailable in `",substitute(Bootstrap),"`.")}
 
@@ -231,7 +234,7 @@ adjacency_cor<- function(Bootstrap.list,method = c("group","focal")){
 centrality_cor<- function(Bootstrap.list,method = c("group","focal"),centrality.fun){
   method<- match.arg(method)
   n.boot = length(Bootstrap.list)
-  mode<- attr(Bootstrap.list,"mode")
+  mode<- Bootstrap_get.attr(Bootstrap.list,"mode")
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
          function(b) {
            cor(
@@ -323,7 +326,7 @@ compute.flowbet<- function(graph,mode=NULL){
 net.metric.diff<- function(Bootstrap.list,method = c("group","focal"),network.fun){
   method<- match.arg(method)
   n.boot = length(Bootstrap.list)
-  mode<- attr(Bootstrap.list,"mode")
+  mode<- Bootstrap_get.attr(Bootstrap.list,"mode")
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
          function(b) {
            "-"(
@@ -380,7 +383,7 @@ weighted.clustering.coeff<- function(graph,mode){
 adj_distance<- function(Bootstrap.list,method = c("group","focal"),dist.fun){
   method<- match.arg(method)
   n.boot = length(Bootstrap.list)
-  mode<- attr(Bootstrap.list,"mode")
+  mode<- Bootstrap_get.attr(Bootstrap.list,"mode")
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
          function(b) {
            dist.fun(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]],Boot_get.list(Bootstrap.list,method,"adjacency")[[b]],mode = mode)
@@ -402,9 +405,9 @@ adj_distance<- function(Bootstrap.list,method = c("group","focal"),dist.fun){
 adj_gof<- function(Bootstrap.list,method = c("group","focal"),dist.fun){
   method<- match.arg(method)
   n.boot = length(Bootstrap.list)
-  scaled<- attr(Bootstrap.list,"scaled")
-  mode<- attr(Bootstrap.list,"mode")
-  total_scan<- attr(Bootstrap.list,"total_scan")
+  scaled<- Bootstrap_get.attr(Bootstrap.list,"scaled")
+  mode<- Bootstrap_get.attr(Bootstrap.list,"mode")
+  total_scan<- Bootstrap_get.attr(Bootstrap.list,"total_scan")
   Adj.subfun<- switch(mode,"directed" = ,"undirected" = ,"max" = ,"min" = ,"plus" = non.diagonal,
                       "upper" = upper.tri,"lower" =  lower.tri)
   sapply(1:n.boot,
