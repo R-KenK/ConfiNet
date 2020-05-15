@@ -51,7 +51,7 @@ observable_edges<- function(Scan,obs.prob=NULL,Adj.subfun=NULL){
 #' Produce matrix of probability of observation from user-defined function
 #'
 #' @param Adj square integers matrix of occurences of dyads.
-#' @param obs.prob_fun either a user-defined function of (i,j) that output a probability of presence for the dyad, or a single value to indicate a constant observation probability
+#' @param obs.prob_fun either a user-defined function of (i,j,Adj) that output a probability of presence for the dyad, or a single value to indicate a constant observation probability
 #' @param Adj.subfun subsetting function of the adjacency matrix. Default is non.diagonal.
 #'
 #' @return a matrix of probability of observation for each dyad (obs.prob)
@@ -68,8 +68,8 @@ observable_edges<- function(Scan,obs.prob=NULL,Adj.subfun=NULL){
 #'
 #' make_obs.prob(Adj)
 #' make_obs.prob(Adj,obs.prob_fun = 0.2)
-#' make_obs.prob(Adj,obs.prob_fun = function(i,j) i+j)
-#' make_obs.prob(Adj,obs.prob_fun = function(i,j){EVs<- compute.EV(Adj,"directed");EVs[i]*EVs[j]})
+#' make_obs.prob(Adj,obs.prob_fun = function(i,j,Adj) i+j)
+#' make_obs.prob(Adj,obs.prob_fun = function(i,j,Adj){EVs<- compute.EV(Adj,"directed");EVs[i]*EVs[j]})
 make_obs.prob<- function(Adj,obs.prob_fun = NULL,
                          Adj.subfun = non.diagonal){
   if(is.numeric(obs.prob_fun)){
@@ -80,20 +80,20 @@ make_obs.prob<- function(Adj,obs.prob_fun = NULL,
     }
   }
 
-  n<- nrow(Adj);
+  n<- nrow(Adj);if(!is.null(rownames(Adj))){nodes<- rownames(Adj)}else{nodes<- as.character(1:n)}
 
   if(is.null(obs.prob_fun)){
-    obs.prob<- matrix(runif(n,0,1),n,n,dimnames = list(rownames(Adj),colnames(Adj)))
+    obs.prob<- matrix(runif(n,0,1),n,n,dimnames = list(nodes,nodes))
     diag(obs.prob)<- 0
     return(obs.prob)
   }
 
   dyads<- expand.grid(row = 1:n,col = 1:n)
-  obs.prob<- matrix(nrow = n,ncol = n,dimnames = list(rownames(Adj),colnames(Adj)),
+  obs.prob<- matrix(nrow = n,ncol = n,dimnames = list(nodes,nodes),
                     data =  sapply(1:nrow(dyads),
                                    function(ij) {
                                      i<- dyads[["row"]];j<- dyads[["col"]];
-                                     obs.prob_fun(i,j)
+                                     obs.prob_fun(i,j,Adj)
                                    }
                     )
   )

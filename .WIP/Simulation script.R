@@ -45,10 +45,24 @@ with.total_scan<- !sapply(TOTAL_SCAN,is.null)
 ADJ<- ADJ[with.total_scan]
 TOTAL_SCAN<- TOTAL_SCAN[with.total_scan]
 
+ADJ<- lapply(seq_along(ADJ),
+             function(a) {
+               Adj<- ADJ[[a]]
+               n<- nrow(Adj)
+               attr(Adj,"total_scan")<- TOTAL_SCAN[[a]]
+               attr(Adj,"use.rare.opti")<- decide_use.rare.opti(n = n,total_scan = total_scan,max.obs = max(Adj),alpha = 0.05)
+               Adj
+             }
+)
+
+
+with.n.inf100<- sapply(ADJ,nrow)<100
+ADJ<- ADJ[with.n.inf100]
+TOTAL_SCAN<- TOTAL_SCAN[with.n.inf100]
+
 # with.total_scan.inf1000<- sapply(TOTAL_SCAN,function(t) t<1000)
 # ADJ<- ADJ[with.total_scan.inf1000]
 # TOTAL_SCAN<- TOTAL_SCAN[with.total_scan.inf1000]
-
 
 # Special treatment of the per week racoon networks -----------------------
 # asnr.racoon.path<- list.files("C:/R/Git/asnr/Networks/Mammalia/raccoon_proximity_weighted/",pattern = ".graphml",full.names = TRUE)
@@ -75,12 +89,68 @@ TOTAL_SCAN<- TOTAL_SCAN[with.total_scan]
 
 # Parameter choices -------------------------------------------------------
 
+
+# Listing desired unbiased obs.prob ####
+unb.fun_list<- list(identity = identity)
+unb.subtype_list<- lapply(seq(0.1,0.9,by = 0.2),
+                          function(x){
+                            bias.subtype<- function(i,j,Adj){x}
+                            bias.subtype
+                          }
+)
+names(unb.subtype_list)<- seq(0.1,0.9,by = 0.2)
+
+# Listing desired trait-based function components ####
+trait.fun_list<- list(plus = `+` #,
+                      # prod = `*`
+)
+trait.subtype_list<- list(identity = function(i,Adj) {i},
+                          double = function(i,Adj){i*2},
+                          square = function(i,Adj){i^2},
+                          power.4 = function(i,Adj){i^4},
+                          sqrt = function(i,Adj){sqrt(i)},
+                          tan = function(i,Adj){tan((i-nrow(Adj)/2)/nrow(Adj))^3},
+                          sin = function(i,Adj){sin((i-nrow(Adj)/2)/nrow(Adj))^3},
+                          tanh = function(i,Adj){tanh(i-nrow(Adj)/2)},
+                          sigmoid = function(i,Adj){exp(i-nrow(Adj)/2)/(1+exp(i-nrow(Adj)/2))},
+                          log = function(i,Adj){log(i-.99)},
+                          exp = function(i,Adj){exp(i)}
+)
+
+# Listing desired net-based function components ####
+net.fun_list<- list(plus = `+`,
+                    prod = `*`
+)
+net.subtype_list<- list(EV = function(Adj){compute.EV(graph = Adj,"max")},
+                        strength = function(Adj){compute.strength(graph = Adj,"max")},
+                        degree = function(Adj){compute.deg(graph = Adj,"max")}
+)
+
+# Assembling all into one list of lists ####
+global_list<- list(
+  list(bias.fun_list = unb.fun_list,
+       bias.subtype_list = unb.subtype_list,
+       type = "unbiased"
+  ),
+  list(bias.fun_list = trait.fun_list,
+       bias.subtype_list = trait.subtype_list,
+       type = "trait"
+  ),
+  list(bias.fun_list = net.fun_list,
+       bias.subtype_list = net.subtype_list,
+       type = "net"
+  )
+)
+
+# Assembling all into one list of lists ####
+initialize_obs.prob_list(ADJ,global_list)
+
 # Generate parameters list for each network once and for all --------------
 PARAMETERS.LIST<- lapply(seq_along(ADJ),
                          function(a){
                            cat(paste0(a,"/",length(ADJ)," @ ",Sys.time(),"\n"))
                            Adj<- ADJ[[a]]
-                           total_scan<- TOTAL_SCAN[[a]]
+                           total_scan<- attr(Adj,"total_scan")
                            initialize_parameters(Adj,total_scan)
                          }
 )
@@ -90,7 +160,8 @@ data.long<- rbind_lapply(seq_along(ADJ),
                    function(a){
                      cat(paste0(a,"/",length(ADJ)," @ ",Sys.time(),"\n"))
                      Adj<- ADJ[[a]]
-                     total_scan<- TOTAL_SCAN[[a]]
+                     total_scan<- attr(Adj,"total_scan")
+                     use.rare.opti<- attr(Adj,"use.rare.opti")
                      parameters.list<- PARAMETERS.LIST[[a]]
                      Bootstrap.list<- lapply(seq_along(parameters.list),
                                              function(p){

@@ -258,7 +258,7 @@ centrality_cor<- function(Bootstrap.list,method = c("group","focal"),centrality.
 compute.EV<- function(graph,mode=NULL){
   if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
   EV<- igraph::eigen_centrality(graph, weights = igraph::E(graph)$weight,scale = FALSE)$vector
-  names(EV)<- igraph::vertex_attr(graph)[[1]] # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
+  if(!is.null(names(EV))){names(EV)<- igraph::vertex_attr(graph)[[1]]} # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
   EV
 }
 
@@ -275,7 +275,7 @@ compute.EV<- function(graph,mode=NULL){
 compute.deg<- function(graph,mode=NULL){
   if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
   deg<- igraph::degree(graph)
-  names(deg)<- igraph::vertex_attr(graph)[[1]] # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
+  if(!is.null(names(deg))) {names(deg)<- igraph::vertex_attr(graph)[[1]]} # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
   deg
 }
 
@@ -291,7 +291,9 @@ compute.deg<- function(graph,mode=NULL){
 #' # Internal use
 compute.strength<- function(graph,mode=NULL){
   if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
-  igraph::strength(graph)
+  stren<-igraph::strength(graph)
+  if(!is.null(names(stren))) {names(stren)<- igraph::vertex_attr(graph)[[1]]} # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
+  stren
 }
 
 #' Compute node flow betweenness from graph or adjacency matrix
@@ -482,6 +484,112 @@ Laplacian_spectral.dist<- function(X,Y=0,...){
 
 # Simulation workflow tools -----------------------------------------------
 
+#' Make a list of obs.prob matrices given list of functions to be composed
+#'
+#' @param bias.fun_list function of (i,j(,and Adj)) to go from individual characteristics to
+#' @param bias.subtype_list
+#' @param type
+#'
+#' @return
+#' @export
+#'
+#' @examples
+make_obs.prob.bias_list<- function(bias.fun_list,bias.subtype_list,type = c("unbiased","trait","net")){
+  bias.comb<- expand.grid(fun=seq_along(bias.fun_list),subtype=seq_along(bias.subtype_list))
+  lapply(1:nrow(bias.comb),
+         function(par){
+           bias.fun<- bias.fun_list[bias.comb[par,"fun"]]
+           bias.subtype<- bias.subtype_list[bias.comb[par,"subtype"]]
+           list(
+             obs.prob_fun = switch(type,
+                                   "unbiased" = {
+                                     function(i,j,Adj) {
+                                       n<- nrow(Adj)
+                                       obs.prob<- matrix(bias.subtype[[1]](i,j,Adj),n,n)
+                                       diag(obs.prob)<-0
+                                       obs.prob
+                                     }
+                                   },
+                                   "trait" = {
+                                     function(i,j,Adj) {bias.fun[[1]](bias.subtype[[1]](i,Adj),bias.subtype[[1]](j,Adj))}
+                                   },
+                                   "net" = {
+                                     function(i,j,Adj) {
+                                       centrality<- bias.subtype[[1]](Adj);
+                                       bias.fun[[1]](centrality[i],centrality[j])
+                                     }
+                                   }
+             ),
+             type = type,
+             subtype = names(bias.subtype),
+             fun = names(bias.fun),
+             centrality.fun = if(type=="net") {function(Adj) bias.subtype[[1]](Adj)} else {function(Adj) compute.EV(Adj,"max")}
+           )
+         }
+  )
+}
+
+make_global_obs.prob<- function(global_list){
+  unlist(
+    lapply(global_list,
+           function(bias_list){
+             make_obs.prob.bias_list(bias_list[["bias.fun_list"]],bias_list[["bias.subtype_list"]],type = bias_list[["type"]])
+           }
+
+    ),recursive = FALSE
+  )
+}
+
+# Making of the complete list of obs.prob
+add_obs.prob_attr<- function(obs.prob,type,subtype,fun){
+  attr(obs.prob,"type")<- type
+  attr(obs.prob,"subtype")<- subtype
+  attr(obs.prob,"fun")<- fun
+  obs.prob
+}
+
+initialize_obs.prob_list<- function(ADJ,global_list){
+  global_list<- make_global_obs.prob(global_list)
+  lapply(seq_along(ADJ),
+         function(a){
+           cat(paste0("\n",a,"/",length(ADJ)))
+           Adj<- ADJ[[a]]
+           lapply(global_list,
+                  function(biais){
+                    obs.prob_fun<- biais[["obs.prob_fun"]]
+                    type<- biais[["type"]]
+                    subtype<- biais[["subtype"]]
+                    fun<- biais[["fun"]]
+                    obs.prob<- make_obs.prob(Adj,obs.prob_fun = obs.prob_fun)
+                    obs.prob<- add_obs.prob_attr(obs.prob = obs.prob,type = type,subtype = subtype,fun = fun)
+                  }
+           )
+         }
+  )
+
+}
+
+# Visual check of the obs.prob generation ---------------------------------
+# n<- 20
+# Adj<- matrix((1:(n*n))^2,n,n,byrow = TRUE);diag(Adj)<- 0
+# Adj<- matrix(round(runif((n*n),0,5)),n,n,byrow = TRUE);diag(Adj)<- 0
+#
+# lapply(make_global_obs.prob(global_list),
+#        function(biais){
+#          obs.prob_fun<- biais[["obs.prob_fun"]]
+#          type<- biais[["type"]]
+#          subtype<- biais[["subtype"]]
+#          fun<- biais[["fun"]]
+#          obs.prob<- make_obs.prob(Adj,obs.prob_fun = obs.prob_fun)
+#          obs.prob<- add_obs.prob_attr(obs.prob = obs.prob,type = type,subtype = subtype,fun = fun)
+#          par(mfrow=c(2,2))
+#          plot(1:n,rowSums(obs.prob),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i)=f(i)")
+#          plot(non.diagonal(Adj,"vect"),non.diagonal(obs.prob,"vect"),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i,j)=f(i,j)")
+#          plot(1:n,biais[["centrality.fun"]](Adj),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "Centrality(i)=f(i)")
+#          plot(compute.EV(Adj,"max"),rowSums(obs.prob),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i)=f(centrality(i))")
+#        }
+# )²
+
 #' Create a list of parameter combinations
 #' to be used in simulations of network sampling
 #'
@@ -496,17 +604,8 @@ Laplacian_spectral.dist<- function(X,Y=0,...){
 #' @examples
 #' #Internal use in Simulation_script.R.
 initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()-1),cl=NULL){
-  # OBS.PROB<- list(trait.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = NULL,reverse = FALSE),
-  #                 trait.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = function(i,j) 1/prod(i,j),bias_fun = NULL,reverse = FALSE),
-  #                 network.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
-  #                                             bias_fun = function(node) igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
-  #                                             reverse = FALSE),
-  #                 network.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
-  #                                             bias_fun = function(node) 1/igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
-  #                                             reverse = FALSE)
-  # )
-  # OBS.PROB<- c({unb<- seq(0.1,0.9,by = 0.2);names(unb)<- paste0("unbiased_",unb);as.list(unb)},OBS.PROB) # c() over two lists makes them flat while allowing for shorter calls
-  # MODE<- if(identical(Adj,t(Adj))) {as.list(c("max"))} else  {as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))}
+#   OBS.PROB.FUN<- initialize_obs.prob_list(ADJ,global_list)
+# MODE<- if(identical(Adj,t(Adj))) {as.list(c("max"))} else  {as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))}
   # FOCAL.LIST<- list(random = sample(rownames(Adj),total_scan,replace = TRUE),  # consider checking if can be implemented for each boot (leaving it NULL?)
   #                   even = rep_len(rownames(Adj),length.out = total_scan),
   #                   biased = "TO IMPLEMENT")
