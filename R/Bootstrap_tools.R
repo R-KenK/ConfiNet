@@ -1,3 +1,6 @@
+
+# Bootstrap object data management ----------------------------------------
+
 #' Keep bootstrap parameters (and more) as attributes
 #' Internal use in Boot_scans(). Add "method", "keep", "mode", "output" attributes to be more easily retrieved by the get function
 #'
@@ -58,6 +61,14 @@ Bootstrap_get.attr<- function(Bootstrap,a){
 #' Boot_get.list(Bootstrap,"group","obs")
 #'
 #' Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
+#'                        scaled = FALSE,obs.prob=0.7,
+#'                        method = "group",mode = "directed",output = "adjacency")
+#' Boot_get.list(Bootstrap,"theoretical","adj")
+#' # Boot_get.list(Bootstrap,"group","list")
+#' Boot_get.list(Bootstrap,"group","adj")
+#' Boot_get.list(Bootstrap,"group","obs")
+#'
+#' Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
 #'                        scaled = TRUE,obs.prob=0.7,keep=TRUE,
 #'                        method = "both",mode = "directed",output = "all")
 #' Boot_get.list(Bootstrap,"focal","all")
@@ -111,11 +122,11 @@ Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
          ),
          "adjacency" = switch(get.format,
                               "list" = stop("Only summed-up adjacency matrices have been stored in Bootstrap object."),
-                              "adjacency" = lapply(Bootstrap,function(boot) lapply(boot, function(scan) scan[[what]])),
-                              "observed_edges" = lapply(Bootstrap,function(boot) lapply(boot, function(scan) attr(scan[[what]],"observed_edges"))),
+                              "adjacency" = lapply(Bootstrap,function(boot) boot[[what]]),
+                              "observed_edges" = lapply(Bootstrap,function(boot) attr(boot[[what]],"observed_edges")),
                               "all" = {
                                 warning("Only summed-up adjacency matrices have been stored in Bootstrap object.")
-                                lapply(Bootstrap,function(boot) lapply(boot, function(scan) scan[[what]]))
+                                lapply(Bootstrap,function(boot) boot[[what]])
                               }
          ),
          "all" = switch(get.format,
@@ -132,37 +143,63 @@ Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
   )
 }
 
-#' Bootstrap specific progress bar
-#' Provide feedbacks on the simulation testing situation (which parameters, which combination of parameters over the whole list). Internal use.
-#'
-#' @param p integer, index of the current combination of parameters within parameters.list.
-#' @param parameters.list data frame of parameters for all the simulations
-#'
-#' @return display some feedbacks on the simulation testing situation (which parameters, which combination of parameters over the whole list).
-#' @export
-#'
-#' @examples
-#' #Internal use in Simulation_script.R.
-boot_progress.param<- function(p,parameters.list = parameters.list){
-  cat(paste0("obs.prob = ",attr(parameters.list[[p]]$obs.prob,"name")
-             ," - focal.list = ",attr(parameters.list[[p]]$focal.list,"name"),
-             " - mode = ",attr(parameters.list[[p]]$mode,"name")," (",p,"/",length(parameters.list),")","\n"))
-}
-
 #' Retrieve specific simulation parameters of given Bootstrap
 #' Internal use. To ease the recollection of a given bootstrap performed through Boot_scans() iterations alongside a parameters.list
 #'
-#' @param parameters a list containing a combination of obs.prob, focal.list, and mode parameters. Element of parameters.list
+#' @param Bootstrap a Bootstrap object (with correct parameter attributes)
 #'
 #' @return a data frame referencing the simulation parameters
 #' @export
 #'
 #' @examples
 #' #Internal use in Simulation_script.R.
-Boot_get.param<- function(parameters){
-  data.frame(obs.prob = as.factor(attr(parameters$obs.prob,"name")),
-             focal.list = as.factor(attr(parameters$focal.list,"name")),
-             mode = as.factor(ifelse(is.null(attr(parameters$mode,"name")),parameters$mode,attr(parameters$mode,"name")))
+Boot_get.param<- function(Bootstrap){
+  method<- Bootstrap_get.attr(Bootstrap,"method");
+  output<- Bootstrap_get.attr(Bootstrap,"output");
+  total_scan<- Bootstrap_get.attr(Bootstrap,"total_scan");
+  n.boot<- Bootstrap_get.attr(Bootstrap,"n.boot");
+  scaled<- Bootstrap_get.attr(Bootstrap,"scaled");
+  mode<- Bootstrap_get.attr(Bootstrap,"mode");
+  use.rare.opti<- Bootstrap_get.attr(Bootstrap,"use.rare.opti");
+
+  obs.prob<- Bootstrap_get.attr(Bootstrap,"obs.prob");
+  focal.list<- Bootstrap_get.attr(Bootstrap,"focal.list");
+
+  data.frame(obs.prob.type = attr(obs.prob,"type"),
+             obs.prob.subtype = attr(obs.prob,"subtype"),
+             obs.prob.fun = attr(obs.prob,"fun"),
+             focal.list.type = attr(focal.list,"type"),
+             focal.list.subtype = attr(focal.list,"subtype"),
+             total_scan = total_scan,
+             mode = mode,
+             use.rare.opti = use.rare.opti
+  )
+}
+
+#' Retrieve data from list of network bootstrap results
+#' To be used in a loop/lapply. format them in a ready to be analyzed data frame
+#'
+#' @param B index of the network from which data are collected.
+#' @param Bootstrap.list list of bootstrap of a given network, through different parameters
+#'
+#' @return a data frame of collected data per network and per parameter combination
+#' @export
+#'
+#' @examples
+#' #Internal use in Simulation_script.R.
+Get.data<- function(B,Bootstrap.list){
+  rbind_lapply(seq_along(Bootstrap.list),
+               function(par){
+                 Bootstrap<- Bootstrap.list[[par]]
+                 parameters.list.df<- Boot_get.param(Bootstrap)
+                 rbind(data.frame(Network = B,boot = seq_along(Bootstrap),method = "group",
+                                  parameters.list.df,
+                                  Boot_calc.data(Bootstrap,method = "group")),
+                       data.frame(Network = B,boot = seq_along(Bootstrap),method = "focal",
+                                  parameters.list.df,
+                                  Boot_calc.data(Bootstrap,method = "focal"))
+                 )
+               }
   )
 }
 
@@ -179,10 +216,10 @@ Boot_get.param<- function(parameters){
 #' #Internal use in Simulation_script.R.
 Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
   data.frame(cor = adjacency_cor(Bootstrap.list = Bootstrap.list,method = method),
-             degree = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.deg),
+             # degree = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.deg),
              strength = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.strength),
              EV = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.EV),
-             # CC = net.metric.diff(Bootstrap.list = Bootstrap.list,method = method,network.fun = weighted.clustering.coeff),
+             CC = net.metric.diff(Bootstrap.list = Bootstrap.list,method = method,network.fun = weighted.clustering.coeff),
              Frob = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Frobenius_from_adjacency),
              Frob.GOF = adj_gof(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Frobenius_from_adjacency),
              SLap = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Laplacian_spectral.dist),
@@ -190,7 +227,6 @@ Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
              # HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
   )
 }
-
 
 # analyses tools ----------------------------------------------------------
 
@@ -486,14 +522,15 @@ Laplacian_spectral.dist<- function(X,Y=0,...){
 
 #' Make a list of obs.prob matrices given list of functions to be composed
 #'
-#' @param bias.fun_list function of (i,j(,and Adj)) to go from individual characteristics to
-#' @param bias.subtype_list
-#' @param type
+#' @param bias.fun_list function of (i,j,Adj) to conjugate two individual values (e.g. function(i,j,Adj) {bias.fun(bias.subtype(i,Adj),bias.subtype(j,Adj)))
+#' @param bias.subtype_list function of (i,Adj) to get an individual value (can be trait- or net-based, or unbiased)(e.g. function(i,j,Adj) {bias.fun(bias.subtype(i,Adj),bias.subtype(j,Adj)))
+#' @param type character, either "unbiased" (`bias.subtype_list` passed as a [0,1] numeric), "trait" for trait-based bias (function(i,j,Adj) {bias.fun(bias.subtype(i,Adj),bias.subtype(j,Adj))), or "net" for net-based bias (centrality<- bias.subtype(Adj);bias.fun(centrality[i],centrality[j])).
 #'
-#' @return
+#' @return a list of elements containing: `obs.prob_fun` as the function to use to build the matrix obs.prob, and attributes to keep track of (sub)type and functions involved in its making
 #' @export
 #'
 #' @examples
+#' # Internal use
 make_obs.prob.bias_list<- function(bias.fun_list,bias.subtype_list,type = c("unbiased","trait","net")){
   bias.comb<- expand.grid(fun=seq_along(bias.fun_list),subtype=seq_along(bias.subtype_list))
   lapply(1:nrow(bias.comb),
@@ -529,6 +566,16 @@ make_obs.prob.bias_list<- function(bias.fun_list,bias.subtype_list,type = c("unb
   )
 }
 
+#' Gather all obs.prob list from a list of lists
+#'
+#' @param global_list list of lists containing each a bias.fun_list, bias.subtype_list, and type elements, to be processed internally by `make_obs.prob.bias_list`
+
+#'
+#' @return a list of elements containing: `obs.prob_fun` as the function to use to build the matrix obs.prob, and attributes to keep track of (sub)type and functions involved in its making
+#' @export
+#'
+#' @examples
+#' # Internal use
 make_global_obs.prob<- function(global_list){
   unlist(
     lapply(global_list,
@@ -540,7 +587,18 @@ make_global_obs.prob<- function(global_list){
   )
 }
 
-# Making of the complete list of obs.prob
+#' Add attribute to each obs.prob
+#'
+#' @param obs.prob the probability of observation matrix
+#' @param type its type ("unbiased","trait", or "net")
+#' @param subtype its subtype function used to make it
+#' @param fun its conjugation function used to make it
+#'
+#' @return an obs.prob matrix with attributes to keep track of (sub)type and functions involved in its making
+#' @export
+#'
+#' @examples
+#' # Internal use
 add_obs.prob_attr<- function(obs.prob,type,subtype,fun){
   attr(obs.prob,"type")<- type
   attr(obs.prob,"subtype")<- subtype
@@ -548,25 +606,45 @@ add_obs.prob_attr<- function(obs.prob,type,subtype,fun){
   obs.prob
 }
 
-initialize_obs.prob_list<- function(ADJ,global_list){
-  global_list<- make_global_obs.prob(global_list)
+#' Create a list of parameter combinations
+#' to be used in simulations of network sampling
+#'
+#' @param ADJ list of networks' adjacency matrices
+#' @param obs.bias_list list of lists containing each a bias.fun_list, bias.subtype_list, and type elements, to be processed internally by `make_obs.prob.bias_list`
+#' @param focal.bias_list a (flat) list of functions of (n,Adj) to be passed as focal.list argument of Bootscan (can be also "even" as the default special case).
+#'
+#' @return a list of lists containing: (1) a matrix `obs.prob` created for each matrix of `ADJ` from functions in `obs.bias_list`, and (2) a `focal.list` being either a function or "even". Both elements have differents attributes to keep track of (sub)type of bias.
+#' @export
+#'
+#' @examples
+#' #Internal use in Simulation_script.R.
+
+initialize_parameter_list<- function(ADJ,obs.bias_list,focal.bias_list){
+  obs.bias_list<- make_global_obs.prob(obs.bias_list)
   lapply(seq_along(ADJ),
          function(a){
            cat(paste0("\n",a,"/",length(ADJ)))
            Adj<- ADJ[[a]]
-           lapply(global_list,
-                  function(biais){
-                    obs.prob_fun<- biais[["obs.prob_fun"]]
-                    type<- biais[["type"]]
-                    subtype<- biais[["subtype"]]
-                    fun<- biais[["fun"]]
+           param.comb<- expand.grid(obs.bias = seq_along(obs.bias_list),focal.bias = seq_along(focal.bias_list))
+           lapply(1:nrow(param.comb),
+                  function(par){
+                    obs.bias<- obs.bias_list[[ param.comb[par,"obs.bias"] ]]
+                    obs.prob_fun<- obs.bias[["obs.prob_fun"]]
+                    type<- obs.bias[["type"]]
+                    subtype<- obs.bias[["subtype"]]
+                    fun<- obs.bias[["fun"]]
                     obs.prob<- make_obs.prob(Adj,obs.prob_fun = obs.prob_fun)
                     obs.prob<- add_obs.prob_attr(obs.prob = obs.prob,type = type,subtype = subtype,fun = fun)
+
+                    focal.bias<- focal.bias_list[[ param.comb[par,"focal.bias"] ]]
+                    focal.type.name<- names(focal.bias_list[ param.comb[par,"focal.bias"] ])
+                    attr(focal.bias,"type")<- gsub("[.].*$","",focal.type.name)
+                    attr(focal.bias,"subtype")<- gsub("^.*[.]","",focal.type.name)
+                    list(obs.prob = obs.prob,focal.list = focal.bias)
                   }
            )
          }
   )
-
 }
 
 # Visual check of the obs.prob generation ---------------------------------
@@ -588,83 +666,5 @@ initialize_obs.prob_list<- function(ADJ,global_list){
 #          plot(1:n,biais[["centrality.fun"]](Adj),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "Centrality(i)=f(i)")
 #          plot(compute.EV(Adj,"max"),rowSums(obs.prob),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i)=f(centrality(i))")
 #        }
-# )²
-
-#' Create a list of parameter combinations
-#' to be used in simulations of network sampling
-#'
-#' @param Adj reference adjacency matrix (especially for network-based observation bias)
-#' @param total_scan integer, total number of scan to be performed in each simulation
-#' @param n.cores number of cores to use to generate (in parallel) the parameter combinations list
-#' @param cl optional cluster object to use, otherwise automatically created when n.cores is inputted
-#'
-#' @return a list of lists of the different parameter combinations.
-#' @export
-#'
-#' @examples
-#' #Internal use in Simulation_script.R.
-initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()-1),cl=NULL){
-#   OBS.PROB.FUN<- initialize_obs.prob_list(ADJ,global_list)
-# MODE<- if(identical(Adj,t(Adj))) {as.list(c("max"))} else  {as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))}
-  # FOCAL.LIST<- list(random = sample(rownames(Adj),total_scan,replace = TRUE),  # consider checking if can be implemented for each boot (leaving it NULL?)
-  #                   even = rep_len(rownames(Adj),length.out = total_scan),
-  #                   biased = "TO IMPLEMENT")
-  #
-  # parameters.comb<- expand.grid(
-  #   list(mode = 1:length(MODE),
-  #        focal.list = 1:length(FOCAL.LIST[1:2]),
-  #        obs.prob = 1:length(OBS.PROB)
-  #   )
-  # )
-  #
-  # if(is.null(cl)) {cl<- snow::makeCluster(n.cores);doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))} # left to avoid error if the function is used alone, but should probably be used internally from Boot_scans() now.
-  # p<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
-  # parameters.list<- foreach::`%dopar%`(
-  #   foreach::foreach(p=1:nrow(parameters.comb)),
-  #   list(
-  #     obs.prob = {
-  #       obs.prob<- OBS.PROB[[parameters.comb[p,"obs.prob"]]];
-  #       attr(obs.prob,"name")<- names(OBS.PROB)[parameters.comb[p,"obs.prob"]];
-  #       obs.prob
-  #     },
-  #     focal.list = {
-  #       focal.list<- FOCAL.LIST[[parameters.comb[p,"focal.list"]]];
-  #       attr(focal.list,"name")<- names(FOCAL.LIST)[parameters.comb[p,"focal.list"]];
-  #       focal.list
-  #     },
-  #     mode = {
-  #       mode<- MODE[[parameters.comb[p,"mode"]]];
-  #       attr(mode,"name")<- names(MODE)[parameters.comb[p,"mode"]];
-  #       mode
-  #     }
-  #   )
-  # )
-  # parameters.list
-  message("to clean")
-}
-
-#' Retrieve data from list of network bootstrap results
-#' To be used in a loop/lapply. format them in a ready to be analyzed data frame
-#'
-#' @param B index of the network from which data are collected.
-#' @param Bootstrap.list list of bootstrap of a given network, through different parameters
-#' @param parameters.list list of parameters used in bootstrap. Should be loopable similarly to Bootstrap.list
-#'
-#' @return a data frame of collected data per network and per parameter combination
-#' @export
-#'
-#' @examples
-#' #Internal use in Simulation_script.R.
-Get.data<- function(B,Bootstrap.list,parameters.list){
-  rbind_lapply(seq_along(Bootstrap.list),
-               function(b){
-                 parameters.list.df<- Boot_get.param(parameters.list[[b]])
-                 rbind(data.frame(Network = B,boot = b,method = "group",
-                                  parameters.list.df,
-                                  Boot_calc.data(Bootstrap.list[[b]],method = "group")),
-                       data.frame(Network = B,boot = b,method = "focal",
-                                  parameters.list.df,
-                                  Boot_calc.data(Bootstrap.list[[b]],method = "focal")))
-               }
-  )
-}
+# )
+# par(mfrow=c(1,1))

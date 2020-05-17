@@ -19,7 +19,7 @@ load("C:/R/Git/ConfiNet/R/sysdata.rda")
 # Here preferably should be implemented as automatic import from ASNR/networkdata
 
 set.seed(42)
-n.boot<- 50;
+n.boot<- 10;
 
 asnr.weighted.dir<- list.files("C:/R/Git/asnr/Networks/Mammalia/",pattern = "_weighted",full.names = TRUE)
 
@@ -64,6 +64,8 @@ TOTAL_SCAN<- TOTAL_SCAN[with.n.inf100]
 # ADJ<- ADJ[with.total_scan.inf1000]
 # TOTAL_SCAN<- TOTAL_SCAN[with.total_scan.inf1000]
 
+ADJ<- ADJ[1:5]
+
 # Special treatment of the per week racoon networks -----------------------
 # asnr.racoon.path<- list.files("C:/R/Git/asnr/Networks/Mammalia/raccoon_proximity_weighted/",pattern = ".graphml",full.names = TRUE)
 # asnr.racoon.Adj<- lapply(asnr.racoon.path,
@@ -105,79 +107,96 @@ trait.fun_list<- list(plus = `+` #,
                       # prod = `*`
 )
 trait.subtype_list<- list(identity = function(i,Adj) {i},
-                          double = function(i,Adj){i*2},
-                          square = function(i,Adj){i^2},
+                          # double = function(i,Adj){i*2},
+                          # normal = function(i,Adj){n<- nrow(Adj);sort(dnorm(1:n,n/2,n/5))[i]},
+                          # square = function(i,Adj){i^2},
                           power.4 = function(i,Adj){i^4},
-                          sqrt = function(i,Adj){sqrt(i)},
+                          # sqrt = function(i,Adj){sqrt(i)},
                           tan = function(i,Adj){tan((i-nrow(Adj)/2)/nrow(Adj))^3},
-                          sin = function(i,Adj){sin((i-nrow(Adj)/2)/nrow(Adj))^3},
-                          tanh = function(i,Adj){tanh(i-nrow(Adj)/2)},
+                          # sin = function(i,Adj){sin((i-nrow(Adj)/2)/nrow(Adj))^3},
+                          # tanh = function(i,Adj){tanh(i-nrow(Adj)/2)},
                           sigmoid = function(i,Adj){exp(i-nrow(Adj)/2)/(1+exp(i-nrow(Adj)/2))},
                           log = function(i,Adj){log(i-.99)},
                           exp = function(i,Adj){exp(i)}
 )
 
 # Listing desired net-based function components ####
-net.fun_list<- list(plus = `+`,
-                    prod = `*`
+net.fun_list<- list(plus = `+`#,
+                    # prod = `*`
 )
 net.subtype_list<- list(EV = function(Adj){compute.EV(graph = Adj,"max")},
-                        strength = function(Adj){compute.strength(graph = Adj,"max")},
-                        degree = function(Adj){compute.deg(graph = Adj,"max")}
+                        # degree = function(Adj){compute.deg(graph = Adj,"max")},
+                        strength = function(Adj){compute.strength(graph = Adj,"max")}
+)
+# focal.list biases
+
+trait.focal.fun_list<- list(identity = function(n,Adj) {1:n},
+                            # double = function(n,Adj){1:n*2},
+                            # normal = function(n,Adj){sort(dnorm(1:n,n/2,n/5))},
+                            # square = function(n,Adj){(1:n)^2},
+                            power.4 = function(n,Adj){(1:n)^4},
+                            # sqrt = function(n,Adj){sqrt(1:n)},
+                            tan = function(n,Adj){tan(((1:n)-n/2)/n)^3-tan((1-n/2)/n)^3},
+                            # sin = function(n,Adj){sin(((1:n)-n/2)/n)^3-sin((1-n/2)/n)^3},
+                            # tanh = function(n,Adj){tanh((1:n)-n/2)-tanh(1-n/2)},
+                            sigmoid = function(n,Adj){exp((1:n)-n/2)/(1+exp((1:n)-n/2))},
+                            log = function(n,Adj){log((1:n)-.99)-log(0.01)},
+                            exp = function(n,Adj){exp(1:n)}
 )
 
-# Assembling all into one list of lists ####
-global_list<- list(
-  list(bias.fun_list = unb.fun_list,
-       bias.subtype_list = unb.subtype_list,
-       type = "unbiased"
+net.focal.fun_list<- list(EV = function(n,Adj){compute.EV(graph = Adj,"max")},
+                          degree = function(n,Adj){compute.deg(graph = Adj,"max")},
+                          strength = function(n,Adj){compute.strength(graph = Adj,"max")}
+)
+# Assembling all obs.prob biases into one list of lists ####
+obs.bias_list<- list(
+  unbias = list(bias.fun_list = unb.fun_list,
+                bias.subtype_list = unb.subtype_list,
+                type = "unbiased"
   ),
-  list(bias.fun_list = trait.fun_list,
-       bias.subtype_list = trait.subtype_list,
-       type = "trait"
+  trait = list(bias.fun_list = trait.fun_list,
+               bias.subtype_list = trait.subtype_list,
+               type = "trait"
   ),
-  list(bias.fun_list = net.fun_list,
-       bias.subtype_list = net.subtype_list,
-       type = "net"
+  net = list(bias.fun_list = net.fun_list,
+             bias.subtype_list = net.subtype_list,
+             type = "net"
   )
 )
 
-# Assembling all into one list of lists ####
-initialize_obs.prob_list(ADJ,global_list)
+focal.bias_list<- unlist(c(list(even = "even"),list(trait = trait.focal.fun_list),list(net = net.focal.fun_list)),recursive = FALSE)
 
 # Generate parameters list for each network once and for all --------------
-PARAMETERS.LIST<- lapply(seq_along(ADJ),
-                         function(a){
-                           cat(paste0(a,"/",length(ADJ)," @ ",Sys.time(),"\n"))
-                           Adj<- ADJ[[a]]
-                           total_scan<- attr(Adj,"total_scan")
-                           initialize_parameters(Adj,total_scan)
-                         }
-)
+PARAMETERS.LIST<- initialize_parameter_list(ADJ,obs.bias_list,focal.bias_list)
 
 # Iteration through networks, bootstrap and gather data in data frame -------------------------
+cl<- snow::makeCluster(7);snow::clusterExport(cl,list = ls());
+start_pblapply<- Sys.time()
 data.long<- rbind_lapply(seq_along(ADJ),
                    function(a){
-                     cat(paste0(a,"/",length(ADJ)," @ ",Sys.time(),"\n"))
+                     cat(paste0("Network ",a,"/",length(ADJ)," @ ",Sys.time(),"\n"))
                      Adj<- ADJ[[a]]
                      total_scan<- attr(Adj,"total_scan")
                      use.rare.opti<- attr(Adj,"use.rare.opti")
                      parameters.list<- PARAMETERS.LIST[[a]]
-                     Bootstrap.list<- lapply(seq_along(parameters.list),
+                     Bootstrap.list<- pbapply::pblapply(seq_along(parameters.list),
                                              function(p){
                                                obs.prob<- parameters.list[[p]]$obs.prob;
-                                               mode<- parameters.list[[p]]$mode;
+                                               mode<- "max"
+                                               # mode<- parameters.list[[p]]$mode;
                                                focal.list<- parameters.list[[p]]$focal.list
-                                               boot_progress.param(p,parameters.list = parameters.list)
-                                               Boot_scans(Adj = Adj,n.boot = n.boot,total_scan = total_scan,obs.prob = obs.prob,keep = TRUE,
-                                                          method = "both",focal.list = focal.list,scaled = TRUE,mode = mode,output = "adjacency",n.cores = 7)
-                                             }
+                                               Boot_scans(Adj = Adj,n.boot = n.boot,total_scan = total_scan,obs.prob = obs.prob,use.rare.opti = use.rare.opti,
+                                                          method = "both",focal.list = focal.list,scaled = FALSE,mode = mode,output = "adjacency")
+                                             },cl = cl
                      )
                      cat(paste0("\nCompiling data @ ",Sys.time(),"\n"))
-                     Get.data(a,Bootstrap.list,parameters.list)
+                     Get.data(a,Bootstrap.list)
                    }
 )
+stop_pblapply<- Sys.time()
+snow::stopCluster(cl)
 
+stop_pblapply-start_pblapply
 
 # Draft of data handling, plotting and analysis ---------------------------
 library(data.table)
@@ -185,29 +204,21 @@ data.long<- data.table(data.long)
 library(ggplot2)
 mytheme<- theme_bw()+theme(plot.title = element_text(lineheight=.9, face="bold"),axis.line = element_line(colour = "black"),panel.grid.major.x = element_line(colour = "grey95",size = .2),panel.grid.minor.x = element_line(colour = "grey95",linetype = "dotted"),panel.grid.major.y =element_line(colour = "grey95",size = .2),panel.grid.minor.y=element_blank())+theme(axis.text.x = element_text(angle = 45, hjust = 0.5,vjust = 0.75))
 
-data.long$obs.prob.type<- as.factor(substr(data.long$obs.prob,1,3))
-data.long$obs.prob.details<- as.factor(
-  substr(data.long$obs.prob,
-         nchar(as.character(data.long$obs.prob))-2,
-         nchar(as.character(data.long$obs.prob))
-  )
-)
-
 data.summary<- data.long[,.(cor=median(cor),sd.cor=sd(cor),
-                            degree=median(degree),sd.degree=sd(degree),
+                            # degree=median(degree),sd.degree=sd(degree),
                             strength=median(strength),sd.strength=sd(strength),
                             EV=median(EV),sd.EV=sd(EV),
                             CC=median(CC),sd.CC=sd(CC),
                             Frob=median(Frob),sd.Frob=sd(Frob),
                             Frob.GOF=median(Frob.GOF),sd.Frob.GOF=sd(Frob.GOF),
                             SLap=median(SLap),sd.SLap=sd(SLap),
-                            SLap.GOF=median(SLap.GOF),sd.SLap.GOF=sd(SLap.GOF)),by = .(Network,obs.prob.type,obs.prob.details,focal.list,mode,method)]
+                            SLap.GOF=median(SLap.GOF),sd.SLap.GOF=sd(SLap.GOF)),by = .(Network,obs.prob.type,obs.prob.subtype,focal.list.type,focal.list.subtype,mode,method)]
 
 # Matrix correlation
-ggplot(data.summary[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),cor,fill = method))+geom_hline(yintercept = 0)+
+ggplot(data.summary,aes(method,cor,fill = method))+geom_hline(yintercept = 0)+
   geom_errorbar(aes(ymin = cor-sd.cor,ymax=cor+sd.cor),colour="grey50",width = 0.2)+
-  facet_grid(obs.prob.type+focal.list~Network)+geom_bar(stat = "identity",alpha=1)+mytheme
-ggplot(data.summary[obs.prob.type %in% c("net","tra")],aes(interaction(method,obs.prob.details),cor,fill = method))+geom_hline(yintercept = 0)+
+  facet_grid(obs.prob.type+focal.list.type~Network)+geom_bar(stat = "identity",alpha=1)+mytheme
+ggplot(data.summary[obs.prob.type %in% c("net","trait")],aes(interaction(method,obs.prob.details),cor,fill = method))+geom_hline(yintercept = 0)+
   geom_errorbar(aes(ymin = cor-sd.cor,ymax=cor+sd.cor),colour="grey50",width = 0.2)+
   facet_grid(obs.prob.type+focal.list~Network)+geom_bar(stat = "identity",alpha=1)+mytheme
 ggplot(data.summary[obs.prob.type=="unb"],aes(obs.prob.details,cor,colour = method,group=interaction(method,obs.prob.type)))+
