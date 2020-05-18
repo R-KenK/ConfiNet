@@ -64,7 +64,6 @@ TOTAL_SCAN<- TOTAL_SCAN[with.n.inf100]
 # ADJ<- ADJ[with.total_scan.inf1000]
 # TOTAL_SCAN<- TOTAL_SCAN[with.total_scan.inf1000]
 
-ADJ<- ADJ[1:5]
 
 # Special treatment of the per week racoon networks -----------------------
 # asnr.racoon.path<- list.files("C:/R/Git/asnr/Networks/Mammalia/raccoon_proximity_weighted/",pattern = ".graphml",full.names = TRUE)
@@ -197,7 +196,8 @@ stop_pblapply<- Sys.time()
 snow::stopCluster(cl)
 
 stop_pblapply-start_pblapply
-
+# data.long.1.5<- data.long
+# saveRDS(data.long.1.5,file = ".WIP/data.long.1.5.rds")
 # Draft of data handling, plotting and analysis ---------------------------
 library(data.table)
 data.long<- data.table(data.long)
