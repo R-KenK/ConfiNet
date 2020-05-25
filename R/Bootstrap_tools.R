@@ -648,23 +648,23 @@ initialize_parameter_list<- function(ADJ,obs.bias_list,focal.bias_list){
 }
 
 # Visual check of the obs.prob generation ---------------------------------
-# n<- 20
-# Adj<- matrix((1:(n*n))^2,n,n,byrow = TRUE);diag(Adj)<- 0
-# Adj<- matrix(round(runif((n*n),0,5)),n,n,byrow = TRUE);diag(Adj)<- 0
-#
-# lapply(make_global_obs.prob(global_list),
-#        function(biais){
-#          obs.prob_fun<- biais[["obs.prob_fun"]]
-#          type<- biais[["type"]]
-#          subtype<- biais[["subtype"]]
-#          fun<- biais[["fun"]]
-#          obs.prob<- make_obs.prob(Adj,obs.prob_fun = obs.prob_fun)
-#          obs.prob<- add_obs.prob_attr(obs.prob = obs.prob,type = type,subtype = subtype,fun = fun)
-#          par(mfrow=c(2,2))
-#          plot(1:n,rowSums(obs.prob),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i)=f(i)")
-#          plot(non.diagonal(Adj,"vect"),non.diagonal(obs.prob,"vect"),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i,j)=f(i,j)")
-#          plot(1:n,biais[["centrality.fun"]](Adj),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "Centrality(i)=f(i)")
-#          plot(compute.EV(Adj,"max"),rowSums(obs.prob),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i)=f(centrality(i))")
-#        }
-# )
-# par(mfrow=c(1,1))
+n<- 20
+Adj<- matrix((1:(n*n))^2,n,n,byrow = TRUE);diag(Adj)<- 0
+Adj<- matrix(round(runif((n*n),0,5)),n,n,byrow = TRUE);diag(Adj)<- 0
+
+lapply(make_global_obs.prob(obs.bias_list),
+       function(biais){
+         obs.prob_fun<- biais[["obs.prob_fun"]]
+         type<- biais[["type"]]
+         subtype<- biais[["subtype"]]
+         fun<- biais[["fun"]]
+         obs.prob<- make_obs.prob(Adj,obs.prob_fun = obs.prob_fun)
+         obs.prob<- add_obs.prob_attr(obs.prob = obs.prob,type = type,subtype = subtype,fun = fun)
+         par(mfrow=c(2,2))
+         plot(1:n,rowSums(obs.prob),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i)=f(i)")
+         plot(non.diagonal(Adj,"vect"),non.diagonal(obs.prob,"vect"),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i,j)=f(i,j)")
+         plot(1:n,biais[["centrality.fun"]](Adj),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "Centrality(i)=f(i)")
+         plot(compute.EV(Adj,"max"),rowSums(obs.prob),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i)=f(centrality(i))")
+       }
+)
+par(mfrow=c(1,1))

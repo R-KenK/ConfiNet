@@ -196,8 +196,9 @@ stop_pblapply<- Sys.time()
 snow::stopCluster(cl)
 
 stop_pblapply-start_pblapply
-# data.long.1.5<- data.long
-# saveRDS(data.long.1.5,file = ".WIP/data.long.1.5.rds")
+# data.long.10.boot<- data.long
+# saveRDS(data.long.10.boot,file = ".WIP/data.long.10.boot.rds")
+data.long<- readRDS(file = ".WIP/data.long.10.boot.rds")
 # Draft of data handling, plotting and analysis ---------------------------
 library(data.table)
 data.long<- data.table(data.long)
@@ -213,11 +214,18 @@ data.summary<- data.long[,.(cor=median(cor),sd.cor=sd(cor),
                             Frob.GOF=median(Frob.GOF),sd.Frob.GOF=sd(Frob.GOF),
                             SLap=median(SLap),sd.SLap=sd(SLap),
                             SLap.GOF=median(SLap.GOF),sd.SLap.GOF=sd(SLap.GOF)),by = .(Network,obs.prob.type,obs.prob.subtype,focal.list.type,focal.list.subtype,mode,method)]
+summary(data.summary)
+
+data.summary[,para:=paste(obs.prob.type,obs.prob.subtype,focal.list.type,focal.list.subtype,sep = "-"),]
+
+unique(data.summary$para)
+
+
 
 # Matrix correlation
-ggplot(data.summary,aes(method,cor,fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = cor-sd.cor,ymax=cor+sd.cor),colour="grey50",width = 0.2)+
-  facet_grid(obs.prob.type+focal.list.type~Network)+geom_bar(stat = "identity",alpha=1)+mytheme
+ggplot(data.summary,aes(interaction(obs.prob.type,focal.list.type),cor,group=interaction(method,obs.prob.subtype,focal.list.subtype),fill = method))+geom_hline(yintercept = 0)+
+  geom_errorbar(aes(ymin = cor-sd.cor,ymax=cor+sd.cor),colour="grey50",width = 0.2,position = position_dodge())+#guides(colour=FALSE)+
+  facet_wrap(.~Network,ncol = 3,scales = "free")+geom_bar(stat = "identity",alpha=1,position = position_dodge())+mytheme
 ggplot(data.summary[obs.prob.type %in% c("net","trait")],aes(interaction(method,obs.prob.details),cor,fill = method))+geom_hline(yintercept = 0)+
   geom_errorbar(aes(ymin = cor-sd.cor,ymax=cor+sd.cor),colour="grey50",width = 0.2)+
   facet_grid(obs.prob.type+focal.list~Network)+geom_bar(stat = "identity",alpha=1)+mytheme

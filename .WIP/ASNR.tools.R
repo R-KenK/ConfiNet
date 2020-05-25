@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples
-default_explorative_net.plot<- function(graph,edge.with.mul=NULL,vertex.size.mul=NULL,centrality.fun=c("degree","strength","eigen_vector")){
+default_explorative_net.plot<- function(graph,edge.with.mul=NULL,vertex.size.mul=NULL,centrality.fun=c("degree","strength","eigen_vector"),...){
   if(!igraph::is.igraph(graph)) {
     if(is.matrix(graph) & dim(graph)[1]==dim(graph)[2]){
       graph<- igraph::graph_from_adjacency_matrix(graph,weighted = TRUE,mode = "plus")
@@ -21,9 +21,8 @@ default_explorative_net.plot<- function(graph,edge.with.mul=NULL,vertex.size.mul
   Adj<- igraph::get.adjacency(graph,type = "both",attr = ifelse(igraph::is.weighted(graph),"weight",NULL),names = TRUE,sparse = FALSE)
 
   if(is.null(edge.with.mul)) {edge.with.mul<-5*1/max(Adj)}
-  if(is.null(vertex.size.mul)) {vertex.size.mul<-vertex.size.mul*1/max(Adj)}
+  if(is.null(vertex.size.mul)) {vertex.size.mul<-3*1/max(Adj)}
 
-  vertex.size.mul
   centrality.fun<- switch(centrality.fun,
                           "degree" = igraph::degree,
                           "strength" = igraph::strength,
@@ -31,8 +30,8 @@ default_explorative_net.plot<- function(graph,edge.with.mul=NULL,vertex.size.mul
   )
   plot(graph,edge.width=igraph::E(graph)$weight*edge.with.mul,
        edge.alpha=igraph::E(graph)$weight*edge.with.mul,
-       edge.color="grey90",
-       vertex.size=centrality.fun(graph)*vertex.size.mul)
+       edge.color="grey70",vertex.label=NA,
+       vertex.size=centrality.fun(graph)*vertex.size.mul,...)
 }
 
 #' Title
