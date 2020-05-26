@@ -9,7 +9,7 @@ make_obs.prob(Adj, obs.prob_fun = NULL, Adj.subfun = non.diagonal)
 \arguments{
 \item{Adj}{square integers matrix of occurences of dyads.}
 
-\item{obs.prob_fun}{either a user-defined function of (i,j) that output a probability of presence for the dyad, or a single value to indicate a constant observation probability}
+\item{obs.prob_fun}{either a user-defined function of (i,j,Adj) that output a probability of presence for the dyad, or a single value to indicate a constant observation probability}
 
 \item{Adj.subfun}{subsetting function of the adjacency matrix. Default is non.diagonal.}
 }
@@ -30,6 +30,6 @@ Adj[non.diagonal(Adj)]<- round(runif(n*(n-1),0,total_scan*.50))
 
 make_obs.prob(Adj)
 make_obs.prob(Adj,obs.prob_fun = 0.2)
-make_obs.prob(Adj,obs.prob_fun = function(i,j) i+j)
-make_obs.prob(Adj,obs.prob_fun = function(i,j){EVs<- compute.EV(Adj,"directed");EVs[i]*EVs[j]})
+make_obs.prob(Adj,obs.prob_fun = function(i,j,Adj) i+j)
+make_obs.prob(Adj,obs.prob_fun = function(i,j,Adj){EVs<- compute.EV(Adj,"directed");EVs[i]*EVs[j]})
 }

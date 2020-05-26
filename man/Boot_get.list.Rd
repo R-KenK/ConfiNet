@@ -44,6 +44,14 @@ Boot_get.list(Bootstrap,"group","adj")
 Boot_get.list(Bootstrap,"group","obs")
 
 Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
+                       scaled = FALSE,obs.prob=0.7,
+                       method = "group",mode = "directed",output = "adjacency")
+Boot_get.list(Bootstrap,"theoretical","adj")
+# Boot_get.list(Bootstrap,"group","list")
+Boot_get.list(Bootstrap,"group","adj")
+Boot_get.list(Bootstrap,"group","obs")
+
+Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
                        scaled = TRUE,obs.prob=0.7,keep=TRUE,
                        method = "both",mode = "directed",output = "all")
 Boot_get.list(Bootstrap,"focal","all")

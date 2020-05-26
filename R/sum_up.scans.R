@@ -137,10 +137,13 @@ n.observed_edges<- function(scan_list,mode,diag=NULL,use.rare.opti=FALSE,obs.pro
          },
          "focal" = {
            if(mode!="directed"){mode<- "plus"}
+           focal.table<- table(focal.list);names(focal.table)<- nodes
            n.observed<- adjacency_mode(
-             rbind_lapply(nodes,function(node) rep(table(focal.list)[node],n)),
+             rbind_lapply(nodes,function(node) rep(focal.table[node],n)),
              mode = mode
            )
+           colnames(n.observed)<- rownames(n.observed)<- nodes
+           n.observed
          },
          "group" = {
            n.observed<- Reduce("+",

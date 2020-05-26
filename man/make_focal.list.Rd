@@ -11,7 +11,7 @@ make_focal.list(Adj, total_scan, focal.prob_fun = "even", all.sampled = TRUE)
 
 \item{total_scan}{integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision. Optional if using presence.prob.}
 
-\item{focal.prob_fun}{a user-defined function of (n) that output a weight of being focal for each node (passed as `prob` argument to sample() function). By default, pick focals following a uniform distribution. Special case "even" tries to even out the focal.list as much as possible before drawing randomly following a uniform distribution.}
+\item{focal.prob_fun}{a user-defined function of (n,Adj) that output a weight of being focal for each node (passed as `prob` argument to sample() function). By default, pick focals following a uniform distribution. Special case "even" tries to even out the focal.list as much as possible before drawing randomly following a uniform distribution.}
 
 \item{all.sampled}{logical, should all individuals be sampled before letting them be sampled according to `focal.prob_fun`? Returns an error if total_scan is smaller than the number of nodes.}
 }
@@ -31,9 +31,9 @@ Adj[non.diagonal(Adj)]<- round(runif(n*(n-1),0,total_scan*.50))
 
 make_focal.list(Adj,total_scan)
 make_focal.list(Adj,total_scan,focal.prob_fun = "even")
-make_focal.list(Adj,total_scan,focal.prob_fun = function(n) 1:n)
-make_focal.list(Adj,total_scan,focal.prob_fun = function(n) 1:n*1:n)
-make_focal.list(Adj,total_scan,focal.prob_fun = function(n) exp(1:n),all.sampled = TRUE)
-make_focal.list(Adj,total_scan,focal.prob_fun = function(n) log(1:n))
-make_focal.list(Adj,total_scan,focal.prob_fun = function(n) compute.strength(Adj,"directed"))
+make_focal.list(Adj,total_scan,focal.prob_fun = function(n,Adj) 1:n)
+make_focal.list(Adj,total_scan,focal.prob_fun = function(n,Adj) 1:n*1:n)
+make_focal.list(Adj,total_scan,focal.prob_fun = function(n,Adj) exp(1:n),all.sampled = TRUE)
+make_focal.list(Adj,total_scan,focal.prob_fun = function(n,Adj) log(1:n))
+make_focal.list(Adj,total_scan,focal.prob_fun = function(n,Adj) compute.strength(Adj,"directed"))
 }

@@ -5,12 +5,18 @@
 \title{Calculate the correlation coefficient between "flattened" adjacency matrices
 Provide the correlation coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method}
 \usage{
-adjacency_cor(Bootstrap.list, method = c("group", "focal"))
+adjacency_cor(
+  Bootstrap.list,
+  method = c("group", "focal"),
+  get.format = c("adjacency", "observed_edges")
+)
 }
 \arguments{
 \item{Bootstrap.list}{an output of Boot_scan()}
 
 \item{method}{character scalar, indicate if the function should output the coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method}
+
+\item{get.format}{character scalar, compare requested data with the one from theoretical (default is "adjacency", but now can be "observed_edges").}
 }
 \value{
 a vector of correlation coefficients

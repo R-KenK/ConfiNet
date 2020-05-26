@@ -48,7 +48,7 @@
 #'            method = "focal",mode = "max",output = "adj")
 #' Boot_scans(Adj,total_scan = 42,focal.list = "even",n.boot = 3,scaled = TRUE,
 #'            method = "focal",mode = "plus",output = "adj")
-#' Boot_scans(Adj,total_scan = 42,focal.list = function(n) 1:n*1:n,n.boot = 3,scaled = TRUE,
+#' Boot_scans(Adj,total_scan = 42,focal.list = function(n,Adj) 1:n*1:n,n.boot = 3,scaled = TRUE,
 #'            method = "focal",mode = "max",output = "adj")
 #' Boot_scans(Adj,total_scan = 42,obs.prob = 0.2,n.boot=3,scaled = TRUE,
 #'            method = "group",mode = "directed",output = "list")

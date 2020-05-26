@@ -87,6 +87,7 @@ Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
   scaled<- Bootstrap_get.attr(Bootstrap,"scaled");
   mode<- Bootstrap_get.attr(Bootstrap,"mode");
   use.rare.opti<- Bootstrap_get.attr(Bootstrap,"use.rare.opti");
+  focal.list<- Bootstrap_get.attr(Bootstrap,"focal.list");
 
   if(what!="theoretical" & method!="both" & what!=method){stop("Element requested unavailable in `",substitute(Bootstrap),"`.")}
 
@@ -95,14 +96,14 @@ Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
                          "list" = lapply(Bootstrap,function(boot) lapply(boot, function(scan) scan[[what]])),
                          "adjacency" = lapply(Bootstrap,
                                               function(boot){
-                                                sum_up.scans(scan_list = boot,
+                                                sum_up.scans(scan_list = boot,focal.list = focal.list,
                                                              scaled = scaled,method = what,mode = mode,use.rare.opti = use.rare.opti)[[what]]
                                               }
                          ),
                          "observed_edges" = lapply(Bootstrap,
                                                    function(boot){
                                                      attr(
-                                                       sum_up.scans(scan_list = boot,
+                                                       sum_up.scans(scan_list = boot,focal.list = focal.list,
                                                                   scaled = scaled,method = what,mode = mode,use.rare.opti = use.rare.opti)[[what]],
                                                        "observed_edges"
                                                      )
@@ -143,6 +144,40 @@ Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
   )
 }
 
+#' Scale unscaled bootstrap list
+#'
+#' @param Bootstrap Bootstrap output object (/!\ WITH output = "adjacency", other output to be implemented if relevant)
+#'
+#' @return a Bootstrap output object with scaled adjacencies (comparable )
+#' @export
+#'
+#' @examples
+#' # Internal use.
+Bootstrap.list_post.scale<- function(Bootstrap){
+  attr.list<- attr(Bootstrap,"attr.list");
+  attr.list[["output"]]<- "adjacency"
+  attr.list[["scaled"]]<- TRUE
+
+  Bootstrap.scaled<- lapply(Bootstrap,
+                            function(boot){
+                              Adj.scaled<- lapply(names(boot),
+                                                  function(method){
+                                                    observed_edges<- attr(boot[[method]],"observed_edges")
+                                                    observed_edges<- ifelse(observed_edges!=0,observed_edges,1) # supposedly boot[[method]]==0 when observed_edges==0, but avoid dividing by 0
+                                                    scaled<- boot[[method]]/observed_edges
+                                                    diag(scaled)<-0
+                                                    scaled
+                                                  }
+                              )
+                              names(Adj.scaled)<- names(boot)
+                              Adj.scaled
+                            }
+  )
+  attr(Bootstrap.scaled,"attr.list")<- attr.list
+  Bootstrap.scaled
+}
+
+
 #' Retrieve specific simulation parameters of given Bootstrap
 #' Internal use. To ease the recollection of a given bootstrap performed through Boot_scans() iterations alongside a parameters.list
 #'
@@ -172,15 +207,16 @@ Boot_get.param<- function(Bootstrap){
              focal.list.subtype = attr(focal.list,"subtype"),
              total_scan = total_scan,
              mode = mode,
+             scaled = scaled,
              use.rare.opti = use.rare.opti
   )
 }
 
 #' Retrieve data from list of network bootstrap results
-#' To be used in a loop/lapply. format them in a ready to be analyzed data frame
+#' To be used in a loop/lapply. format them in a ready to be analyzed data frame.
 #'
 #' @param B index of the network from which data are collected.
-#' @param Bootstrap.list list of bootstrap of a given network, through different parameters
+#' @param Bootstrap.list list of bootstrap of a given network, through different parameters. Now should receive an unscaled bootstraplist that will also be post scaled.
 #'
 #' @return a data frame of collected data per network and per parameter combination
 #' @export
@@ -192,12 +228,21 @@ Get.data<- function(B,Bootstrap.list){
                function(par){
                  Bootstrap<- Bootstrap.list[[par]]
                  parameters.list.df<- Boot_get.param(Bootstrap)
-                 rbind(data.frame(Network = B,boot = seq_along(Bootstrap),method = "group",
-                                  parameters.list.df,
-                                  Boot_calc.data(Bootstrap,method = "group")),
-                       data.frame(Network = B,boot = seq_along(Bootstrap),method = "focal",
-                                  parameters.list.df,
-                                  Boot_calc.data(Bootstrap,method = "focal"))
+                 Bootstrap.post.scaled<- Bootstrap.list_post.scale(Bootstrap)
+                 parameters.list.df.post.scaled<- Boot_get.param(Bootstrap.post.scaled)
+                 rbind(
+                   data.frame(Network = B,boot = seq_along(Bootstrap),method = "group",
+                              parameters.list.df,
+                              Boot_calc.data(Bootstrap,method = "group")),
+                   data.frame(Network = B,boot = seq_along(Bootstrap),method = "group",
+                              parameters.list.df.post.scaled,
+                              Boot_calc.data(Bootstrap.post.scaled,method = "group")),
+                   data.frame(Network = B,boot = seq_along(Bootstrap),method = "focal",
+                              parameters.list.df,
+                              Boot_calc.data(Bootstrap,method = "focal")),
+                   data.frame(Network = B,boot = seq_along(Bootstrap),method = "focal",
+                              parameters.list.df.post.scaled,
+                              Boot_calc.data(Bootstrap.post.scaled,method = "focal"))
                  )
                }
   )
@@ -223,7 +268,8 @@ Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
              Frob = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Frobenius_from_adjacency),
              Frob.GOF = adj_gof(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Frobenius_from_adjacency),
              SLap = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Laplacian_spectral.dist),
-             SLap.GOF = adj_gof(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Laplacian_spectral.dist)
+             SLap.GOF = adj_gof(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Laplacian_spectral.dist),
+             obs.cor = adjacency_cor(Bootstrap.list = Bootstrap.list,method = method,get.format = "observed_edges")#,
              # HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
   )
 }
@@ -235,6 +281,7 @@ Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
 #'
 #' @param Bootstrap.list an output of Boot_scan()
 #' @param method character scalar, indicate if the function should output the coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
+#' @param get.format character scalar, compare requested data with the one from theoretical (default is "adjacency", but now can be "observed_edges").
 #'
 #' @return a vector of correlation coefficients
 #' @export
@@ -243,14 +290,15 @@ Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
 #'
 #' @examples
 #' #Internal use in Simulation_script.R.
-adjacency_cor<- function(Bootstrap.list,method = c("group","focal")){
+adjacency_cor<- function(Bootstrap.list,method = c("group","focal"),get.format = c("adjacency","observed_edges")){
   method<- match.arg(method)
+  get.format<- match.arg(get.format)
   n.boot = length(Bootstrap.list)
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
          function(b) {
            stats::cor(
-             c(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]]),   # c() flattens the matrix to consider it like a vector
-             c(Boot_get.list(Bootstrap.list,method,"adjacency")[[b]])
+             c(Boot_get.list(Bootstrap.list,"theoretical",get.format)[[b]]),   # c() flattens the matrix to consider it like a vector
+             c(Boot_get.list(Bootstrap.list,method,get.format)[[b]])
            )
          }
   )
@@ -522,9 +570,9 @@ Laplacian_spectral.dist<- function(X,Y=0,...){
 
 #' Make a list of obs.prob matrices given list of functions to be composed
 #'
-#' @param bias.fun_list function of (i,j,Adj) to conjugate two individual values (e.g. function(i,j,Adj) {bias.fun(bias.subtype(i,Adj),bias.subtype(j,Adj)))
-#' @param bias.subtype_list function of (i,Adj) to get an individual value (can be trait- or net-based, or unbiased)(e.g. function(i,j,Adj) {bias.fun(bias.subtype(i,Adj),bias.subtype(j,Adj)))
-#' @param type character, either "unbiased" (`bias.subtype_list` passed as a [0,1] numeric), "trait" for trait-based bias (function(i,j,Adj) {bias.fun(bias.subtype(i,Adj),bias.subtype(j,Adj))), or "net" for net-based bias (centrality<- bias.subtype(Adj);bias.fun(centrality[i],centrality[j])).
+#' @param bias.fun_list function of (i,j,Adj) to conjugate two individual values (e.g. function(i,j,Adj) {bias.fun(bias.subtype(i,Adj),bias.subtype(j,Adj))})
+#' @param bias.subtype_list function of (i,Adj) to get an individual value (can be trait- or net-based, or unbiased)(e.g. function(i,j,Adj) {bias.fun(bias.subtype(i,Adj),bias.subtype(j,Adj))})
+#' @param type character, either "unbiased" (`bias.subtype_list` passed as a [0,1] numeric), "trait" for trait-based bias (function(i,j,Adj) {bias.fun(bias.subtype(i,Adj),bias.subtype(j,Adj))}), or "net" for net-based bias (centrality<- bias.subtype(Adj);bias.fun(centrality[i],centrality[j])).
 #'
 #' @return a list of elements containing: `obs.prob_fun` as the function to use to build the matrix obs.prob, and attributes to keep track of (sub)type and functions involved in its making
 #' @export
@@ -648,23 +696,23 @@ initialize_parameter_list<- function(ADJ,obs.bias_list,focal.bias_list){
 }
 
 # Visual check of the obs.prob generation ---------------------------------
-n<- 20
-Adj<- matrix((1:(n*n))^2,n,n,byrow = TRUE);diag(Adj)<- 0
-Adj<- matrix(round(runif((n*n),0,5)),n,n,byrow = TRUE);diag(Adj)<- 0
-
-lapply(make_global_obs.prob(obs.bias_list),
-       function(biais){
-         obs.prob_fun<- biais[["obs.prob_fun"]]
-         type<- biais[["type"]]
-         subtype<- biais[["subtype"]]
-         fun<- biais[["fun"]]
-         obs.prob<- make_obs.prob(Adj,obs.prob_fun = obs.prob_fun)
-         obs.prob<- add_obs.prob_attr(obs.prob = obs.prob,type = type,subtype = subtype,fun = fun)
-         par(mfrow=c(2,2))
-         plot(1:n,rowSums(obs.prob),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i)=f(i)")
-         plot(non.diagonal(Adj,"vect"),non.diagonal(obs.prob,"vect"),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i,j)=f(i,j)")
-         plot(1:n,biais[["centrality.fun"]](Adj),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "Centrality(i)=f(i)")
-         plot(compute.EV(Adj,"max"),rowSums(obs.prob),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i)=f(centrality(i))")
-       }
-)
-par(mfrow=c(1,1))
+# n<- 20
+# Adj<- matrix((1:(n*n))^2,n,n,byrow = TRUE);diag(Adj)<- 0
+# Adj<- matrix(round(runif((n*n),0,5)),n,n,byrow = TRUE);diag(Adj)<- 0
+#
+# lapply(make_global_obs.prob(obs.bias_list),
+#        function(biais){
+#          obs.prob_fun<- biais[["obs.prob_fun"]]
+#          type<- biais[["type"]]
+#          subtype<- biais[["subtype"]]
+#          fun<- biais[["fun"]]
+#          obs.prob<- make_obs.prob(Adj,obs.prob_fun = obs.prob_fun)
+#          obs.prob<- add_obs.prob_attr(obs.prob = obs.prob,type = type,subtype = subtype,fun = fun)
+#          par(mfrow=c(2,2))
+#          plot(1:n,rowSums(obs.prob),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i)=f(i)")
+#          plot(non.diagonal(Adj,"vect"),non.diagonal(obs.prob,"vect"),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i,j)=f(i,j)")
+#          plot(1:n,biais[["centrality.fun"]](Adj),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "Centrality(i)=f(i)")
+#          plot(compute.EV(Adj,"max"),rowSums(obs.prob),main = paste(attributes(obs.prob)[c("type","subtype","fun")],sep = " "),sub = "P(i)=f(centrality(i))")
+#        }
+# )
+# par(mfrow=c(1,1))
