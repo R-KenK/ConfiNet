@@ -19,7 +19,7 @@ load("C:/R/Git/ConfiNet/R/sysdata.rda")
 # Here preferably should be implemented as automatic import from ASNR/networkdata
 
 set.seed(42)
-n.boot<- 10;
+n.boot<- 50;
 
 asnr.weighted.dir<- list.files("C:/R/Git/asnr/Networks/Mammalia/",pattern = "_weighted",full.names = TRUE)
 
@@ -198,7 +198,7 @@ snow::stopCluster(cl)
 stop_pblapply-start_pblapply
 # data.long.10.boot<- data.long
 # saveRDS(data.long.10.boot,file = ".WIP/data.long.10.boot.rds")
-data.long<- readRDS(file = ".WIP/data.long.10.boot.rds")
+# data.long<- readRDS(file = ".WIP/data.long.10.boot.rds")
 # Draft of data handling, plotting and analysis ---------------------------
 library(data.table)
 data.long<- data.table(data.long)
@@ -213,7 +213,8 @@ data.summary<- data.long[,.(cor=median(cor),sd.cor=sd(cor),
                             Frob=median(Frob),sd.Frob=sd(Frob),
                             Frob.GOF=median(Frob.GOF),sd.Frob.GOF=sd(Frob.GOF),
                             SLap=median(SLap),sd.SLap=sd(SLap),
-                            SLap.GOF=median(SLap.GOF),sd.SLap.GOF=sd(SLap.GOF)),by = .(Network,obs.prob.type,obs.prob.subtype,focal.list.type,focal.list.subtype,mode,method)]
+                            SLap.GOF=median(SLap.GOF),sd.SLap.GOF=sd(SLap.GOF),
+                            obs.cor=median(obs.cor),sd.obs.cor=sd(obs.cor)),by = .(Network,obs.prob.type,obs.prob.subtype,focal.list.type,focal.list.subtype,mode,method,scaled)]
 summary(data.summary)
 
 data.summary[,para:=paste(obs.prob.type,obs.prob.subtype,focal.list.type,focal.list.subtype,sep = "-"),]
@@ -222,98 +223,26 @@ unique(data.summary$para)
 
 
 
-# Matrix correlation
-ggplot(data.summary,aes(interaction(obs.prob.type,focal.list.type),cor,group=interaction(method,obs.prob.subtype,focal.list.subtype),fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = cor-sd.cor,ymax=cor+sd.cor),colour="grey50",width = 0.2,position = position_dodge())+#guides(colour=FALSE)+
-  facet_wrap(.~Network,ncol = 3,scales = "free")+geom_bar(stat = "identity",alpha=1,position = position_dodge())+mytheme
-ggplot(data.summary[obs.prob.type %in% c("net","trait")],aes(interaction(method,obs.prob.details),cor,fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = cor-sd.cor,ymax=cor+sd.cor),colour="grey50",width = 0.2)+
-  facet_grid(obs.prob.type+focal.list~Network)+geom_bar(stat = "identity",alpha=1)+mytheme
-ggplot(data.summary[obs.prob.type=="unb"],aes(obs.prob.details,cor,colour = method,group=interaction(method,obs.prob.type)))+
-  facet_grid(focal.list~Network)+geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
-  geom_linerange(aes(ymin = cor-sd.cor,ymax=cor+sd.cor))+geom_line()+geom_point(shape=21,fill="white")+
-  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$cor)-max(data.summary[obs.prob.type=="unb"]$sd.cor),1))+mytheme
+# Exploratory graphs ------------------------------------------------------
+data.summary$Network<- factor(data.summary$Network,levels = 1:12)
+data.summary$Network.txt<- factor(paste0("Network ",data.summary$Network),levels = paste0("Network ",1:12))
 
-# degree correlation
-ggplot(data.summary[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),degree,fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = degree-sd.degree,ymax=degree+sd.degree),colour="grey50",width = 0.2)+
-  facet_grid(obs.prob.type+focal.list~Network)+geom_bar(stat = "identity",alpha=1)+mytheme
-ggplot(data.summary[obs.prob.type %in% c("net","tra")],aes(interaction(method,obs.prob.details),degree,fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = degree-sd.degree,ymax=degree+sd.degree),colour="grey50",width = 0.2)+
-  facet_grid(obs.prob.type+focal.list~Network)+geom_bar(stat = "identity",alpha=1)+mytheme
-ggplot(data.summary[obs.prob.type=="unb"],aes(obs.prob.details,degree,colour = method,group=interaction(method,obs.prob.type)))+
-  facet_grid(focal.list~Network)+geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
-  geom_linerange(aes(ymin = degree-sd.degree,ymax=degree+sd.degree))+geom_line()+geom_point(shape=21,fill="white")+
-  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$degree)-max(data.summary[obs.prob.type=="unb"]$sd.degree),1))+mytheme
+vars<- c("cor","strength","Frob.GOF","SLap.GOF","obs.cor")
 
-# strength correlation
-ggplot(data.summary[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),strength,fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = strength-sd.strength,ymax=strength+sd.strength),colour="grey50",width = 0.2)+
-  facet_grid(obs.prob.type+focal.list~Network)+geom_bar(stat = "identity",alpha=1)+mytheme
-ggplot(data.summary[obs.prob.type %in% c("net","tra")],aes(interaction(method,obs.prob.details),strength,fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = strength-sd.strength,ymax=strength+sd.strength),colour="grey50",width = 0.2)+
-  facet_grid(obs.prob.type+focal.list~Network)+geom_bar(stat = "identity",alpha=1)+mytheme
-ggplot(data.summary[obs.prob.type=="unb"],aes(obs.prob.details,strength,colour = method,group=interaction(method,obs.prob.type)))+
-  facet_grid(focal.list~Network)+geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
-  geom_linerange(aes(ymin = strength-sd.strength,ymax=strength+sd.strength))+geom_line()+geom_point(shape=21,fill="white")+
-  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$strength)-max(data.summary[obs.prob.type=="unb"]$sd.strength),1))+mytheme
+ggplot_points.lines.and.boxplot<- function(var){
+  eval(
+    parse(text  = paste0(
+      "plot<- ggplot(data.summary,aes(method,",var,",colour=method,fill=method,group=para))+facet_wrap(.~Network.txt,ncol=4)+geom_hline(yintercept = 0,colour='grey50')+geom_hline(yintercept = 1,colour='grey75',lty='dashed')+geom_line(alpha=0.3,colour='grey80')+geom_point(alpha=0.1)+geom_violin(aes(group=method),alpha=0.3,colour='grey50')+theme_bw()"
+    )
+    )
+  )
+  plot
+}
 
-# eigen-vector correlation
-ggplot(data.summary[obs.prob.type=="net"],aes(interaction(method,obs.prob.type,obs.prob.details),EV,fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = EV-sd.EV,ymax=EV+sd.EV),colour="grey50",width = 0.2)+
-  facet_grid(obs.prob.type+focal.list~Network)+geom_bar(stat = "identity",alpha=1)+mytheme
-ggplot(data.summary[obs.prob.type %in% c("net","tra")],aes(interaction(method,obs.prob.details),EV,fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = EV-sd.EV,ymax=EV+sd.EV),colour="grey50",width = 0.2)+
-  facet_grid(obs.prob.type+focal.list~Network)+geom_bar(stat = "identity",alpha=1)+mytheme
-ggplot(data.summary[obs.prob.type=="unb"],aes(obs.prob.details,EV,colour = method,group=interaction(method,obs.prob.type)))+
-  facet_grid(focal.list~Network)+geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
-  geom_linerange(aes(ymin = EV-sd.EV,ymax=EV+sd.EV))+geom_line()+geom_point(shape=21,fill="white")+
-  scale_y_continuous(limits = c(min(data.summary[obs.prob.type=="unb"]$EV)-max(data.summary[obs.prob.type=="unb"]$sd.EV),1))+mytheme
-
-# Clusering coefficient distance
-ggplot(data.summary,aes(interaction(method,obs.prob.type,obs.prob.details),CC,fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = CC-sd.CC,ymax=CC+sd.CC),colour="grey50",width = 0.2)+
-  facet_grid(.~Network)+#facet_grid(obs.prob.type+focal.list~Network)+
-  geom_bar(stat = "identity",alpha=1)+mytheme
-ggplot(data.summary,aes(interaction(method,obs.prob.details),CC,fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = CC-sd.CC,ymax=CC+sd.CC),colour="grey50",width = 0.2)+
-  facet_grid(obs.prob.type+focal.list~Network)+
-  geom_bar(stat = "identity",alpha=1)+mytheme
-ggplot(data.summary,aes(obs.prob.details,CC,colour = method,group=interaction(method,obs.prob.type)))+
-  facet_grid(focal.list~Network)+
-  #geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
-  geom_linerange(aes(ymin = CC-sd.CC,ymax=CC+sd.CC))+geom_line()+geom_point(shape=21,fill="white")+
-  mytheme
-
-# GOF distance
-ggplot(data.summary,aes(interaction(method,obs.prob.type,obs.prob.details),GOF,fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = GOF-sd.GOF,ymax=GOF+sd.GOF),colour="grey50",width = 0.2)+
-  facet_grid(.~Network)+#facet_grid(obs.prob.type+focal.list~Network)+
-  geom_bar(stat = "identity",alpha=1)+mytheme
-ggplot(data.summary,aes(interaction(method,obs.prob.details),GOF,fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = GOF-sd.GOF,ymax=GOF+sd.GOF),colour="grey50",width = 0.2)+
-  facet_grid(obs.prob.type+focal.list~Network)+
-  geom_bar(stat = "identity",alpha=1)+mytheme
-ggplot(data.summary,aes(obs.prob.details,GOF,colour = method,group=interaction(method,obs.prob.type)))+
-  facet_grid(focal.list~Network)+
-  geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
-  geom_linerange(aes(ymin = GOF-sd.GOF,ymax=GOF+sd.GOF))+geom_line()+geom_point(shape=21,fill="white")+
-  mytheme
-
-# Frob distance
-ggplot(data.summary,aes(interaction(method,obs.prob.type,obs.prob.details),Frob,fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = Frob-sd.frob,ymax=Frob+sd.frob),colour="grey50",width = 0.2)+
-  facet_grid(.~Network)+#facet_grid(obs.prob.type+focal.list~Network)+
-  geom_bar(stat = "identity",alpha=1)+mytheme
-ggplot(data.summary,aes(interaction(method,obs.prob.details),Frob,fill = method))+geom_hline(yintercept = 0)+
-  geom_errorbar(aes(ymin = Frob-sd.frob,ymax=Frob+sd.frob),colour="grey50",width = 0.2)+
-  facet_grid(obs.prob.type+focal.list~Network)+
-  geom_bar(stat = "identity",alpha=1)+mytheme
-ggplot(data.summary,aes(obs.prob.details,Frob,colour = method,group=interaction(method,obs.prob.type)))+
-  facet_grid(focal.list~Network)+
-  geom_hline(yintercept = 1,lty="dashed",colour="grey50")+
-  geom_linerange(aes(ymin = Frob-sd.frob,ymax=Frob+sd.frob))+geom_line()+geom_point(shape=21,fill="white")+
-  mytheme
+for(var in vars){
+  (plot<- ggplot_points.lines.and.boxplot(var))
+  ggsave(paste0(".WIP/SN plots/Raw ",var," boxplot.png"),plot = plot,width = 10,height = 6,units = "in",dpi = 200)
+}
 
 
 # Draft PCA ---------------------------------------------------------------
