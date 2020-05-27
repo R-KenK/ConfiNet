@@ -93,8 +93,12 @@ iterate_scans<- function(Adj=NULL,total_scan,method=c("theoretical","group","foc
   }else{
     scan_list<- simulate_zeros.non.zeros(total_scan,presence.prob)
     n.zeros<- attr(scan_list,"n.zeros")
-    non.zero.list<- attr(scan_list,"non.zero.list")
-    to.do.list<- seq_along(scan_list)
+    if(is.na(n.zeros)){
+      to.do.list<- 1:total_scan;n.zeros<- NULL;non.zero.list<- 1:total_scan;use.rare.opti<- FALSE;use.rare.opti<- FALSE
+    }else{
+      non.zero.list<- attr(scan_list,"non.zero.list")
+      to.do.list<- seq_along(scan_list)
+    }
   }
 
   # Iterate scans -----------------------------------------------------------
