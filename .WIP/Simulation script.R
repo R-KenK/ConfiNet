@@ -19,7 +19,7 @@ load("C:/R/Git/ConfiNet/R/sysdata.rda")
 # Here preferably should be implemented as automatic import from ASNR/networkdata
 
 set.seed(42)
-n.boot<- 50;
+n.boot<- 10;
 
 asnr.weighted.dir<- list.files("C:/R/Git/asnr/Networks/Mammalia/",pattern = "_weighted",full.names = TRUE)
 
@@ -198,6 +198,8 @@ snow::stopCluster(cl)
 stop_pblapply-start_pblapply
 # data.long.10.boot<- data.long
 # saveRDS(data.long.10.boot,file = ".WIP/data.long.10.boot.rds")
+# data.long.100.boot<- data.long
+# saveRDS(data.long.100.boot,file = ".WIP/data.long.100.boot.rds")
 # data.long<- readRDS(file = ".WIP/data.long.10.boot.rds")
 # Draft of data handling, plotting and analysis ---------------------------
 library(data.table)
