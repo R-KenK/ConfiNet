@@ -84,5 +84,5 @@ Boot_scans<- function(Adj,total_scan,method=c("theoretical","group","focal","bot
     },cl = cl
   )
   Bootstrap_add.attributes(Bootstrap = Bootstrap,method = method,scaled = scaled,use.rare.opti = use.rare.opti,
-                           mode = mode,output = output,total_scan = total_scan,n.boot = n.boot,obs.prob = obs.prob,focal.list = focal.list)
+                           mode = mode,output = output,total_scan = total_scan,n.boot = n.boot,presence.prob = presence.prob,obs.prob = obs.prob,focal.list = focal.list)
 }

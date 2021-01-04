@@ -19,7 +19,7 @@ load("C:/R/Git/ConfiNet/R/sysdata.rda")
 # Here preferably should be implemented as automatic import from ASNR/networkdata
 
 set.seed(42)
-n.boot<- 10;
+n.boot<- 5;
 
 asnr.weighted.dir<- list.files("C:/R/Git/asnr/Networks/Mammalia/",pattern = "_weighted",full.names = TRUE)
 
@@ -223,7 +223,7 @@ data.summary[,para:=paste(obs.prob.type,obs.prob.subtype,focal.list.type,focal.l
 
 unique(data.summary$para)
 
-
+# data.summary<- data.summary[scaled==TRUE]
 
 # Exploratory graphs ------------------------------------------------------
 data.summary$Network<- factor(data.summary$Network,levels = 1:12)
@@ -232,20 +232,20 @@ data.summary$Network.txt<- factor(paste0("Network ",data.summary$Network),levels
 vars<- c("cor","strength","Frob.GOF","SLap.GOF","obs.cor")
 
 ggplot_points.lines.and.boxplot<- function(var){
-  eval(
-    parse(text  = paste0(
-      "plot<- ggplot(data.summary,aes(method,",var,",colour=method,fill=method,group=para))+facet_wrap(.~Network.txt,ncol=4)+geom_hline(yintercept = 0,colour='grey50')+geom_hline(yintercept = 1,colour='grey75',lty='dashed')+geom_line(alpha=0.3,colour='grey80')+geom_point(alpha=0.1)+geom_violin(aes(group=method),alpha=0.3,colour='grey50')+theme_bw()"
-    )
-    )
-  )
+  plot<- ggplot(data.summary,aes_string("method",var,colour="method",fill="method",group="para"))+
+    facet_wrap(.~Network.txt+scaled,ncol=8)+
+    geom_hline(yintercept = 0,colour='grey50')+geom_hline(yintercept = 1,colour='grey75',lty='dashed')+
+    geom_line(alpha=0.3,colour='grey80')+geom_point(alpha=0.1)+
+    geom_violin(aes(group=method),alpha=0.3,colour='grey50')+theme_bw()
   plot
 }
+
+ggplot_points.lines.and.boxplot("obs.cor")
 
 for(var in vars){
   (plot<- ggplot_points.lines.and.boxplot(var))
   ggsave(paste0(".WIP/SN plots/Raw ",var," boxplot.png"),plot = plot,width = 10,height = 6,units = "in",dpi = 200)
 }
-
 
 # Draft PCA ---------------------------------------------------------------
 

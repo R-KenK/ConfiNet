@@ -274,6 +274,82 @@ Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
   )
 }
 
+#' WIP: revamping Boot_calc.data to be flexible in what it calculates
+#'
+#' @param Bootstrap.list
+#' @param fun.list
+#' @param args.list
+#' @param cname.list
+#'
+#' @return
+#' @export
+#'
+#' @examples
+Boot_calc.data2<- function(Bootstrap.list,fun.list,args.list = NULL,cname.list = NULL){
+  if(is.null(args.list)){args.list<- attr(fun.list,"args.list")}
+
+  df<- cbind_lapply(seq_along(fun.list),
+                    function(i){
+                      fun<- fun.list[[i]];args<- args.list[i]
+                      data.frame(fun(args))
+                    }
+  )
+  if(is.null(cname.list)){cnames<- attr(fun.list,"colnames")}
+  colnames(df)<- cname.list
+  df
+}
+
+adjacency_cor_old<- function(Bootstrap.list,method = c("group","focal"),get.format = c("adjacency","observed_edges")){
+  method<- match.arg(method)
+  get.format<- match.arg(get.format)
+  n.boot = length(Bootstrap.list)
+  sapply(1:n.boot,  # needs function to gather and structure in a data frame
+         function(b) {
+           stats::cor(
+             c(Boot_get.list(Bootstrap.list,"theoretical",get.format)[[b]]),   # c() flattens the matrix to consider it like a vector
+             c(Boot_get.list(Bootstrap.list,method,get.format)[[b]])
+           )
+         }
+  )
+}
+
+#' Title
+#'
+#' @param Bootsrap.df
+#' @param ADJ
+#' @param net.fun.list
+#' @param mode
+#'
+#' @return
+#' @export
+#'
+#' @examples
+Boot_merge.from_Adj<- function(Bootsrap.df,ADJ,net.fun.list,mode = c("directed", "undirected", "max","min", "upper", "lower", "plus"),cnames = NULL){
+  mode<- match.arg(mode)
+
+  net.metrics.df<- rbind_lapply(unique(Bootsrap.df[["Network"]]),
+               function(i){
+                 Adj<- ADJ[[i]]
+                 graph<- igraph::graph_from_adjacency_matrix(Adj,mode = mode)
+                 net.metrics<- do.call(cbind,
+                                          lapply(net.fun.list,
+                                                 function(net.fun){
+                                                   data.frame(Network = i,net.fun(graph))
+                                                 }
+                                          )
+                 )
+                 if(is.null(cnames)){cnames<- attr(net.fun.list,"colnames")}
+                 colnames(net.metrics)[-c(1)]<- cnames
+                 net.metrics
+               }
+  )
+  merge(Bootsrap.df,net.metrics.df,by = "Network")
+}
+
+make_net.fun.list<- function(...){
+
+}
+
 # analyses tools ----------------------------------------------------------
 
 #' Calculate the correlation coefficient between "flattened" adjacency matrices
@@ -294,11 +370,15 @@ adjacency_cor<- function(Bootstrap.list,method = c("group","focal"),get.format =
   method<- match.arg(method)
   get.format<- match.arg(get.format)
   n.boot = length(Bootstrap.list)
+  mode<- Bootstrap_get.attr(Bootstrap.list,"mode")
+  if(mode=="directed"){Adj.subfun<- non.diagonal}else{Adj.subfun<- upper.tri}
   sapply(1:n.boot,  # needs function to gather and structure in a data frame
          function(b) {
+           theoretical<- Boot_get.list(Bootstrap.list,"theoretical",get.format)[[b]]
+           empirical<- Boot_get.list(Bootstrap.list,method,get.format)[[b]]
            stats::cor(
-             c(Boot_get.list(Bootstrap.list,"theoretical",get.format)[[b]]),   # c() flattens the matrix to consider it like a vector
-             c(Boot_get.list(Bootstrap.list,method,get.format)[[b]])
+             theoretical[Adj.subfun(theoretical)],
+             empirical[Adj.subfun(empirical)]
            )
          }
   )
@@ -443,15 +523,21 @@ weighted.clustering.coeff<- function(graph,mode){
     DirectedClustering::ClustF(mat = graph,type = "directed")$GlobaltotalCC
   }
 }
-#
-# generate.null.adj<- function(Adj,total_scan,
-#                              Adj.subfun = non.diagonal,scaled = TRUE,
-#                              mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
-#   n<- nrow(Adj);if(is.null(row.names(Adj))) {nodes<- as.character(1:n)} else {nodes<- row.names(Adj)}
-#   Null<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
-#   Null[Adj.subfun(Null)]<- rbinom(length(Null[Adj.subfun(Null)]),total_scan,prob = 0.5)
-#   adjacency_mode(Null,mode)/ifelse(scaled,total_scan,1)
-# }
+
+#' Coefficient of variation of association indices
+#'
+#' @param Adj square integers matrix of occurences of dyads. WIP: implement method for association matrices...
+#' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
+#'
+#' @return Coefficient of variation of association indices
+#' @export
+#'
+#' @examples
+#' # Internal use.
+association.index_CV<- function(Adj,mode){
+  if(mode=="directed"){Adj<- Adj[non.diagonal(Adj)]}else{Adj<- Adj[upper.tri(Adj)]}
+  sd(Adj)/mean(Adj)
+}
 
 #' Wrapper to calculate adjacency/network distances
 #'
@@ -531,6 +617,7 @@ generate.null.adj<- function(Adj,total_scan,
   Null[Adj.subfun(Null)]<- stats::rbinom(length(Null[Adj.subfun(Null)]),total_scan,prob = 0.5)
   adjacency_mode(Null,mode)/ifelse(scaled,total_scan,1)
 }
+
 #' Simple Frobenius distance calculation
 #'
 #' @param X an adjacency matrix
@@ -542,7 +629,24 @@ generate.null.adj<- function(Adj,total_scan,
 #'
 #' @examples
 #' #Internal use in Simulation_script.R.
-Frobenius_from_adjacency<- function(X,Y=0,...){
+# Frobenius_from_adjacency_old<- function(X,Y=0,...){
+#   sqrt(sum((X-Y)^2))
+# }
+
+#' Frobenius distance calculation
+#' considers if the adjacency matrix is symetric or not (and avoid redundant information)
+#'
+#' @param X an adjacency matrix
+#' @param Y another adjacency matrix, otherwise the distance measuredd is ||X||
+#' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
+#'
+#' @return the Frobenius distance
+#' @export
+#'
+#' #Internal use in Simulation_script.R.
+Frobenius_from_adjacency<- function(X,Y=0,mode){
+  if(mode=="directed"){Adj.subfun<- non.diagonal}else{Adj.subfun<- upper.tri}
+  X<- X[Adj.subfun(X)];Y<- Y[Adj.subfun(Y)];
   sqrt(sum((X-Y)^2))
 }
 
