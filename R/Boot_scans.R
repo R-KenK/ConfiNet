@@ -14,6 +14,7 @@
 #'   \item{"a dyad observation obs.probability matrix"}{of same dimension as Adj}
 #'   \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
 #'   \item{"a general dyad observation obs.probability"}{should be in [0,1], assumed to be the case when only one value is inputed)}
+#'   \item{"a user-defined function to be passed to `make_obs.prob` as `obs.prob_fun`"}{should be a function of (i,j,Adj))}
 #' }
 #' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
 #' @param output Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix
@@ -44,17 +45,17 @@
 #' Boot_scans(Adj,total_scan = 42,focal.list = focal.list,n.boot = 3,scaled = TRUE,
 #'            method = "group",use.rare.opti=FALSE,mode = "directed",obs.prob = 0.5,output = "list")
 #' Boot_scans(Adj,total_scan = 42,focal.list = focal.list,n.boot = 3,scaled = FALSE,
-#'            method = "focal",mode = "directed",output = "adj")
+#'            method = "focal",mode = "max",output = "adj")
 #' Boot_scans(Adj,total_scan = 42,focal.list = "even",n.boot = 3,scaled = TRUE,
-#'            method = "focal",mode = "directed",output = "adj")
-#' Boot_scans(Adj,total_scan = 42,focal.list = function(n) 1:n*1:n,n.boot = 3,scaled = TRUE,
-#'            method = "focal",mode = "directed",output = "adj")
+#'            method = "focal",mode = "plus",output = "adj")
+#' Boot_scans(Adj,total_scan = 42,focal.list = function(n,Adj) 1:n*1:n,n.boot = 3,scaled = TRUE,
+#'            method = "focal",mode = "max",output = "adj")
 #' Boot_scans(Adj,total_scan = 42,obs.prob = 0.2,n.boot=3,scaled = TRUE,
 #'            method = "group",mode = "directed",output = "list")
 #' Boot_scans(Adj,total_scan = 42,obs.prob = obs.prob,n.boot=3,scaled = TRUE,
 #'            method = "both",mode = "directed",output = "all")
-#' Boot_scans(Adj,total_scan = 4000,obs.prob = obs.prob,n.boot=3,scaled = TRUE,
-#'            method = "both",mode = "directed",use.rare.opti = TRUE,output = "all")
+#' Boot_scans(Adj,total_scan = 400,obs.prob = obs.prob,n.boot=3,scaled = TRUE,
+#'            method = "both",mode = "directed",use.rare.opti = TRUE,output = "adj")
 Boot_scans<- function(Adj,total_scan,method=c("theoretical","group","focal","both"),focal.list=NULL,n.boot,...,
                       scaled=FALSE,obs.prob = NULL,
                       mode = c("directed", "undirected", "max","min", "upper", "lower", "plus","vector"),
@@ -83,5 +84,5 @@ Boot_scans<- function(Adj,total_scan,method=c("theoretical","group","focal","bot
     },cl = cl
   )
   Bootstrap_add.attributes(Bootstrap = Bootstrap,method = method,scaled = scaled,use.rare.opti = use.rare.opti,
-                           mode = mode,output = output,total_scan = total_scan,n.boot = n.boot)
+                           mode = mode,output = output,total_scan = total_scan,n.boot = n.boot,presence.prob = presence.prob,obs.prob = obs.prob,focal.list = focal.list)
 }

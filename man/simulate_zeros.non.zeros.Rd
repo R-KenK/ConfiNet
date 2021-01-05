@@ -12,7 +12,7 @@ simulate_zeros.non.zeros(total_scan, presence.prob)
 \item{presence.prob}{presence probability matrix (or vector)}
 }
 \value{
-a list of NULL representing the non-zero scan to run with an attribute `n.zero` being the number of full-zero scans
+a list of NULL representing the non-zero scan to run with an attribute `n.zero` being the number of full-zero scans,and `non.zero.pos`
 }
 \description{
 Simulate which scan returns an all-zeros matrix

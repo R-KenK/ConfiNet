@@ -46,52 +46,12 @@ observable_edges<- function(Scan,obs.prob=NULL,Adj.subfun=NULL){
   observed
 }
 
-#' Get number of edge observations (for group scans with unobservable individuals)
-#' quantify actual edge-wise sampling effort, considering that some weren't observable in all group scans.Internal use.
-#'
-#' @param scan_list list of binary group scans, with NAs when the dyad was not observable.
-#' @param diag integer (mostly), value to replace the diagonal of the output matrix with. Use NULL if you consider self-loop (untested).
-#' @param use.rare.opti logical: should the optimization for rare event be used?
-#' @param obs.prob either :
-#' \itemize{
-#'  \item{"a dyad observation probability matrix (P.obs)"}{of same dimension as Adj}
-#'  \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
-#'  \item{"a systematic dyad observation (P.obs constant for all i,j)"}{should be in [0,1], assumed to be the case when only one value is inputed)}
-#' }
-#' @param n.zeros integer, the attribute outputed by `simulate_zeros.non.zeros`, representing the number of full-zero scans. Used only when use.rare.opti=TRUE
-#'
-#' @importFrom stats rbinom
-#'
-#' @return a square matrix with element quantifying how many time a dyad has been sampled
-#' @export
-#'
-#' @examples
-#' #internal use.
-n.observed_edges<- function(scan_list,diag=NULL,use.rare.opti=FALSE,obs.prob=NULL,n.zeros = NULL){
-  n.observed<- Reduce("+",
-                      lapply(scan_list,
-                             function(scan){
-                               observed<- ifelse(!is.na(scan),1,0) # counting part of the algorithm
-                               if(!is.null(diag)) {diag(observed)<- diag} # doesn't count the diagonal by default. Left the option to count if self loops should be considered
-                               observed
-                             }
-                      )
-  )
-  if(!use.rare.opti){
-    n.observed
-  }else{
-    n<- nrow(n.observed);
-    if(!is.matrix(obs.prob)){obs.prob<- matrix(obs.prob,n,n)}
-    rbind_lapply(1:n,function(i) rbinom(n,n.zeros,obs.prob[i,])+n.observed[i,])
-  }
-}
-
 # obs.prob tools ----------------------------------------------------------
 
 #' Produce matrix of probability of observation from user-defined function
 #'
 #' @param Adj square integers matrix of occurences of dyads.
-#' @param obs.prob_fun either a user-defined function of (i,j) that output a probability of presence for the dyad, or a single value to indicate a constant observation probability
+#' @param obs.prob_fun either a user-defined function of (i,j,Adj) that output a probability of presence for the dyad, or a single value to indicate a constant observation probability
 #' @param Adj.subfun subsetting function of the adjacency matrix. Default is non.diagonal.
 #'
 #' @return a matrix of probability of observation for each dyad (obs.prob)
@@ -108,8 +68,16 @@ n.observed_edges<- function(scan_list,diag=NULL,use.rare.opti=FALSE,obs.prob=NUL
 #'
 #' make_obs.prob(Adj)
 #' make_obs.prob(Adj,obs.prob_fun = 0.2)
-#' make_obs.prob(Adj,obs.prob_fun = function(i,j) i+j)
-#' make_obs.prob(Adj,obs.prob_fun = function(i,j){EVs<- compute.EV(Adj,"directed");EVs[i]*EVs[j]})
+#' make_obs.prob(Adj,obs.prob_fun = function(i,j,Adj) i+j)
+#' compute.EV<- function(graph,mode=NULL){
+#'   if(is.matrix(graph)){
+#'     graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)
+#'   }
+#'   EV<- igraph::eigen_centrality(graph, weights = igraph::E(graph)$weight,scale = FALSE)$vector
+#'   if(!is.null(names(EV))){names(EV)<- igraph::vertex_attr(graph)[[1]]}
+#'   EV
+#' }
+#' make_obs.prob(Adj,obs.prob_fun = function(i,j,Adj){EVs<- compute.EV(Adj,"directed");EVs[i]*EVs[j]})
 make_obs.prob<- function(Adj,obs.prob_fun = NULL,
                          Adj.subfun = non.diagonal){
   if(is.numeric(obs.prob_fun)){
@@ -120,20 +88,20 @@ make_obs.prob<- function(Adj,obs.prob_fun = NULL,
     }
   }
 
-  n<- nrow(Adj);
+  n<- nrow(Adj);if(!is.null(rownames(Adj))){nodes<- rownames(Adj)}else{nodes<- as.character(1:n)}
 
   if(is.null(obs.prob_fun)){
-    obs.prob<- matrix(runif(n,0,1),n,n,dimnames = list(rownames(Adj),colnames(Adj)))
+    obs.prob<- matrix(runif(n,0,1),n,n,dimnames = list(nodes,nodes))
     diag(obs.prob)<- 0
     return(obs.prob)
   }
 
   dyads<- expand.grid(row = 1:n,col = 1:n)
-  obs.prob<- matrix(nrow = n,ncol = n,dimnames = list(rownames(Adj),colnames(Adj)),
+  obs.prob<- matrix(nrow = n,ncol = n,dimnames = list(nodes,nodes),
                     data =  sapply(1:nrow(dyads),
                                    function(ij) {
                                      i<- dyads[["row"]];j<- dyads[["col"]];
-                                     obs.prob_fun(i,j)
+                                     obs.prob_fun(i,j,Adj)
                                    }
                     )
   )

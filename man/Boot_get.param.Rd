@@ -5,10 +5,10 @@
 \title{Retrieve specific simulation parameters of given Bootstrap
 Internal use. To ease the recollection of a given bootstrap performed through Boot_scans() iterations alongside a parameters.list}
 \usage{
-Boot_get.param(parameters)
+Boot_get.param(Bootstrap)
 }
 \arguments{
-\item{parameters}{a list containing a combination of obs.prob, focal.list, and mode parameters. Element of parameters.list}
+\item{Bootstrap}{a Bootstrap object (with correct parameter attributes)}
 }
 \value{
 a data frame referencing the simulation parameters

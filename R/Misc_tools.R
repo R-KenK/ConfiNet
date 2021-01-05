@@ -16,6 +16,24 @@ rbind_lapply<- function(X,FUN){
   do.call(rbind,lapply(X = X,FUN = FUN))
 }
 
+#' Column bind list of data frames
+#' wrapper to one-function do.call cbind over a lapply list
+#'
+#' @param X a list. See details \link[base]{lapply}.
+#' @param FUN a function to subset data frames (or data tables). See details \link[base]{lapply}.
+#'
+#' @return a column bound data frame
+#' @export
+#'
+#' @examples
+#' set.seed(42)
+#'
+#' X<- lapply(1:3,function(i) list(int = 42,df = data.frame(x = runif(10,0,1),y = runif(10,0,1))))
+#' cbind_lapply(X,function(x) x$df)
+cbind_lapply<- function(X,FUN){
+  do.call(cbind,lapply(X = X,FUN = FUN))
+}
+
 #' Row bind list of data frames
 #' wrapper to one-function do.call rbind over a pblapply list
 #'

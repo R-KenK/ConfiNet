@@ -27,7 +27,7 @@ focal.scan<- function(scan.theoretical,focal){
 #'
 #' @param Adj square integers matrix of occurences of dyads.
 #' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision. Optional if using presence.prob.
-#' @param focal.prob_fun a user-defined function of (n) that output a weight of being focal for each node (passed as `prob` argument to sample() function). By default, pick focals following a uniform distribution. Special case "even" tries to even out the focal.list as much as possible before drawing randomly following a uniform distribution.
+#' @param focal.prob_fun a user-defined function of (n,Adj) that output a weight of being focal for each node (passed as `prob` argument to sample() function). By default, pick focals following a uniform distribution. Special case "even" tries to even out the focal.list as much as possible before drawing randomly following a uniform distribution.
 #' @param all.sampled logical, should all individuals be sampled before letting them be sampled according to `focal.prob_fun`? Returns an error if total_scan is smaller than the number of nodes.
 #'
 #' @return a vector of focals (as integers)
@@ -43,11 +43,19 @@ focal.scan<- function(scan.theoretical,focal){
 #'
 #' make_focal.list(Adj,total_scan)
 #' make_focal.list(Adj,total_scan,focal.prob_fun = "even")
-#' make_focal.list(Adj,total_scan,focal.prob_fun = function(n) 1:n)
-#' make_focal.list(Adj,total_scan,focal.prob_fun = function(n) 1:n*1:n)
-#' make_focal.list(Adj,total_scan,focal.prob_fun = function(n) exp(1:n),all.sampled = TRUE)
-#' make_focal.list(Adj,total_scan,focal.prob_fun = function(n) log(1:n))
-#' make_focal.list(Adj,total_scan,focal.prob_fun = function(n) compute.strength(Adj,"directed"))
+#' make_focal.list(Adj,total_scan,focal.prob_fun = function(n,Adj) 1:n)
+#' make_focal.list(Adj,total_scan,focal.prob_fun = function(n,Adj) 1:n*1:n)
+#' make_focal.list(Adj,total_scan,focal.prob_fun = function(n,Adj) exp(1:n),all.sampled = TRUE)
+#' make_focal.list(Adj,total_scan,focal.prob_fun = function(n,Adj) log(1:n))
+#' compute.strength<- function(graph,mode=NULL){
+#'   if(is.matrix(graph)){
+#'     graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)
+#'   }
+#'   stren<-igraph::strength(graph)
+#'   if(!is.null(names(stren))) {names(stren)<- igraph::vertex_attr(graph)[[1]]}
+#'   stren
+#' }
+#' make_focal.list(Adj,total_scan,focal.prob_fun = function(n,Adj) compute.strength(Adj,"directed"))
 make_focal.list<- function(Adj,total_scan,
                            focal.prob_fun = "even",all.sampled = TRUE){
 
@@ -70,7 +78,7 @@ make_focal.list<- function(Adj,total_scan,
     return(focal.list)
   }
 
-  P<- focal.prob_fun(n);if(any(P==0)){P<-P+min(P[P>0])}
+  P<- focal.prob_fun(n,Adj);if(any(P==0)){P<-P+min(P[P>0])}
   focal.list[is.na(focal.list)]<- sample(1:n,total_scan,replace = TRUE,prob = P)
   focal.list
 }

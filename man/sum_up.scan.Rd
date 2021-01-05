@@ -11,7 +11,8 @@ sum_up.scan(
   mode = NULL,
   scaled,
   use.rare.opti = FALSE,
-  obs.prob = NULL
+  obs.prob = NULL,
+  focal.list = NULL
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ sum_up.scan(
  \item{"a dyad observation vector"}{subsetted similarly as Adj (through the non.diagonal() function for instance)}
  \item{"a systematic dyad observation (P.obs constant for all i,j)"}{should be in [0,1], assumed to be the case when only one value is inputed)}
 }}
+
+\item{focal.list}{Character vector, indicate the list of focals to consider throughout the scans.}
 }
 \value{
 An integer adjacency matrix, or a list of two if method = "both". Now returns NAs for dyad scaled with no observation at all.

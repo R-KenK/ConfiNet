@@ -1,5 +1,11 @@
 # ConfiNet (development version)
 
+# ConfiNet 0.10.3
+* Digging up of the project after a while (...). Update of NEWS.md to keep a (as) good (as possible) track of where the project was at.
+* Cleaner way to keep track of Bootstrap object attributes and retrieving them through the use of `attr(Bootstrap,"attr.list")` in `Bootstrap_add.attributes()` and `Bootstrap_get.attr()`. Stepping stone toward Object Oriented Programming for this package?
+* Fixed wrong handling of mode in `sum_up.scan(s)` and `n.observed` functions. `adjacency_mode` now rely on `null_na()` and `comp_with_transposed()` to correctly compare an adjacency matrix with its transposed matrix despite having empirical NAs (which are internally replaced by zeros).
+* Moved analytic functions from `Bootstrap_tools.R` into `.WIP/analysis_tools.R`, same for simulation workflow tools from `Bootstrap_tools.R` into `.WIP/simulation_tools.R`. Time to split into `ConfiNet` and `SimuNet`/`EmpiriNet`?
+
 # ConfiNet 0.10.2
 * Fixed bug where Boot_scan input argument was overwritten by scan.default.args
 * Added make_focal.list() to the Boot_scan and nested functions workflow: can either rely on user-defined functions to randomly draw focals for the focal.list (to implement trait- or network- based bias), be left as the default "even", or NULL for a uniform random draw, through the argument `focal.prob_fun`.

@@ -1,30 +1,36 @@
-#' Keep bootstrap parameters as attributes
+
+# Bootstrap object data management ----------------------------------------
+
+#' Keep bootstrap parameters (and more) as attributes
 #' Internal use in Boot_scans(). Add "method", "keep", "mode", "output" attributes to be more easily retrieved by the get function
 #'
 #' @param Bootstrap Boot_scans() intermediate output
-#' @param method Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).
-#' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
-#' @param output Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix
-#' @param scaled logical, specifies if adjacency data should be scaled by sampling effort.
-#' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.
-#' @param n.boot integer, number of bootstrap performed.
-#' @param use.rare.opti logical: has the optimization for rare event been used?
+#' @param ... Any named attribute to be included to the Bootstrap object. Mostly determined by the code of Boot_scan(). Will produce error later if no name is attributed to any
 #'
-#' @return list which structure depends on chosen parameters, with parameters stored as attributes.
+#' @return Bootstrap object, with stored attribute for later retrieval through Bootstrap_get.attributes(). A special attribute, attr.list stores those who have been properly inputted, to account for those with special structure.
 #' @export
 #'
 #' @examples
 #' #Internal
-Bootstrap_add.attributes<- function(Bootstrap,method,scaled,mode,output,total_scan,n.boot,use.rare.opti){
-  attr(Bootstrap,"method")<- method;
-  attr(Bootstrap,"scaled")<- scaled;
-  attr(Bootstrap,"mode")<- mode;
-  attr(Bootstrap,"output")<- output;
-  attr(Bootstrap,"total_scan")<- total_scan;
-  attr(Bootstrap,"n.boot")<- n.boot;
-  attr(Bootstrap,"use.rare.opti")<- use.rare.opti;
+Bootstrap_add.attributes<- function(Bootstrap,...){
+  attr(Bootstrap,"attr.list")<- list(...)
   Bootstrap
 }
+
+#' Retrieve bootstrap object's attributes and reassign them in caller frame
+#'
+#' @param Bootstrap Boot_scans() output
+#' @param a character, parameter stored as attribute to retrieve from `Bootstrap`.
+#'
+#' @return the value of the parameter `a`.
+#' @export
+#'
+#' @examples
+#' #Internal
+Bootstrap_get.attr<- function(Bootstrap,a){
+  attr(Bootstrap,"attr.list")[[a]]
+}
+
 
 #' Retrieve data from specific method from Boot_scans() output
 #' Subset rich Bootstrap output choosing what's needed
@@ -55,6 +61,14 @@ Bootstrap_add.attributes<- function(Bootstrap,method,scaled,mode,output,total_sc
 #' Boot_get.list(Bootstrap,"group","obs")
 #'
 #' Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
+#'                        scaled = FALSE,obs.prob=0.7,
+#'                        method = "group",mode = "directed",output = "adjacency")
+#' Boot_get.list(Bootstrap,"theoretical","adj")
+#' # Boot_get.list(Bootstrap,"group","list")
+#' Boot_get.list(Bootstrap,"group","adj")
+#' Boot_get.list(Bootstrap,"group","obs")
+#'
+#' Bootstrap<- Boot_scans(Adj,3,total_scan = 42,focal.list = focal.list,
 #'                        scaled = TRUE,obs.prob=0.7,keep=TRUE,
 #'                        method = "both",mode = "directed",output = "all")
 #' Boot_get.list(Bootstrap,"focal","all")
@@ -66,13 +80,14 @@ Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
   what<- match.arg(what)
   get.format<- match.arg(get.format)
 
-  method<- attr(Bootstrap,"method");
-  output<- attr(Bootstrap,"output");
-  total_scan<- attr(Bootstrap,"total_scan");
-  n.boot<- attr(Bootstrap,"n.boot");
-  scaled<- attr(Bootstrap,"scaled");
-  mode<- attr(Bootstrap,"mode");
-  use.rare.opti<- attr(Bootstrap,"use.rare.opti");
+  method<- Bootstrap_get.attr(Bootstrap,"method");
+  output<- Bootstrap_get.attr(Bootstrap,"output");
+  total_scan<- Bootstrap_get.attr(Bootstrap,"total_scan");
+  n.boot<- Bootstrap_get.attr(Bootstrap,"n.boot");
+  scaled<- Bootstrap_get.attr(Bootstrap,"scaled");
+  mode<- Bootstrap_get.attr(Bootstrap,"mode");
+  use.rare.opti<- Bootstrap_get.attr(Bootstrap,"use.rare.opti");
+  focal.list<- Bootstrap_get.attr(Bootstrap,"focal.list");
 
   if(what!="theoretical" & method!="both" & what!=method){stop("Element requested unavailable in `",substitute(Bootstrap),"`.")}
 
@@ -81,14 +96,14 @@ Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
                          "list" = lapply(Bootstrap,function(boot) lapply(boot, function(scan) scan[[what]])),
                          "adjacency" = lapply(Bootstrap,
                                               function(boot){
-                                                sum_up.scans(scan_list = boot,
+                                                sum_up.scans(scan_list = boot,focal.list = focal.list,
                                                              scaled = scaled,method = what,mode = mode,use.rare.opti = use.rare.opti)[[what]]
                                               }
                          ),
                          "observed_edges" = lapply(Bootstrap,
                                                    function(boot){
                                                      attr(
-                                                       sum_up.scans(scan_list = boot,
+                                                       sum_up.scans(scan_list = boot,focal.list = focal.list,
                                                                   scaled = scaled,method = what,mode = mode,use.rare.opti = use.rare.opti)[[what]],
                                                        "observed_edges"
                                                      )
@@ -108,11 +123,11 @@ Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
          ),
          "adjacency" = switch(get.format,
                               "list" = stop("Only summed-up adjacency matrices have been stored in Bootstrap object."),
-                              "adjacency" = lapply(Bootstrap,function(boot) lapply(boot, function(scan) scan[[what]])),
-                              "observed_edges" = lapply(Bootstrap,function(boot) lapply(boot, function(scan) attr(scan[[what]],"observed_edges"))),
+                              "adjacency" = lapply(Bootstrap,function(boot) boot[[what]]),
+                              "observed_edges" = lapply(Bootstrap,function(boot) attr(boot[[what]],"observed_edges")),
                               "all" = {
                                 warning("Only summed-up adjacency matrices have been stored in Bootstrap object.")
-                                lapply(Bootstrap,function(boot) lapply(boot, function(scan) scan[[what]]))
+                                lapply(Bootstrap,function(boot) boot[[what]])
                               }
          ),
          "all" = switch(get.format,
@@ -129,440 +144,70 @@ Boot_get.list<- function(Bootstrap,what=c("theoretical","group","focal"),
   )
 }
 
-#' Bootstrap specific progress bar
-#' Provide feedbacks on the simulation testing situation (which parameters, which combination of parameters over the whole list). Internal use.
+#' Scale unscaled bootstrap list
 #'
-#' @param p integer, index of the current combination of parameters within parameters.list.
-#' @param parameters.list data frame of parameters for all the simulations
+#' @param Bootstrap Bootstrap output object (/!\ WITH output = "adjacency", other output to be implemented if relevant)
 #'
-#' @return display some feedbacks on the simulation testing situation (which parameters, which combination of parameters over the whole list).
+#' @return a Bootstrap output object with scaled adjacencies (comparable )
 #' @export
 #'
 #' @examples
-#' #Internal use in Simulation_script.R.
-boot_progress.param<- function(p,parameters.list = parameters.list){
-  cat(paste0("obs.prob = ",attr(parameters.list[[p]]$obs.prob,"name")
-             ," - focal.list = ",attr(parameters.list[[p]]$focal.list,"name"),
-             " - mode = ",attr(parameters.list[[p]]$mode,"name")," (",p,"/",length(parameters.list),")","\n"))
+#' # Internal use.
+Bootstrap.list_post.scale<- function(Bootstrap){
+  attr.list<- attr(Bootstrap,"attr.list");
+  attr.list[["output"]]<- "adjacency"
+  attr.list[["scaled"]]<- TRUE
+
+  Bootstrap.scaled<- lapply(Bootstrap,
+                            function(boot){
+                              Adj.scaled<- lapply(names(boot),
+                                                  function(method){
+                                                    observed_edges<- attr(boot[[method]],"observed_edges")
+                                                    observed_edges<- ifelse(observed_edges!=0,observed_edges,1) # supposedly boot[[method]]==0 when observed_edges==0, but avoid dividing by 0
+                                                    scaled<- boot[[method]]/observed_edges
+                                                    diag(scaled)<-0
+                                                    scaled
+                                                  }
+                              )
+                              names(Adj.scaled)<- names(boot)
+                              Adj.scaled
+                            }
+  )
+  attr(Bootstrap.scaled,"attr.list")<- attr.list
+  Bootstrap.scaled
 }
+
 
 #' Retrieve specific simulation parameters of given Bootstrap
 #' Internal use. To ease the recollection of a given bootstrap performed through Boot_scans() iterations alongside a parameters.list
 #'
-#' @param parameters a list containing a combination of obs.prob, focal.list, and mode parameters. Element of parameters.list
+#' @param Bootstrap a Bootstrap object (with correct parameter attributes)
 #'
 #' @return a data frame referencing the simulation parameters
 #' @export
 #'
 #' @examples
 #' #Internal use in Simulation_script.R.
-Boot_get.param<- function(parameters){
-  data.frame(obs.prob = as.factor(attr(parameters$obs.prob,"name")),
-             focal.list = as.factor(attr(parameters$focal.list,"name")),
-             mode = as.factor(ifelse(is.null(attr(parameters$mode,"name")),parameters$mode,attr(parameters$mode,"name")))
-  )
-}
+Boot_get.param<- function(Bootstrap){
+  method<- Bootstrap_get.attr(Bootstrap,"method");
+  output<- Bootstrap_get.attr(Bootstrap,"output");
+  total_scan<- Bootstrap_get.attr(Bootstrap,"total_scan");
+  n.boot<- Bootstrap_get.attr(Bootstrap,"n.boot");
+  scaled<- Bootstrap_get.attr(Bootstrap,"scaled");
+  mode<- Bootstrap_get.attr(Bootstrap,"mode");
+  use.rare.opti<- Bootstrap_get.attr(Bootstrap,"use.rare.opti");
 
-#' Calculate desired data from simulation
-#' Internal use. To ease the recollection of a given bootstrap performed through Boot_scans() iterations alongside a parameters.list
-#'
-#' @param Bootstrap.list Bootstrap output object
-#' @param method sampling method to retrieve data for.
-#'
-#' @return a data frame of desired data
-#' @export
-#'
-#' @examples
-#' #Internal use in Simulation_script.R.
-Boot_calc.data<- function(Bootstrap.list,method = c("group","focal")){
-  data.frame(cor = adjacency_cor(Bootstrap.list = Bootstrap.list,method = method),
-             degree = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.deg),
-             strength = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.strength),
-             EV = centrality_cor(Bootstrap.list = Bootstrap.list,method = method,centrality.fun = compute.EV),
-             # CC = net.metric.diff(Bootstrap.list = Bootstrap.list,method = method,network.fun = weighted.clustering.coeff),
-             Frob = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Frobenius_from_adjacency),
-             Frob.GOF = adj_gof(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Frobenius_from_adjacency),
-             SLap = adj_distance(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Laplacian_spectral.dist),
-             SLap.GOF = adj_gof(Bootstrap.list = Bootstrap.list,method = method,dist.fun = Laplacian_spectral.dist)
-             # HERE IMPLEMENT OTHER STATISTICAL APPROACHES: i.e. NETWORK DISTANCES, METRICS CORRELATION
-  )
-}
+  obs.prob<- Bootstrap_get.attr(Bootstrap,"obs.prob");
+  focal.list<- Bootstrap_get.attr(Bootstrap,"focal.list");
 
-
-# analyses tools ----------------------------------------------------------
-
-#' Calculate the correlation coefficient between "flattened" adjacency matrices
-#' Provide the correlation coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
-#'
-#' @param Bootstrap.list an output of Boot_scan()
-#' @param method character scalar, indicate if the function should output the coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
-#'
-#' @return a vector of correlation coefficients
-#' @export
-#'
-#' @importFrom stats cor
-#'
-#' @examples
-#' #Internal use in Simulation_script.R.
-adjacency_cor<- function(Bootstrap.list,method = c("group","focal")){
-  method<- match.arg(method)
-  n.boot = length(Bootstrap.list)
-  sapply(1:n.boot,  # needs function to gather and structure in a data frame
-         function(b) {
-           stats::cor(
-             c(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]]),   # c() flattens the matrix to consider it like a vector
-             c(Boot_get.list(Bootstrap.list,method,"adjacency")[[b]])
-           )
-         }
-  )
-}
-
-#' Wrapper to calculate coefficient of correlation between centrality indices
-#'
-#' @param Bootstrap.list an output of Boot_scan()
-#' @param method character scalar, indicate if the function should output the coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
-#' @param centrality.fun a centrality function taking an igraph object (or an adjacency matrix but transforms it to an igraph object first) and returns an ordered vector of vertex centralities
-#'
-#' @return a vector of coefficient of correlations between theoretical and empirical methods derived network node centralities.
-#' @export
-#'
-#' @examples
-#' #Internal use in Simulation_script.R.
-centrality_cor<- function(Bootstrap.list,method = c("group","focal"),centrality.fun){
-  method<- match.arg(method)
-  n.boot = length(Bootstrap.list)
-  mode<- attr(Bootstrap.list,"mode")
-  sapply(1:n.boot,  # needs function to gather and structure in a data frame
-         function(b) {
-           cor(
-             centrality.fun(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]],mode=mode),
-             centrality.fun(Boot_get.list(Bootstrap.list,method,"adjacency")[[b]],mode=mode)
-           )
-         }
-  )
-}
-
-#' Compute eigenvector centrality values from graph or adjacency matrix
-#'
-#' @param graph an igraph object (or an adjacency matrix)
-#' @param mode optional, only if `graph` is an adjacency matrix. Othewise character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
-#'
-#' @return a vector of eigenvector centrality values for each node
-#' @export
-#'
-#' @examples
-#' # Internal use
-compute.EV<- function(graph,mode=NULL){
-  if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
-  EV<- igraph::eigen_centrality(graph, weights = igraph::E(graph)$weight,scale = FALSE)$vector
-  names(EV)<- igraph::vertex_attr(graph)[[1]] # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
-  EV
-}
-
-#' Compute node degree from graph or adjacency matrix
-#'
-#' @param graph an igraph object (or an adjacency matrix)
-#' @param mode optional, only if `graph` is an adjacency matrix. Othewise character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
-#'
-#' @return a vector of degree values for each node
-#' @export
-#'
-#' @examples
-#' # Internal use
-compute.deg<- function(graph,mode=NULL){
-  if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
-  deg<- igraph::degree(graph)
-  names(deg)<- igraph::vertex_attr(graph)[[1]] # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
-  deg
-}
-
-#' Compute node strength from graph or adjacency matrix
-#'
-#' @param graph an igraph object (or an adjacency matrix)
-#' @param mode optional, only if `graph` is an adjacency matrix. Othewise character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
-#'
-#' @return a vector of strength values for each node
-#' @export
-#'
-#' @examples
-#' # Internal use
-compute.strength<- function(graph,mode=NULL){
-  if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
-  igraph::strength(graph)
-}
-
-#' Compute node flow betweenness from graph or adjacency matrix
-#'
-#' @param graph an igraph object (or an adjacency matrix)
-#' @param mode optional, only if `graph` is an adjacency matrix. Othewise character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
-#'
-#' @return a vector of flow betweenness values for each node
-#' @export
-#'
-#' @examples
-#' # Internal use
-compute.flowbet<- function(graph,mode=NULL){
-  if(is.matrix(graph)){graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)}
-  graph.network<- intergraph::asNetwork(graph)
-  FB<- sna::flowbet(graph.network)
-  names(FB)<- igraph::vertex_attr(graph)[[1]] # dirty: does not actually test if the order of the vertex centrality is the same as the name, but I suspect igraph does that by default...
-  FB
-}
-
-#' Wrapper to calculate difference between whole-group network metric
-#'
-#' @param Bootstrap.list an output of Boot_scan()
-#' @param method character scalar, indicate if the function should output the coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
-#' @param network.fun a whole-group network metric function taking an igraph object (or an adjacency matrix but transforms it to an igraph object first) and returns a metric
-#'
-#' @return the difference between metrics of networks obtained via theoretical and empirical methods.
-#' @export
-#'
-#' @examples
-#' #Internal use in Simulation_script.R.
-net.metric.diff<- function(Bootstrap.list,method = c("group","focal"),network.fun){
-  method<- match.arg(method)
-  n.boot = length(Bootstrap.list)
-  mode<- attr(Bootstrap.list,"mode")
-  sapply(1:n.boot,  # needs function to gather and structure in a data frame
-         function(b) {
-           "-"(
-             network.fun(Boot_get.list(Bootstrap.list,method,"adjacency")[[b]],mode=mode),
-             network.fun(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]],mode=mode)
-             )
-         }
-  )
-}
-
-#' Weighted clustering coefficient
-#'
-#' @param graph a graph
-#' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.
-#'
-#' @return the clustering coefficient
-#' @export
-#'
-#' @importFrom DirectedClustering ClustF
-#'
-#' @examples
-#' # Internal use.
-weighted.clustering.coeff<- function(graph,mode){
-  if(!is.matrix(graph)){graph<- igraph::get.adjacency(graph,type = "both",sparse = FALSE,attr = "weight")}
-  if(isSymmetric.matrix(graph)){
-    DirectedClustering::ClustF(mat = graph,type = "undirected")$GlobalCC
-  }else{
-    DirectedClustering::ClustF(mat = graph,type = "directed")$GlobaltotalCC
-  }
-}
-#
-# generate.null.adj<- function(Adj,total_scan,
-#                              Adj.subfun = non.diagonal,scaled = TRUE,
-#                              mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
-#   n<- nrow(Adj);if(is.null(row.names(Adj))) {nodes<- as.character(1:n)} else {nodes<- row.names(Adj)}
-#   Null<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
-#   Null[Adj.subfun(Null)]<- rbinom(length(Null[Adj.subfun(Null)]),total_scan,prob = 0.5)
-#   adjacency_mode(Null,mode)/ifelse(scaled,total_scan,1)
-# }
-
-#' Wrapper to calculate adjacency/network distances
-#'
-#' @param Bootstrap.list an output of Boot_scan()
-#' @param method character scalar, indicate if the function should output the coefficient between the theoretical adjacency matrix and either the empirical one from group or focal method
-#' @param dist.fun a matrix/network distance function taking an igraph object (or an adjacency matrix but transforms it to an igraph object first) and returns an ordered vector of vertex centralities
-#'
-#' @return a vector of coefficient of correlations between theoretical and empirical methods derived network node centralities.
-#' @export
-#'
-#' @importFrom stats cor
-#'
-#' @examples
-#' #Internal use in Simulation_script.R.
-adj_distance<- function(Bootstrap.list,method = c("group","focal"),dist.fun){
-  method<- match.arg(method)
-  n.boot = length(Bootstrap.list)
-  mode<- attr(Bootstrap.list,"mode")
-  sapply(1:n.boot,  # needs function to gather and structure in a data frame
-         function(b) {
-           dist.fun(Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]],Boot_get.list(Bootstrap.list,method,"adjacency")[[b]],mode = mode)
-         }
-  )
-}
-
-#' Wrapper to calculate goodness of fit (GOF) from adjacency/network distances
-#'
-#' @param Bootstrap.list an output of Boot_scan()
-#' @param method character scalar, indicate if the function should output the GOF between the theoretical adjacency matrix and either the empirical one from group or focal method
-#' @param dist.fun a matrix/network distance function taking an igraph object (or an adjacency matrix but transforms it to an igraph object first) and returns an ordered vector of vertex centralities
-#'
-#' @return a vector of GOF values between theoretical and empirical methods.
-#' @export
-#'
-#' @examples
-#' #Internal use in Simulation_script.R.
-adj_gof<- function(Bootstrap.list,method = c("group","focal"),dist.fun){
-  method<- match.arg(method)
-  n.boot = length(Bootstrap.list)
-  scaled<- attr(Bootstrap.list,"scaled")
-  mode<- attr(Bootstrap.list,"mode")
-  total_scan<- attr(Bootstrap.list,"total_scan")
-  Adj.subfun<- switch(mode,"directed" = ,"undirected" = ,"max" = ,"min" = ,"plus" = non.diagonal,
-                      "upper" = upper.tri,"lower" =  lower.tri)
-  sapply(1:n.boot,
-         function(b) {
-           Adj.theo<- Boot_get.list(Bootstrap.list,"theoretical","adjacency")[[b]]
-           Adj.method<- Boot_get.list(Bootstrap.list,method,"adjacency")[[b]]
-           dist.method<- dist.fun(Adj.theo,Adj.method,mode = mode)
-           dist.null<- dist.fun(Adj.theo,generate.null.adj(Adj = Adj.theo,total_scan = total_scan,scaled = scaled,Adj.subfun = Adj.subfun,mode = mode),mode = mode)
-           1-dist.method/dist.null # cf. Shore and Lubin (2015) p. 19
-         }
-  )
-}
-
-#' Generate a random matrix as a null following similarly designed matrix generation
-#' used in adj_gof
-#'
-#' @param Adj square integers matrix of occurences of dyads. Optional if using presence.prob. Update: now if presence prob is passed as Adj (thus all(Adj<1) is TRUE), it will be rightfully assigned to presence.prob. WIP: implement method for association matrices...
-#' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision. Optional if using presence.prob.
-#' @param Adj.subfun subsetting function of the adjacency matrix. Driven by igraph "mode" argument
-#' @param scaled logical, specifies if adjacency data should be scaled by sampling effort.
-#' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. Default here is directed. Possible values are: directed, undirected, upper, lower, max, min, plus. Added vector too. See details \link[igraph]{graph_from_adjacency_matrix}.
-#'
-#' @importFrom stats rbinom
-#'
-#' @return a weighted adjacency matrix randomly drawn from binomial trials, comparably to how adjacency matrices are simulated with iterate_scans()
-#' @export
-#'
-#' @examples
-#' # internal use in adj_gof
-generate.null.adj<- function(Adj,total_scan,
-                             Adj.subfun = non.diagonal,scaled = TRUE,
-                             mode = c("directed", "undirected", "max","min", "upper", "lower", "plus")){
-  n<- nrow(Adj);if(is.null(row.names(Adj))) {nodes<- as.character(1:n)} else {nodes<- row.names(Adj)}
-  Null<- matrix(data = 0,nrow = n,ncol = n,dimnames = list(nodes,nodes))
-  Null[Adj.subfun(Null)]<- stats::rbinom(length(Null[Adj.subfun(Null)]),total_scan,prob = 0.5)
-  adjacency_mode(Null,mode)/ifelse(scaled,total_scan,1)
-}
-#' Simple Frobenius distance calculation
-#'
-#' @param X an adjacency matrix
-#' @param Y another adjacency matrix, otherwise the distance measuredd is ||X||
-#' @param ... for compatibility when mode has to be inputted
-#'
-#' @return the Frobenius distance
-#' @export
-#'
-#' @examples
-#' #Internal use in Simulation_script.R.
-Frobenius_from_adjacency<- function(X,Y=0,...){
-  sqrt(sum((X-Y)^2))
-}
-
-Laplacian_spectrum<- function(Adj,mode){
-  G<- igraph::graph.adjacency(Adj,weighted = TRUE,mode = mode)
-  zapsmall(eigen(igraph::laplacian_matrix(G))$value)
-}
-
-#' Graph Laplacian spectral distance
-#'
-#' @param X an adjacency matrix
-#' @param Y another adjacency matrix, otherwise the distance measuredd is ||X||
-#' @param ... for compatibility when mode has to be inputted
-#'
-#' @return the Laplacian spectral distance
-#' @export
-#'
-#' @examples
-#' #Internal use for now only.
-Laplacian_spectral.dist<- function(X,Y=0,...){
-  sqrt(sum(Laplacian_spectrum(X,...)-Laplacian_spectrum(Y,...))^2)
-}
-
-# Simulation workflow tools -----------------------------------------------
-
-#' Create a list of parameter combinations
-#' to be used in simulations of network sampling
-#'
-#' @param Adj reference adjacency matrix (especially for network-based observation bias)
-#' @param total_scan integer, total number of scan to be performed in each simulation
-#' @param n.cores number of cores to use to generate (in parallel) the parameter combinations list
-#' @param cl optional cluster object to use, otherwise automatically created when n.cores is inputted
-#'
-#' @return a list of lists of the different parameter combinations.
-#' @export
-#'
-#' @examples
-#' #Internal use in Simulation_script.R.
-initialize_parameters<- function(Adj,total_scan,n.cores=(parallel::detectCores()-1),cl=NULL){
-  # OBS.PROB<- list(trait.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,bias_fun = NULL,reverse = FALSE),
-  #                 trait.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = function(i,j) 1/prod(i,j),bias_fun = NULL,reverse = FALSE),
-  #                 network.pos = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
-  #                                             bias_fun = function(node) igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
-  #                                             reverse = FALSE),
-  #                 network.neg = obs.prob_bias(Adj = Adj,obs.prob_fun = prod,
-  #                                             bias_fun = function(node) 1/igraph::strength(igraph::graph.adjacency(Adj,weighted = TRUE))[node],
-  #                                             reverse = FALSE)
-  # )
-  # OBS.PROB<- c({unb<- seq(0.1,0.9,by = 0.2);names(unb)<- paste0("unbiased_",unb);as.list(unb)},OBS.PROB) # c() over two lists makes them flat while allowing for shorter calls
-  # MODE<- if(identical(Adj,t(Adj))) {as.list(c("max"))} else  {as.list(c(directed = "directed",max = "max",min = "min",plus = "plus"))}
-  # FOCAL.LIST<- list(random = sample(rownames(Adj),total_scan,replace = TRUE),  # consider checking if can be implemented for each boot (leaving it NULL?)
-  #                   even = rep_len(rownames(Adj),length.out = total_scan),
-  #                   biased = "TO IMPLEMENT")
-  #
-  # parameters.comb<- expand.grid(
-  #   list(mode = 1:length(MODE),
-  #        focal.list = 1:length(FOCAL.LIST[1:2]),
-  #        obs.prob = 1:length(OBS.PROB)
-  #   )
-  # )
-  #
-  # if(is.null(cl)) {cl<- snow::makeCluster(n.cores);doSNOW::registerDoSNOW(cl);on.exit(snow::stopCluster(cl))} # left to avoid error if the function is used alone, but should probably be used internally from Boot_scans() now.
-  # p<-NULL; #irrelevant bit of code, only to remove annoying note in R CMD Check...
-  # parameters.list<- foreach::`%dopar%`(
-  #   foreach::foreach(p=1:nrow(parameters.comb)),
-  #   list(
-  #     obs.prob = {
-  #       obs.prob<- OBS.PROB[[parameters.comb[p,"obs.prob"]]];
-  #       attr(obs.prob,"name")<- names(OBS.PROB)[parameters.comb[p,"obs.prob"]];
-  #       obs.prob
-  #     },
-  #     focal.list = {
-  #       focal.list<- FOCAL.LIST[[parameters.comb[p,"focal.list"]]];
-  #       attr(focal.list,"name")<- names(FOCAL.LIST)[parameters.comb[p,"focal.list"]];
-  #       focal.list
-  #     },
-  #     mode = {
-  #       mode<- MODE[[parameters.comb[p,"mode"]]];
-  #       attr(mode,"name")<- names(MODE)[parameters.comb[p,"mode"]];
-  #       mode
-  #     }
-  #   )
-  # )
-  # parameters.list
-  message("to clean")
-}
-
-#' Retrieve data from list of network bootstrap results
-#' To be used in a loop/lapply. format them in a ready to be analyzed data frame
-#'
-#' @param B index of the network from which data are collected.
-#' @param Bootstrap.list list of bootstrap of a given network, through different parameters
-#' @param parameters.list list of parameters used in bootstrap. Should be loopable similarly to Bootstrap.list
-#'
-#' @return a data frame of collected data per network and per parameter combination
-#' @export
-#'
-#' @examples
-#' #Internal use in Simulation_script.R.
-Get.data<- function(B,Bootstrap.list,parameters.list){
-  rbind_lapply(seq_along(Bootstrap.list),
-               function(b){
-                 parameters.list.df<- Boot_get.param(parameters.list[[b]])
-                 rbind(data.frame(Network = B,boot = b,method = "group",
-                                  parameters.list.df,
-                                  Boot_calc.data(Bootstrap.list[[b]],method = "group")),
-                       data.frame(Network = B,boot = b,method = "focal",
-                                  parameters.list.df,
-                                  Boot_calc.data(Bootstrap.list[[b]],method = "focal")))
-               }
+  data.frame(obs.prob.type = attr(obs.prob,"type"),
+             obs.prob.subtype = attr(obs.prob,"subtype"),
+             obs.prob.fun = attr(obs.prob,"fun"),
+             focal.list.type = attr(focal.list,"type"),
+             focal.list.subtype = attr(focal.list,"subtype"),
+             total_scan = total_scan,
+             mode = mode,
+             scaled = scaled,
+             use.rare.opti = use.rare.opti
   )
 }

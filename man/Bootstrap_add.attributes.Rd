@@ -2,42 +2,21 @@
 % Please edit documentation in R/Bootstrap_tools.R
 \name{Bootstrap_add.attributes}
 \alias{Bootstrap_add.attributes}
-\title{Keep bootstrap parameters as attributes
+\title{Keep bootstrap parameters (and more) as attributes
 Internal use in Boot_scans(). Add "method", "keep", "mode", "output" attributes to be more easily retrieved by the get function}
 \usage{
-Bootstrap_add.attributes(
-  Bootstrap,
-  method,
-  scaled,
-  mode,
-  output,
-  total_scan,
-  n.boot,
-  use.rare.opti
-)
+Bootstrap_add.attributes(Bootstrap, ...)
 }
 \arguments{
 \item{Bootstrap}{Boot_scans() intermediate output}
 
-\item{method}{Character scalar, specify if the function should use a whole group or a focal scan sampling method (or both).}
-
-\item{scaled}{logical, specifies if adjacency data should be scaled by sampling effort.}
-
-\item{mode}{Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}.}
-
-\item{output}{Character scalar, specify if the function should return the list of scans, or reduce them into the bootstrapped adjacency matrix}
-
-\item{total_scan}{integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.}
-
-\item{n.boot}{integer, number of bootstrap performed.}
-
-\item{use.rare.opti}{logical: has the optimization for rare event been used?}
+\item{...}{Any named attribute to be included to the Bootstrap object. Mostly determined by the code of Boot_scan(). Will produce error later if no name is attributed to any}
 }
 \value{
-list which structure depends on chosen parameters, with parameters stored as attributes.
+Bootstrap object, with stored attribute for later retrieval through Bootstrap_get.attributes(). A special attribute, attr.list stores those who have been properly inputted, to account for those with special structure.
 }
 \description{
-Keep bootstrap parameters as attributes
+Keep bootstrap parameters (and more) as attributes
 Internal use in Boot_scans(). Add "method", "keep", "mode", "output" attributes to be more easily retrieved by the get function
 }
 \examples{
