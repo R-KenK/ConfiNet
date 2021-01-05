@@ -1,7 +1,7 @@
 #' Binarize from adjacency matrix
 #' Internal use. Provide binary probability for each weight, taking into account the sampling effort.
 #'
-#' @param Adj square integers matrix of occurences of dyads. WIP: implement method for association matrices...
+#' @param Adj square integers matrix of occurrences of dyads. WIP: implement method for association matrices...
 #' @param total_scan integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.
 #' @param mode Character scalar, specifies how igraph should interpret the supplied matrix. See also the weighted argument, the interpretation depends on that too. Possible values are: directed, undirected, upper, lower, max, min, plus. See details \link[igraph]{graph_from_adjacency_matrix}. Added also a vector mode.
 #'

@@ -12,7 +12,7 @@ Binary.prob(
 )
 }
 \arguments{
-\item{Adj}{square integers matrix of occurences of dyads. WIP: implement method for association matrices...}
+\item{Adj}{square integers matrix of occurrences of dyads. WIP: implement method for association matrices...}
 
 \item{total_scan}{integer, sampling effort. Note that 1/total_scan should be relatively small, increasingly small with increasing precision.}
 

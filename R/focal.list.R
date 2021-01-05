@@ -47,6 +47,14 @@ focal.scan<- function(scan.theoretical,focal){
 #' make_focal.list(Adj,total_scan,focal.prob_fun = function(n,Adj) 1:n*1:n)
 #' make_focal.list(Adj,total_scan,focal.prob_fun = function(n,Adj) exp(1:n),all.sampled = TRUE)
 #' make_focal.list(Adj,total_scan,focal.prob_fun = function(n,Adj) log(1:n))
+#' compute.strength<- function(graph,mode=NULL){
+#'   if(is.matrix(graph)){
+#'     graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)
+#'   }
+#'   stren<-igraph::strength(graph)
+#'   if(!is.null(names(stren))) {names(stren)<- igraph::vertex_attr(graph)[[1]]}
+#'   stren
+#' }
 #' make_focal.list(Adj,total_scan,focal.prob_fun = function(n,Adj) compute.strength(Adj,"directed"))
 make_focal.list<- function(Adj,total_scan,
                            focal.prob_fun = "even",all.sampled = TRUE){

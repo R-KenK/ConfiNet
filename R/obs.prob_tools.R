@@ -69,6 +69,14 @@ observable_edges<- function(Scan,obs.prob=NULL,Adj.subfun=NULL){
 #' make_obs.prob(Adj)
 #' make_obs.prob(Adj,obs.prob_fun = 0.2)
 #' make_obs.prob(Adj,obs.prob_fun = function(i,j,Adj) i+j)
+#' compute.EV<- function(graph,mode=NULL){
+#'   if(is.matrix(graph)){
+#'     graph<- igraph::graph.adjacency(graph,mode = mode,weighted = TRUE,add.colnames = TRUE)
+#'   }
+#'   EV<- igraph::eigen_centrality(graph, weights = igraph::E(graph)$weight,scale = FALSE)$vector
+#'   if(!is.null(names(EV))){names(EV)<- igraph::vertex_attr(graph)[[1]]}
+#'   EV
+#' }
 #' make_obs.prob(Adj,obs.prob_fun = function(i,j,Adj){EVs<- compute.EV(Adj,"directed");EVs[i]*EVs[j]})
 make_obs.prob<- function(Adj,obs.prob_fun = NULL,
                          Adj.subfun = non.diagonal){
