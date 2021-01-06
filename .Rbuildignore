@@ -1,3 +1,5 @@
+^renv$
+^renv\.lock$
 ^ConfiNet\.Rproj$
 ^\.Rproj\.user$
 ^R/RTWS\.progbar\.R$
