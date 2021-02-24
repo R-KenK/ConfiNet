@@ -56,24 +56,21 @@ rbind_pblapply<- function(X,FUN,n.cores=NULL,.export=NULL,cl=NULL){
   do.call(rbind,pbapply::pblapply(X = X,FUN = FUN,cl = cl))
 }
 
-# Make cluster object wrapper
-#
-# @param n.cores number of threads to use.
-# @param .export vector of variable/function names to use in each clusters
-#
-# @return a cluster object
-# @export
-#
-# @importFrom  snow makeCluster
-# @importFrom  snow clusterExport
-# @importFrom  doSNOW registerDoSNOW
-#
-# @examples
-# # Internal use
-# make_cl<- function(n.cores,.export){
-#   cl<- snow::makeCluster(n.cores);snow::clusterExport(cl,list = .export);
-#   cl
-# }
+#' Make cluster object wrapper
+#'
+#' @param n.cores number of threads to use.
+#' @param .export vector of variable/function names to use in each clusters
+#'
+#' @return a cluster object
+#' @noRd
+#'
+#' @importFrom  snow makeCluster
+#' @importFrom  snow clusterExport
+#' @importFrom  doSNOW registerDoSNOW
+make_cl<- function(n.cores,.export){
+  cl<- snow::makeCluster(n.cores);snow::clusterExport(cl,list = .export);
+  cl
+}
 
 #' Quick optimized equivalent to sample(x,size,replace=TRUE)
 #'
