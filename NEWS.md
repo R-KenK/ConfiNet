@@ -1,5 +1,7 @@
 # ConfiNet (development version)
 
+# ConfiNet 0.11.0
+
 # ConfiNet 0.10.3
 * Digging up of the project after a while (...). Update of NEWS.md to keep a (as) good (as possible) track of where the project was at.
 * Cleaner way to keep track of Bootstrap object attributes and retrieving them through the use of `attr(Bootstrap,"attr.list")` in `Bootstrap_add.attributes()` and `Bootstrap_get.attr()`. Stepping stone toward Object Oriented Programming for this package?
