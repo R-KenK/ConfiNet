@@ -5,6 +5,8 @@
 #'
 #' @return TO WRITE
 #' @export
+
+#' @importFrom DirectedClustering ClustF
 #'
 #' @examples
 #' # TO WRITE

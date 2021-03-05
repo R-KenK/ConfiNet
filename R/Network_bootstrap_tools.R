@@ -17,6 +17,7 @@ bootstrap_scan.list <- function(scan.list,n.boot = 100) {
 #' TO WRITE
 #'
 #' @param scan.list TO WRITE
+#' @param metric.fun TO WRITE
 #' @param n.boot TO WRITE
 #'
 #' @return TO WRITE
